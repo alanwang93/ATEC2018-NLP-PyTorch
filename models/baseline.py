@@ -18,7 +18,7 @@ class SimpleRNN(nn.Module):
         self.hidden_size = c['hidden_size']
         self.num_layers = c['num_layers']
         self.bidirectional = c['bidirectional']
-        self.pos_weight = 4.0
+        self.pos_weight = 3.0
         self.mode = None
 
         self.embed = nn.Embedding(self.vocab_size, self.embed_size, padding_idx=EOS_IDX)
@@ -69,7 +69,7 @@ class SimpleRNN(nn.Module):
         feats = torch.cat([s1_out, s2_out, s1_out*s2_out], dim=1)
         # feats = s1_out - s2_out
         linear_out = self.linear(feats)
-        out = self.linear2(self.tanh(linear_out))
+        out = self.linear2(self.relu(linear_out))
 
         return out
 

@@ -16,9 +16,9 @@ baseline = {
     'embed_size': 200,
     'hidden_size': 150,
     'rnn_cell': 'BasicLSTMCell',
-    'num_layers': 2,
+    'num_layers': 1,
     'bidirectional':False,
-    'dropout': 0.2,
+    'dropout': 0.4,
 
     # training
     'batch_size': 16,
