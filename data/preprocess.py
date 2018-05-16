@@ -24,8 +24,8 @@ def extract_features(data, exts):
 
 def main(args):
     c = getattr(config, args.config)
-    exts_train = {'WordEmbedExtractor':{}}
-    exts_valid = {'WordEmbedExtractor':{}}
+    exts_train = {'WordEmbedExtractor':{'config': c}}
+    exts_valid = {'WordEmbedExtractor':{'config': c}}
 
     # Train
     if args.mode == 'train':

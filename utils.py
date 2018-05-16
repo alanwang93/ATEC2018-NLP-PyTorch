@@ -69,12 +69,13 @@ def score(pred, target):
     return f1, acc, prec, recall
 
 def BCELoss(output, target, weights=None):
+    eps = 1e-6
     if weights is not None:
         assert len(weights) == 2
-        loss = weights[1] * (target * torch.log(output)) + \
-               weights[0] * ((1 - target) * torch.log(1 - output))
+        loss = weights[1] * (target * torch.log(output+eps)) + \
+               weights[0] * ((1 - target) * torch.log(1 - output+eps))
     else:
-        loss = target * torch.log(output) + (1 - target) * torch.log(1 - output)
+        loss = target * torch.log(output+eps) + (1 - target) * torch.log(1 - output+eps)
     return torch.neg(torch.mean(loss))
 
 def to_cuda(d, c):

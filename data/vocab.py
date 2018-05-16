@@ -106,5 +106,11 @@ class Vocab:
         else:
             return self.stoi[l]
 
+    def tos(self, l):
+        if hasattr(l, '__len__'):
+            return [self.itos[w] for w in l]
+        else:
+            return self.itos[l]
+
     def load_vectors(self):
         pass

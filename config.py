@@ -18,7 +18,7 @@ baseline = {
     'rnn_cell': 'BasicLSTMCell',
     'num_layers': 1,
     'bidirectional':False,
-    'dropout': 0.2,
+    'dropout': 0.5,
 
     # training
     'batch_size': 32,

@@ -27,8 +27,12 @@ class SimpleRNN(nn.Module):
         self.linear_in_size = self.hidden_size*2
         if self.bidirectional:
             self.linear_in_size *= 2
-        self.linear = nn.Linear(self.linear_in_size, 1)
+        self.linear2_in_size = 100
+        self.linear = nn.Linear(self.linear_in_size, self.linear2_in_size)
+        self.linear2 = nn.Linear(self.linear2_in_size, 1)
         self.sigmoid = nn.Sigmoid()
+        self.tanh = nn.Tanh()
+        self.relu = nn.ReLU()
         # self.bce = nn.BCELoss()
         self.bce = BCELoss
         self.optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, self.parameters()), lr=0.001)
@@ -45,6 +49,7 @@ class SimpleRNN(nn.Module):
         s2_embed = self.embed(data['s2_word'])
         s1_embed = self.dropout(s1_embed)
         s2_embed = self.dropout(s2_embed)
+
         # Packed, using `complex_collate_fn`
         # s1_packed = nn.utils.rnn.pack_padded_sequence(s1_embed, data['s1_ordered_len'], batch_first=True)
         # s2_packed = nn.utils.rnn.pack_padded_sequence(s2_embed, data['s2_ordered_len'], batch_first=True)
@@ -52,6 +57,7 @@ class SimpleRNN(nn.Module):
         # s2_out, s2_hidden = self.rnn(s2_packed)
         # s1_out, _ = nn.utils.rnn.pad_packed_sequence(s1_out, batch_first=True)
         # s2_out, _ = nn.utils.rnn.pad_packed_sequence(s2_out, batch_first=True)
+
         # Non-packed, using `simple_collate_fn`
         s1_out, s1_hidden = self.rnn(s1_embed)
         s2_out, s2_hidden = self.rnn(s2_embed)
@@ -59,7 +65,8 @@ class SimpleRNN(nn.Module):
         row_idx = torch.arange(0, batch_size).long()
         s1_out = torch.squeeze(s1_out[row_idx, data['s1_len']-1, :], 1) # last hidden state
         s2_out = torch.squeeze(s2_out[row_idx, data['s2_len']-1, :], 1)
-        out = self.linear(torch.cat([s1_out, s2_out], dim=1))
+        linear_out = self.linear(torch.cat([s1_out, s2_out], dim=1))
+        out = self.linear2(self.tanh(linear_out))
 
         return out
 
@@ -67,7 +74,7 @@ class SimpleRNN(nn.Module):
     def train_step(self, data):
         out = self.forward(data)
         proba = torch.squeeze(self.sigmoid(out))
-        loss = self.bce(proba, data['label'], weights=[1., 3.5])
+        loss = self.bce(proba, data['label'], weights=[1., 1.5])
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
@@ -78,6 +85,7 @@ class SimpleRNN(nn.Module):
     def evaluate(self, data):
         out = self.forward(data)
         proba = torch.squeeze(self.sigmoid(out), 0)
+        loss = self.bce(proba, data['label'], weights=[1., 1.5])
         target =  data['label'].item()
-        loss = self.bce(proba, data['label'], weights=[1., 3.5])
-        return proba, target, loss.item()
+        pred = proba.item()
+        return pred, target, loss.item()
