@@ -10,11 +10,12 @@ baseline = {
     'train': 'data/data1/train.pkl',
     'valid': 'data/data1/valid.pkl',
     # model
-    'max_vocab': 10000000,
-    'embed_size': 100,
-    'hidden_size': 100,
+    'max_vocab': 1200,
+    'embed_size': 200,
+    'hidden_size': 200,
     'rnn_cell': 'BasicLSTMCell',
-    'num_layers': 2,
+    'num_layers': 1,
+    'bidirectional':False,
 
 
     # training

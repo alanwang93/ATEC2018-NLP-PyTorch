@@ -17,17 +17,20 @@ class SimpleRNN(nn.Module):
         self.embed_size = c['embed_size']
         self.hidden_size = c['hidden_size']
         self.num_layers = c['num_layers']
+        self.bidirectional = c['bidirectional']
         self.mode = None
 
         self.embed = nn.Embedding(self.vocab_size, self.embed_size, padding_idx=EOS_IDX)
         self.rnn = nn.GRU(input_size=self.embed_size, hidden_size=self.hidden_size, \
-                num_layers=self.num_layers, batch_first=True, bidirectional=True)
+                num_layers=self.num_layers, batch_first=True, bidirectional=self.bidirectional)
         self.dropout = nn.Dropout(0.1)
-        self.linear_in_size = self.hidden_size*2*2
+        self.linear_in_size = self.hidden_size*2
+        if self.bidirectional:
+            self.linear_in_size *= 2
         self.linear = nn.Linear(self.linear_in_size, 1)
         self.sigmoid = nn.Sigmoid()
         self.bce = nn.BCELoss()
-        self.optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, self.parameters()), lr=0.002)
+        self.optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, self.parameters()), lr=0.001)
 
         self._init_weights()
 
@@ -56,7 +59,7 @@ class SimpleRNN(nn.Module):
     def train_step(self, data):
         out = self.forward(data)
         proba = torch.squeeze(self.sigmoid(out))
-        loss = BCELoss(proba, data['label'], weights=[1., 3.5])
+        loss = self.bce(proba, data['label'])#, weights=[1., 3.5])
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
@@ -68,5 +71,5 @@ class SimpleRNN(nn.Module):
         out = self.forward(data)
         proba = torch.squeeze(self.sigmoid(out), 0)
         target =  data['label'].item()
-        loss = BCELoss(proba, data['label'], weights=[1., 3.5])
+        loss = self.bce(proba, data['label'])#, weights=[1., 3.5])
         return proba, target, loss.item()
