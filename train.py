@@ -10,7 +10,7 @@ from data.vocab import Vocab
 from torch.utils import data
 import config
 import itertools, argparse, os, json
-from utils import init_log, score
+from utils import init_log, score, to_cuda
 import numpy as np
 
 """
@@ -24,7 +24,8 @@ EOS_IDX = 2
 def main(args):
     assert args.config is not None
     c = getattr(config, args.config)
-    c['use_gpu'] = not args.disable_gpu and torch.cuda.is_available()
+    c['use_cuda'] = not args.disable_cuda and torch.cuda.is_available()
+    c['cuda_num'] = args.cuda_num
 
     logger = init_log(os.path.join('log/', args.config))
 
@@ -33,8 +34,8 @@ def main(args):
     vocab_size = len(vocab)
     c['vocab_size'] = vocab_size
 
-    train_data = Dataset(c['train'])
-    valid_data = Dataset(c['valid'])
+    train_data = Dataset(c['train'], config=c)
+    valid_data = Dataset(c['valid'], config=c)
     valid_size = len(valid_data)
     train = data.DataLoader(train_data, batch_size=64, shuffle=True, collate_fn=my_collate_fn)
     valid = data.DataLoader(valid_data, batch_size=1, collate_fn=my_collate_fn)
@@ -42,13 +43,15 @@ def main(args):
     print(json.dumps(c, indent=2))
 
     model = getattr(models, c['model'])(c)
-
+    if c['use_cuda']:
+	model = model.cuda(c['cuda_num'])
+    
     train_loss = 0
     global_step = 0
     for epoch in range(200):
         for step, train_batch in enumerate(train):
             global_step += 1
-            train_loss += model.train_step(train_batch)
+            train_loss += model.train(mode=True).train_step(to_cuda(train_batch, c))
             if global_step % LOG_STEPS == 0:
                 logger.info("Step {0}, train loss: {1}".format(global_step, train_loss/LOG_STEPS))
                 train_loss = 0
@@ -58,7 +61,7 @@ def main(args):
                 preds = []
                 targets = []
                 for _, valid_batch in enumerate(valid):
-                    pred, target, valid_loss = model.eval().evaluate(valid_batch)
+                    pred, target, valid_loss = model.eval().evaluate(to_cuda(valid_batch,c))
                     preds.append(pred)
                     targets.append(target)
                     valid_losses.append(valid_loss)
@@ -72,6 +75,8 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', type=str, default=None)
-    parser.add_argument('--disable_gpu', dest='disable_gpu', action='store_true')
+    parser.add_argument('--cuda_num', type=int, default=2)
+    parser.add_argument('--disable_cuda', dest='disable_cuda', action='store_true')
     args = parser.parse_args()
+ 
     main(args)

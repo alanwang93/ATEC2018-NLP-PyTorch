@@ -77,6 +77,13 @@ def BCELoss(output, target, weights=None):
         loss = target * torch.log(output) + (1 - target) * torch.log(1 - output)
     return torch.neg(torch.mean(loss))
 
+def to_cuda(d, c):
+    if c['use_cuda']:
+        for k, v in d.items():
+            d[k] = v.cuda(c['cuda_num'])
+    return d
+
+
 def main(args):
     if args.split:
         split_data(args.raw, args.out_dir, args.train_ratio)

@@ -13,17 +13,17 @@ class Dataset(data.Dataset):
 
     Examples:
     """
-    def __init__(self, data_path, use_gpu=False, mode='train'):
+    def __init__(self, data_path, config, mode='train'):
         self.dict = pickle.load(open(data_path, 'r'))
         self.keys = self.dict.keys()
         self.data = []
-        self.use_gpu = use_gpu
+        use_cuda = config['use_cuda']
         for index in range(len(self.dict.values()[0])):
             d = {}
             for k in self.keys:
                 d[k] = torch.tensor(self.dict[k][index])
-                if use_gpu:
-                    d[k] = d[k].gpu()
+                if use_cuda:
+                    d[k] = d[k].cuda(config['cuda_num'])
             self.data.append(d)
 
     def __getitem__(self, index):
@@ -31,6 +31,8 @@ class Dataset(data.Dataset):
 
     def __len__(self):
         return len(self.data)
+
+
 
 def my_collate_fn(batch):
     keys = batch[0].keys()
@@ -42,8 +44,8 @@ def my_collate_fn(batch):
             d[k].append(v)
     d['s1_len'] = torch.tensor(d['s1_len'])
     d['s2_len'] = torch.tensor(d['s2_len'])
-    d['s1_len'], d['s1_indices'] = torch.sort(d['s1_len'], descending=True)
-    d['s2_len'], d['s2_indices'] = torch.sort(d['s2_len'], descending=True)
+    d['s1_ordered_len'], d['s1_indices'] = torch.sort(d['s1_len'], descending=True)
+    d['s2_ordered_len'], d['s2_indices'] = torch.sort(d['s2_len'], descending=True)
     d['s1_rvs'] = torch.zeros_like(d['s1_indices'])
     d['s2_rvs'] = torch.zeros_like(d['s2_indices'])
     for i, v in enumerate(d['s1_indices']):
@@ -52,9 +54,8 @@ def my_collate_fn(batch):
         d['s2_rvs'][v] = i
 
     for k in keys:
-        if k in ['s1_len', 's2_len']:
+        if 'len' in k:
             continue
-
         if len(d[k][0].size()) > 0:
             if 's1' in k:
                 d[k] = torch.nn.utils.rnn.pad_sequence([torch.tensor(d[k][i]) for i in d['s1_indices'].tolist()],\
