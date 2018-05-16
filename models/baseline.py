@@ -43,6 +43,20 @@ class SimpleRNN(nn.Module):
 
     def _init_weights(self):
         nn.init.normal_(self.embed.weight)
+        init_fun = init.orthogonal
+        for i in range(self.num_layers):
+            for j in range(3):
+                init_fun(getattr(self.rnn, 'weight_ih_l{0}'.format(i))[j*self.hidden_size:(j+1)*self.hidden_size])
+                init_fun(getattr(self.rnn, 'weight_hh_l{0}'.format(i))[j*self.hidden_size:(j+1)*self.hidden_size])
+                if self.bidirection:
+                    init_fun(getattr(self.rnn, 'weight_ih_l{0}_reverse'.format(i))[j*self.hidden_size:(j+1)*self.hidden_size])
+                    init_fun(getattr(self.rnn, 'weight_hh_l{0}_reverse'.format(i))[j*self.hidden_size:(j+1)*self.hidden_size])
+
+            getattr(self.rnn, 'bias_ih_l{0}'.format(i))[self.hidden_size:2*self.hidden_size].data.fill_(1.)
+            getattr(self.rnn, 'bias_hh_l{0}'.format(i))[self.hidden_size:2*self.hidden_size].data.fill_(1.)
+            if self.bidirection:
+                getattr(self.rnn, 'bias_ih_l{0}_reverse'.format(i))[self.hidden_size:2*self.hidden_size].data.fill_(1.)
+                getattr(self.rnn, 'bias_hh_l{0}_reverse'.format(i))[self.hidden_size:2*self.hidden_size].data.fill_(1.)
 
 
     def forward(self, data):
