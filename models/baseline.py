@@ -18,13 +18,14 @@ class SimpleRNN(nn.Module):
         self.hidden_size = c['hidden_size']
         self.num_layers = c['num_layers']
         self.bidirectional = c['bidirectional']
+        self.pos_weight = 4.0
         self.mode = None
 
         self.embed = nn.Embedding(self.vocab_size, self.embed_size, padding_idx=EOS_IDX)
         self.rnn = nn.GRU(input_size=self.embed_size, hidden_size=self.hidden_size, \
                 num_layers=self.num_layers, batch_first=True, bidirectional=self.bidirectional)
         self.dropout = nn.Dropout(c['dropout'])
-        self.linear_in_size = self.hidden_size*2
+        self.linear_in_size = self.hidden_size*3
         if self.bidirectional:
             self.linear_in_size *= 2
         self.linear2_in_size = 100
@@ -65,7 +66,9 @@ class SimpleRNN(nn.Module):
         row_idx = torch.arange(0, batch_size).long()
         s1_out = torch.squeeze(s1_out[row_idx, data['s1_len']-1, :], 1) # last hidden state
         s2_out = torch.squeeze(s2_out[row_idx, data['s2_len']-1, :], 1)
-        linear_out = self.linear(torch.cat([s1_out, s2_out], dim=1))
+        feats = torch.cat([s1_out, s2_out, s1_out*s2_out], dim=1)
+        # feats = s1_out - s2_out
+        linear_out = self.linear(feats)
         out = self.linear2(self.tanh(linear_out))
 
         return out
@@ -74,7 +77,7 @@ class SimpleRNN(nn.Module):
     def train_step(self, data):
         out = self.forward(data)
         proba = torch.squeeze(self.sigmoid(out))
-        loss = self.bce(proba, data['label'], weights=[1., 1.5])
+        loss = self.bce(proba, data['label'], weights=[1., self.pos_weight])
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
@@ -85,7 +88,7 @@ class SimpleRNN(nn.Module):
     def evaluate(self, data):
         out = self.forward(data)
         proba = torch.squeeze(self.sigmoid(out), 0)
-        loss = self.bce(proba, data['label'], weights=[1., 1.5])
+        loss = self.bce(proba, data['label'], weights=[1., self.pos_weight])
         target =  data['label'].item()
         pred = proba.item()
         return pred, target, loss.item()

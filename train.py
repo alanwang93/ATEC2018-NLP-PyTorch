@@ -37,7 +37,7 @@ def main(args):
     train_data = Dataset(c['train'])
     valid_data = Dataset(c['valid'])
     valid_size = len(valid_data)
-    train = data.DataLoader(train_data, batch_size=64, shuffle=True, collate_fn=simple_collate_fn)
+    train = data.DataLoader(train_data, batch_size=c['batch_size'], shuffle=True, collate_fn=simple_collate_fn)
     valid = data.DataLoader(valid_data, batch_size=1, collate_fn=simple_collate_fn)
 
     print(json.dumps(c, indent=2))
@@ -65,11 +65,13 @@ def main(args):
                     preds.append(pred)
                     targets.append(target)
                     valid_losses.append(valid_loss)
-                f1, acc, prec, recall = score(preds, targets)
                 valid_loss = np.mean(valid_losses)
-
-                logger.info("Valid at {0}, F1:{1:.3f}, Acc:{2:.3f}, P:{3:.3f}, R:{4:.3f}, Loss:{5:.3f}\n"\
-                        .format(global_step, f1, acc, prec, recall, valid_loss))
+                for threshold in [0.5, 0.6, 0.7, 0.8]:
+                    f1, acc, prec, recall = score(preds, targets, threshold=threshold)
+                    logger.info("Valid at {0}, threshold {6}, F1:{1:.3f}, Acc:{2:.3f}, P:{3:.3f}, R:{4:.3f}, Loss:{5:.3f}"\
+                            .format(global_step, f1, acc, prec, recall, valid_loss, threshold))
+                print()
+        logger.info("Epoch {0} done".format(epoch))
 
 
 if __name__ == '__main__':

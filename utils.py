@@ -48,9 +48,9 @@ def split_data(in_file, out_dir, train_ratio=0.95):
         train_file.close()
         valid_file.close()
 
-def score(pred, target):
+def score(pred, target, threshold=0.5):
     eps = 1e-6
-    pred = [1 if p > 0.5 else 0 for p in pred]
+    pred = [1 if p > threshold else 0 for p in pred]
     target = list(map(int, target))
     TP = TN = FP = FN = 0
     for p, t in zip(pred, target):
