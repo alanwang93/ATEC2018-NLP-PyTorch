@@ -33,7 +33,7 @@ def main(args):
                 os.path.join(c['data_root'], 'train.pkl'), 'w', encoding='utf-8') as fout:
             data = f.readlines()
             vocab = Vocab(c['data_root'])
-            vocab.build(data, max_size=c['max_vocab'])
+            vocab.build(data, max_size=c['max_vocab'], config=c)
             exts_train['WordEmbedExtractor']['vocab'] = vocab
             train = extract_features(data, exts_train)
             pickle.dump(train, fout)

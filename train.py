@@ -4,7 +4,7 @@
 #
 # Distributed under terms of the MIT license.
 import torch
-from data.dataset import Dataset, my_collate_fn
+from data.dataset import Dataset, simple_collate_fn
 import models
 from data.vocab import Vocab
 from torch.utils import data
@@ -34,18 +34,18 @@ def main(args):
     vocab_size = len(vocab)
     c['vocab_size'] = vocab_size
 
-    train_data = Dataset(c['train'], config=c)
-    valid_data = Dataset(c['valid'], config=c)
+    train_data = Dataset(c['train'])
+    valid_data = Dataset(c['valid'])
     valid_size = len(valid_data)
-    train = data.DataLoader(train_data, batch_size=64, shuffle=True, collate_fn=my_collate_fn)
-    valid = data.DataLoader(valid_data, batch_size=1, collate_fn=my_collate_fn)
+    train = data.DataLoader(train_data, batch_size=64, shuffle=True, collate_fn=simple_collate_fn)
+    valid = data.DataLoader(valid_data, batch_size=1, collate_fn=simple_collate_fn)
 
     print(json.dumps(c, indent=2))
 
     model = getattr(models, c['model'])(c)
     if c['use_cuda']:
 	model = model.cuda(c['cuda_num'])
-    
+
     train_loss = 0
     global_step = 0
     for epoch in range(200):
@@ -78,5 +78,5 @@ if __name__ == '__main__':
     parser.add_argument('--cuda_num', type=int, default=2)
     parser.add_argument('--disable_cuda', dest='disable_cuda', action='store_true')
     args = parser.parse_args()
- 
+
     main(args)

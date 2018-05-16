@@ -56,20 +56,17 @@ class Vocab:
         self.sos_token = 'SOS'
         self.eos_token = 'EOS'
         self.tokens = self.freqs = self.itos = self.stoi = self.vectors = None
-
         self.keys = ['tokens','freqs','itos','stoi','root','unk_token','sos_token','eos_token','vectors']
 
-    def build(self, data=None, min_freq=1, max_size=None, rebuild=True):
+    def build(self, data=None, min_freq=1, max_size=None, rebuild=True, config=None):
         if not rebuild and os.path.exists(os.path.join(self.root, 'vocab.pkl')):
             print("Loading vocab")
             self._load()
         elif data is not None:
             # Build vocab
-            self.tokens = tokenize_all(data, tokenizer='word')
+            self.tokens = tokenize_all(data, tokenizer=config['tokenizer'])
             allwords = list(itertools.chain.from_iterable(self.tokens['s1_token'] + self.tokens['s2_token']))
             self.freqs = Counter(allwords)
-            # for k, v in self.freqs.items():
-                # print(k)
 
             # Reference: torchtext
             min_freq = max(min_freq, 1)

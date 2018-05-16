@@ -3,6 +3,7 @@ from torch.utils import data
 import extractors
 from vocab import Vocab
 import argparse, os, pickle, json, codecs, pickle, itertools
+import numpy as np
 
 UNK_IDX = 0
 EOS_IDX = 2
@@ -13,17 +14,14 @@ class Dataset(data.Dataset):
 
     Examples:
     """
-    def __init__(self, data_path, config, mode='train'):
+    def __init__(self, data_path, mode='train'):
         self.dict = pickle.load(open(data_path, 'r'))
         self.keys = self.dict.keys()
         self.data = []
-        use_cuda = config['use_cuda']
         for index in range(len(self.dict.values()[0])):
             d = {}
             for k in self.keys:
-                d[k] = torch.tensor(self.dict[k][index])
-                if use_cuda:
-                    d[k] = d[k].cuda(config['cuda_num'])
+                d[k] = self.dict[k][index]
             self.data.append(d)
 
     def __getitem__(self, index):
@@ -34,7 +32,7 @@ class Dataset(data.Dataset):
 
 
 
-def my_collate_fn(batch):
+def complex_collate_fn(batch):
     keys = batch[0].keys()
     d = {}
     for k in keys:
@@ -70,4 +68,22 @@ def my_collate_fn(batch):
                 d[k] = torch.tensor(d[k])[d['s1_indices']]
             if 's2' in k:
                 d[k] = torch.tensor(d[k])[d['s2_indices']]
+    return d
+
+def simple_collate_fn(batch):
+    batch_size = len(batch)
+    keys = batch[0].keys()
+    d = {}
+    for k in keys:
+        d[k] = []
+    for b in batch:
+        for k,v in b.items():
+            d[k].append(v)
+    max_len = np.max(d['s1_len']+d['s2_len'])
+    for k in keys:
+        if hasattr(d[k][0], '__len__'):
+            d[k+'_rvs'] = torch.tensor([np.pad(e[::-1], (0,max_len - len(e)), mode='constant', constant_values=EOS_IDX) for e in d[k]])
+            d[k] = torch.tensor([np.pad(e, (0,max_len - len(e)), mode='constant', constant_values=EOS_IDX) for e in d[k]])
+        else:
+            d[k] = torch.tensor(d[k])
     return d

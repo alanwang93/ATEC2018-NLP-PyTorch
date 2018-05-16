@@ -9,14 +9,16 @@ baseline = {
     'data_root': 'data/data1/',
     'train': 'data/data1/train.pkl',
     'valid': 'data/data1/valid.pkl',
+    'tokenizer': 'word',
+
     # model
-    'max_vocab': 1200,
+    'max_vocab': 5000,
     'embed_size': 200,
     'hidden_size': 200,
     'rnn_cell': 'BasicLSTMCell',
     'num_layers': 1,
     'bidirectional':False,
-
+    'dropout': 0.2,
 
     # training
     'batch_size': 32,
