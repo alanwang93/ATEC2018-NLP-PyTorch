@@ -17,38 +17,73 @@ class SimpleRNN(nn.Module):
         self.embed_size = c['embed_size']
         self.hidden_size = c['hidden_size']
         self.num_layers = c['num_layers']
+        self.bidirectional = c['bidirectional']
+        self.pos_weight = 4.0
         self.mode = None
 
         self.embed = nn.Embedding(self.vocab_size, self.embed_size, padding_idx=EOS_IDX)
         self.rnn = nn.GRU(input_size=self.embed_size, hidden_size=self.hidden_size, \
-                num_layers=self.num_layers, batch_first=True, bidirectional=True)
-        self.dropout = nn.Dropout(0.1)
-        self.linear_in_size = self.hidden_size*2*2
-        self.linear = nn.Linear(self.linear_in_size, 1)
+                num_layers=self.num_layers, batch_first=True, bidirectional=self.bidirectional)
+        self.dropout = nn.Dropout(c['dropout'])
+        self.linear_in_size = self.hidden_size*3
+        if self.bidirectional:
+            self.linear_in_size *= 2
+        self.linear2_in_size = 100
+        self.linear = nn.Linear(self.linear_in_size, self.linear2_in_size)
+        self.linear2 = nn.Linear(self.linear2_in_size, 1)
         self.sigmoid = nn.Sigmoid()
-        self.bce = nn.BCELoss()
-        self.optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, self.parameters()), lr=0.002)
+        self.tanh = nn.Tanh()
+        self.relu = nn.ReLU()
+        # self.bce = nn.BCELoss()
+        self.bce = BCELoss
+        self.optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, self.parameters()), lr=0.001)
 
         self._init_weights()
 
 
     def _init_weights(self):
         nn.init.normal_(self.embed.weight)
+        init_fun = init.orthogonal
+        for i in range(self.num_layers):
+            for j in range(3):
+                init_fun(getattr(self.rnn, 'weight_ih_l{0}'.format(i))[j*self.hidden_size:(j+1)*self.hidden_size])
+                init_fun(getattr(self.rnn, 'weight_hh_l{0}'.format(i))[j*self.hidden_size:(j+1)*self.hidden_size])
+                if self.bidirection:
+                    init_fun(getattr(self.rnn, 'weight_ih_l{0}_reverse'.format(i))[j*self.hidden_size:(j+1)*self.hidden_size])
+                    init_fun(getattr(self.rnn, 'weight_hh_l{0}_reverse'.format(i))[j*self.hidden_size:(j+1)*self.hidden_size])
+
+            getattr(self.rnn, 'bias_ih_l{0}'.format(i))[self.hidden_size:2*self.hidden_size].data.fill_(1.)
+            getattr(self.rnn, 'bias_hh_l{0}'.format(i))[self.hidden_size:2*self.hidden_size].data.fill_(1.)
+            if self.bidirection:
+                getattr(self.rnn, 'bias_ih_l{0}_reverse'.format(i))[self.hidden_size:2*self.hidden_size].data.fill_(1.)
+                getattr(self.rnn, 'bias_hh_l{0}_reverse'.format(i))[self.hidden_size:2*self.hidden_size].data.fill_(1.)
 
 
     def forward(self, data):
         s1_embed = self.embed(data['s1_word'])
         s2_embed = self.embed(data['s2_word'])
-        s1_packed = nn.utils.rnn.pack_padded_sequence(s1_embed, data['s1_len'], batch_first=True)
-        s2_packed = nn.utils.rnn.pack_padded_sequence(s2_embed, data['s2_len'], batch_first=True)
-        s1_out, s1_hidden = self.rnn(s1_packed)
-        s2_out, s2_hidden = self.rnn(s2_packed)
-        # recover order
-        s1_out, _ = nn.utils.rnn.pad_packed_sequence(s1_out, batch_first=True)
-        s2_out, _ = nn.utils.rnn.pad_packed_sequence(s2_out, batch_first=True)
-        s1_out = torch.squeeze(s1_out[data['s1_rvs']][:,-1,:], 1) # last hidden state
-        s2_out = torch.squeeze(s2_out[data['s2_rvs']][:,-1,:], 1)
-        out = self.linear(torch.cat([s1_out, s2_out], dim=1))
+        s1_embed = self.dropout(s1_embed)
+        s2_embed = self.dropout(s2_embed)
+
+        # Packed, using `complex_collate_fn`
+        # s1_packed = nn.utils.rnn.pack_padded_sequence(s1_embed, data['s1_ordered_len'], batch_first=True)
+        # s2_packed = nn.utils.rnn.pack_padded_sequence(s2_embed, data['s2_ordered_len'], batch_first=True)
+        # s1_out, s1_hidden = self.rnn(s1_packed)
+        # s2_out, s2_hidden = self.rnn(s2_packed)
+        # s1_out, _ = nn.utils.rnn.pad_packed_sequence(s1_out, batch_first=True)
+        # s2_out, _ = nn.utils.rnn.pad_packed_sequence(s2_out, batch_first=True)
+
+        # Non-packed, using `simple_collate_fn`
+        s1_out, s1_hidden = self.rnn(s1_embed)
+        s2_out, s2_hidden = self.rnn(s2_embed)
+        batch_size = s1_out.size()[0]
+        row_idx = torch.arange(0, batch_size).long()
+        s1_out = torch.squeeze(s1_out[row_idx, data['s1_len']-1, :], 1) # last hidden state
+        s2_out = torch.squeeze(s2_out[row_idx, data['s2_len']-1, :], 1)
+        feats = torch.cat([s1_out, s2_out, s1_out*s2_out], dim=1)
+        # feats = s1_out - s2_out
+        linear_out = self.linear(feats)
+        out = self.linear2(self.tanh(linear_out))
 
         return out
 
@@ -56,17 +91,18 @@ class SimpleRNN(nn.Module):
     def train_step(self, data):
         out = self.forward(data)
         proba = torch.squeeze(self.sigmoid(out))
-        loss = BCELoss(proba, data['label'], weights=[1., 3.5])
+        loss = self.bce(proba, data['label'], weights=[1., self.pos_weight])
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
-        f1, acc, prec, recall = score(proba.tolist(), data['label'].tolist())
+        # f1, acc, prec, recall = score(proba.tolist(), data['label'].tolist())
         # print({'loss':loss.item(), 'f1':f1, 'acc':acc, 'prec':prec, 'recall':recall})
         return loss.item()
 
     def evaluate(self, data):
         out = self.forward(data)
         proba = torch.squeeze(self.sigmoid(out), 0)
+        loss = self.bce(proba, data['label'], weights=[1., self.pos_weight])
         target =  data['label'].item()
-        loss = BCELoss(proba, data['label'], weights=[1., 3.5])
-        return proba, target, loss.item()
+        pred = proba.item()
+        return pred, target, loss.item()

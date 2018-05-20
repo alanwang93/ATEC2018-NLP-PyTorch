@@ -14,6 +14,40 @@ import pickle, os, itertools
 UNK_IDX = 0
 EOS_IDX = 2
 
+def create_dictionary(root, data, num_vocab=500):
+    """
+    Count the frequency of all 2-gram and 3-gram in training set
+
+    用法： jieba.load_userdict(file_name) # file_name 为文件类对象或自定义词典的路径
+    词典格式和 dict.txt 一样，一个词占一行；每一行分三部分：词语、词频（可省略）、词性（可省略），
+    用空格隔开，顺序不可颠倒。file_name 若为路径或二进制方式打开的文件，则文件必须为 UTF-8 编码。
+
+    Return:
+        most_freq: [(word, freq),...], list of tuple
+    """
+    ngrams = []
+    for line in data:
+        line_split = line.split('\t')
+        s1 = tokenize(line_split[1], 'word')
+        s2 = tokenize(line_split[2], 'word')
+        for s in [s1, s2]:
+            for i in range(len(s)):
+                if i+2 <= len(s):
+                    ngrams.append("".join(s[i:i+2]))
+                if i+3 <= len(s):
+                    ngrams.append("".join(s[i:i+3]))
+    freqs = Counter(ngrams)
+    most_freq = freqs.most_common(num_vocab)
+    # save dictionary
+    with open(os.path.join(root, 'dict.txt'), 'w') as f:
+        for w, freq in most_freq:
+            f.write("{0} {1} \n".format(w.encode('utf-8'), freq))
+    return most_freq
+
+
+
+
+
 def tokenize(sentence, tokenizer='jieba', del_punctuation=False):
     if tokenizer == 'jieba':
         if del_punctuation:
@@ -38,6 +72,7 @@ def tokenize_all(data, tokenizer='jieba'):
     d['s2_token'] = s2_token
     return d
 
+
 def unk_idx():
     return 0
 
@@ -56,20 +91,22 @@ class Vocab:
         self.sos_token = 'SOS'
         self.eos_token = 'EOS'
         self.tokens = self.freqs = self.itos = self.stoi = self.vectors = None
-
         self.keys = ['tokens','freqs','itos','stoi','root','unk_token','sos_token','eos_token','vectors']
 
-    def build(self, data=None, min_freq=1, max_size=None, rebuild=True):
+    def build(self, data=None, min_freq=1, max_size=None, rebuild=True, config=None):
         if not rebuild and os.path.exists(os.path.join(self.root, 'vocab.pkl')):
             print("Loading vocab")
             self._load()
         elif data is not None:
+            if config['use_dictionary'] and config['tokenizer'] == 'jieba':
+                print("Load user dictionary")
+                create_dictionary(self.root, data, num_vocab=500)
+                jieba.load_userdict(os.path.join(self.root, 'dict.txt'))
+
             # Build vocab
-            self.tokens = tokenize_all(data, tokenizer='word')
+            self.tokens = tokenize_all(data, tokenizer=config['tokenizer'])
             allwords = list(itertools.chain.from_iterable(self.tokens['s1_token'] + self.tokens['s2_token']))
             self.freqs = Counter(allwords)
-            # for k, v in self.freqs.items():
-                # print(k)
 
             # Reference: torchtext
             min_freq = max(min_freq, 1)
@@ -108,6 +145,12 @@ class Vocab:
             return [self.stoi[w] for w in l]
         else:
             return self.stoi[l]
+
+    def tos(self, l):
+        if hasattr(l, '__len__'):
+            return [self.itos[w] for w in l]
+        else:
+            return self.itos[l]
 
     def load_vectors(self):
         pass

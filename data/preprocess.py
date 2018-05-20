@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 #
-# Copyright © 2018 Yifan WANG <yifanwang1993@gmail.com>
+# Copyright 漏 2018 Yifan WANG <yifanwang1993@gmail.com>
 #
 # Distributed under terms of the MIT license.
 
@@ -24,16 +24,17 @@ def extract_features(data, exts):
 
 def main(args):
     c = getattr(config, args.config)
-    exts_train = {'WordEmbedExtractor':{}}
-    exts_valid = {'WordEmbedExtractor':{}}
+    exts_train = {'WordEmbedExtractor':{'config': c}}
+    exts_valid = {'WordEmbedExtractor':{'config': c}}
 
     # Train
     if args.mode == 'train':
         with open(os.path.join(c['data_root'], 'train.raw'), 'r') as f, codecs.open( \
                 os.path.join(c['data_root'], 'train.pkl'), 'w', encoding='utf-8') as fout:
             data = f.readlines()
+            data = [l.replace('***', '*') for l in data]
             vocab = Vocab(c['data_root'])
-            vocab.build(data, max_size=c['max_vocab'])
+            vocab.build(data, max_size=c['max_vocab'], config=c)
             exts_train['WordEmbedExtractor']['vocab'] = vocab
             train = extract_features(data, exts_train)
             pickle.dump(train, fout)
@@ -41,6 +42,7 @@ def main(args):
         with open(os.path.join(c['data_root'], 'valid.raw'), 'r') as f, codecs.open( \
                 os.path.join(c['data_root'], 'valid.pkl'), 'w', encoding='utf-8') as fout:
             data = f.readlines()
+            data = [l.replace('***', '*') for l in data]
             exts_valid['WordEmbedExtractor']['vocab'] = vocab
             valid = extract_features(data, exts_valid)
             pickle.dump(valid, fout)
