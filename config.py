@@ -10,6 +10,7 @@ baseline = {
     'train': 'data/data1/train.pkl',
     'valid': 'data/data1/valid.pkl',
     'tokenizer': 'word',
+    'use_dictionary': True,
 
     # model
     'max_vocab': 5000,
