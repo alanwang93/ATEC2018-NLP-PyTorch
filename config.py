@@ -9,7 +9,8 @@ baseline = {
     'data_root': 'data/data1/',
     'train': 'data/data1/train.pkl',
     'valid': 'data/data1/valid.pkl',
-    'tokenizer': 'word',
+    'tokenizer': 'jieba',
+    'use_dictionary': True,
 
     # model
     'max_vocab': 20000,
