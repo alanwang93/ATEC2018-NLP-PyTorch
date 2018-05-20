@@ -45,7 +45,7 @@ def main(args):
 
     train_loss = 0
     global_step = 0
-    for epoch in range(3):
+    for epoch in range(100):
         for step, train_batch in enumerate(train):
             global_step += 1
             train_loss += model.train_step(train_batch)

@@ -14,7 +14,7 @@ baseline = {
     'embed_size': 100,
     'hidden_size': 100,
     'rnn_cell': 'BasicLSTMCell',
-    'num_layers': 2,
+    'num_layers': 1,
 
 
     # training
