@@ -54,7 +54,7 @@ def main(args):
             train_loss += model.train(mode=True).train_step(to_cuda(train_batch, c))
             if global_step % LOG_STEPS == 0:
                 logger.info("Step {0}, train loss: {1}".format(global_step, train_loss/LOG_STEPS))
-                train_loss = 0
+                train_loss = 0.
 
             if global_step % EVAL_STEPS == 0:
                 valid_losses = []

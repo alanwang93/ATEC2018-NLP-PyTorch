@@ -58,7 +58,7 @@ class Vocab:
         self.tokens = self.freqs = self.itos = self.stoi = self.vectors = None
         self.keys = ['tokens','freqs','itos','stoi','root','unk_token','sos_token','eos_token','vectors']
 
-    def build(self, data=None, min_freq=1, max_size=None, rebuild=True, config=None):
+    def build(self, data=None, rebuild=True, config=None):
         if not rebuild and os.path.exists(os.path.join(self.root, 'vocab.pkl')):
             print("Loading vocab")
             self._load()
@@ -69,15 +69,15 @@ class Vocab:
             self.freqs = Counter(allwords)
 
             # Reference: torchtext
-            min_freq = max(min_freq, 1)
+            min_freq = max(config['min_freq'], 1)
             specials = [self.unk_token, self.sos_token, self.eos_token]
             self.itos = list(specials)
-            max_size = None if max_size is None else max_size + len(self.itos)
+            max_vocab = None if config['max_vocab'] is None else config['max_vocab'] + len(self.itos)
             words_and_frequencies = list(self.freqs.items())
             words_and_frequencies.sort(key=lambda tup: tup[1], reverse=True) # sort by order
 
             for word, freq in words_and_frequencies:
-                if freq < min_freq or len(self.itos) == max_size:
+                if freq < min_freq or len(self.itos) == max_vocab:
                     break
                 self.itos.append(word)
             self.stoi = defaultdict(unk_idx)

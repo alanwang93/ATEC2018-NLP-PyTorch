@@ -12,15 +12,16 @@ baseline = {
     'tokenizer': 'word',
 
     # model
-    'max_vocab': 5000,
+    'max_vocab': 20000,
+    'min_freq': 2,
     'embed_size': 200,
-    'hidden_size': 150,
+    'hidden_size': 200,
     'rnn_cell': 'BasicLSTMCell',
-    'num_layers': 1,
+    'num_layers': 2,
     'bidirectional':False,
     'dropout': 0.4,
 
     # training
-    'batch_size': 16,
+    'batch_size': 32,
     'max_iter': 50000,
 }
