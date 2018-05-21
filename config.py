@@ -36,6 +36,7 @@ siamese = {
     'train': 'data/processed/siamese/train.pkl',
     'valid': 'data/processed/siamese/valid.pkl',
     'tokenizer': 'word',
+    'embedding': 'sgns.financial.char',
 
     # model
     'max_vocab': 20000,

@@ -14,7 +14,7 @@ test/
 *.pkl
 *.txt
 *.tokenized
-data/embedding/
+data/embeddings/
 data/processed/
 log/
 *.log

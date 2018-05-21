@@ -10,6 +10,7 @@
 from collections import Counter, defaultdict
 import jieba
 import pickle, os, itertools
+import numpy as np
 
 UNK_IDX = 0
 EOS_IDX = 2
@@ -23,19 +24,20 @@ class Vocab:
     """
     Vocabulary class
     """
-    def __init__(self, root):
+    def __init__(self, config):
         """
         Args:
             data: list of samples (s1 s2 label)
         """
-        self.root = root
+        self.config = config
+        self.root = config['data_root']
         self.unk_token = 'UNK'
         self.sos_token = 'SOS'
         self.eos_token = 'EOS'
         self.tokens = self.freqs = self.itos = self.stoi = self.vectors = None
         self.keys = ['tokens','freqs','itos','stoi','root','unk_token','sos_token','eos_token','vectors']
 
-    def build(self, tokenized=None, rebuild=True, config=None):
+    def build(self, tokenized=None, rebuild=True):
         if not rebuild and os.path.exists(os.path.join(self.root, 'vocab.pkl')):
             print("Loading vocab")
             self._load()
@@ -49,19 +51,27 @@ class Vocab:
             self.freqs = Counter(allwords)
 
             # Reference: torchtext
-            min_freq = max(config['min_freq'], 1)
+            min_freq = max(self.config['min_freq'], 1)
             specials = [self.unk_token, self.sos_token, self.eos_token]
             self.itos = list(specials)
-            max_vocab = None if config['max_vocab'] is None else config['max_vocab'] + len(self.itos)
+            max_vocab = None if self.config['max_vocab'] is None else self.config['max_vocab'] + len(self.itos)
             words_and_frequencies = list(self.freqs.items())
             words_and_frequencies.sort(key=lambda tup: tup[1], reverse=True) # sort by order
 
-            for word, freq in words_and_frequencies:
-                if freq < min_freq or len(self.itos) == max_vocab:
-                    break
-                self.itos.append(word)
+            with open(os.path.join(self.root, 'freqs.txt'), 'w') as f:
+                for word, freq in words_and_frequencies:
+                    if not (freq < min_freq or len(self.itos) == max_vocab):
+                        self.itos.append(word)
+                    f.write("{0} {1}\n".format(word, freq))
             self.stoi = defaultdict(unk_idx)
             self.stoi.update({tok: i for i, tok in enumerate(self.itos)})
+
+            # TODO: extend vocab 1. words  2. characters
+
+            # load vectors
+            if self.config['embedding'] is not None:
+                self.load_vectors(self.config['embedding'])
+
             self._dump()
 
     def __len__(self):
@@ -92,5 +102,34 @@ class Vocab:
         else:
             return self.itos[l]
 
-    def load_vectors(self):
-        pass
+    def load_vectors(self, filename):
+        print("Load vectors from pretrained embeddings {0}".format(filename))
+        num_vocab = embed_size = 0
+        with open(os.path.join('data/embeddings', filename), 'r') as f, \
+                open(os.path.join(self.root, 'embed.txt'), 'w') as fout:
+            line0 = list(map(int, f.readline().strip().split(' ')))
+            num_vocab, embed_size = line0[0], line0[1]
+            self.vectors = np.random.randn(len(self.itos), embed_size)
+            for i in range(num_vocab):
+                line = f.readline()
+                s = line.strip().split(' ')
+                word = s[0]
+                vec = np.asarray(list(map(float, s[1:])))
+                if word in self.stoi:
+                    self.vectors[self.stoi[word]] = vec
+                    fout.write(line)
+
+
+    def select_embeddings(filename, save_to, num_freq=10000):
+        """
+        Args:
+            filename: filename of embeddings
+            save_to: path to save selected embeddings
+            num_freq: number of most frequent words to be saved
+        """
+        num_vocab = embed_size = 0
+        with open(os.path.join('data/embeddings', filename), 'r') as f:
+            line0 = list(map(int, lines[0].strip().split(' ')))
+            num_vocab, embed_size = line0[0], line0[1]
+    
+    

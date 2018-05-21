@@ -25,15 +25,6 @@ def extract_features(data, tokenized, exts):
 
 
 
-def select_embeddings(embed_file, save_to, num_freq=10000):
-    """
-    Args:
-        embed_file: filename of embeddings
-        save_to: path to save selected embeddings
-        num_freq: number of most frequent words to be saved
-    """
-    pass
-
 def main(args):
     c = getattr(config, args.config)
     tokenizer = Tokenizer(config=c)
@@ -51,8 +42,8 @@ def main(args):
             data = [l.replace('***', '*') for l in data]
             # tokenize
             tokenized = tokenizer.tokenize_all(data, 'train.tokenized')
-            vocab = Vocab(c['data_root'])
-            vocab.build(tokenized, config=c)
+            vocab = Vocab(config=c)
+            vocab.build(tokenized)
             exts_train['WordEmbedExtractor']['vocab'] = vocab
             train = extract_features(data, tokenized, exts_train)
             pickle.dump(train, fout)

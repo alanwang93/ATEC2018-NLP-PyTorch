@@ -39,8 +39,8 @@ class Tokenizer:
         data = open('data/raw/train.raw', 'r').readlines()
         for line in data:
             line_split = line.split('\t')
-            s1 = tokenize(line_split[1], 'word')
-            s2 = tokenize(line_split[2], 'word')
+            s1 = self.tokenize(line_split[1], 'word')
+            s2 = self.tokenize(line_split[2], 'word')
             for s in [s1, s2]:
                 for i in range(len(s)):
                     if i+2 <= len(s):
@@ -67,7 +67,7 @@ class Tokenizer:
             word_list = [word for word in seg]
         elif tokenizer == 'word':
             word_list = list(sentence.decode('utf-8'))
-        elif tokenized == 'word+dict':
+        elif tokenizer == 'word+dict':
             pass
         return word_list
 

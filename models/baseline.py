@@ -221,6 +221,7 @@ class SiameseRNN(nn.Module):
         # out = torch.exp(torch.neg(torch.norm(s1_out-s2_out, p=1, dim=1)))
 
         return out
+
     def cosine_loss(self, cos, labels, margin=0.5):
         batch_size = labels.size()[0]
         loss = torch.tensor(0.)
@@ -232,8 +233,10 @@ class SiameseRNN(nn.Module):
                 loss += (1-l)*cos[i] * cos[i]
         loss /= batch_size
         return loss
-            
 
+    def load_vectors(self, vectors):
+        print("Use pretrained embedding")
+        self.embed.weight.fill_(torch.from_numpy(vectors))
 
     def train_step(self, data):
         out = self.forward(data)

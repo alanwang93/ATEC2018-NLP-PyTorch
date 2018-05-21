@@ -29,7 +29,7 @@ def main(args):
 
     logger = init_log(os.path.join('log/', args.config))
 
-    vocab = Vocab(c['data_root'])
+    vocab = Vocab(config=c)
     vocab.build(rebuild=False)
     vocab_size = len(vocab)
     c['vocab_size'] = vocab_size
@@ -44,7 +44,9 @@ def main(args):
 
     model = getattr(models, c['model'])(c)
     if c['use_cuda']:
-	model = model.cuda(c['cuda_num'])
+	   model = model.cuda(c['cuda_num'])
+    if c['embedding'] is not None:
+        model.load_vectors(vocab.vectors)
 
     train_loss = 0
     global_step = 0
