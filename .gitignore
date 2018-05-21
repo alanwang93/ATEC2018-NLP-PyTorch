@@ -12,6 +12,10 @@ test/
 *.zip
 *.swp
 *.pkl
+*.txt
+*.tokenized
+data/embedding/
+data/processed/
 log/
 *.log
 .nfs*

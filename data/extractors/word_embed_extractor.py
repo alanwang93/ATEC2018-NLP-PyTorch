@@ -5,7 +5,7 @@
 # Distributed under terms of the MIT license.
 
 from .extractor import Extractor
-from ..vocab import tokenize, Vocab
+from ..vocab import Vocab
 import jieba
 import re
 import numpy as np
@@ -20,7 +20,7 @@ class WordEmbedExtractor(Extractor):
     def __init__(self):
         Extractor.__init__(self, 'word', 'embed')
 
-    def extract(self, data, vocab, config):
+    def extract(self, data, tokenized, vocab, config):
         d = dict()
         s1_word = []
         s2_word = []
@@ -29,10 +29,10 @@ class WordEmbedExtractor(Extractor):
         label = []
         sid = []
         vocab_size = len(vocab)
-        for line in data:
+        for line in tokenized:
             line_split = line.strip().split('\t')
-            s1 = tokenize(line_split[1], tokenizer=config['tokenizer'])
-            s2 = tokenize(line_split[2], tokenizer=config['tokenizer'])
+            s1 = line_split[1].split(" ")
+            s2 =line_split[2].split(" ")
             s1_len.append(len(s1))
             s2_len.append(len(s2))
             s1_word.append(vocab.toi(s1))

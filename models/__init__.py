@@ -4,4 +4,4 @@
 #
 # Distributed under terms of the MIT license.
 
-from .baseline import SimpleRNN
+from .baseline import SimpleRNN, SiameseRNN
