@@ -29,10 +29,15 @@ def main(args):
 
     logger = init_log(os.path.join('log/', args.config))
 
-    vocab = Vocab(config=c)
-    vocab.build(rebuild=False)
-    vocab_size = len(vocab)
-    c['vocab_size'] = vocab_size
+    char_vocab = Vocab(config=c, type='char')
+    word_vocab = Vocab(config=c, type='word')
+    char_vocab.build(rebuild=False)
+    word_vocab.build(rebuild=False)
+
+    char_size = len(char_vocab)
+    word_size = len(word_vocab)
+    c['char_size'] = char_size
+    c['word_size'] = word_size
 
     train_data = Dataset(c['train'])
     valid_data = Dataset(c['valid'])
@@ -43,7 +48,10 @@ def main(args):
     logger.info(json.dumps(c, indent=2))
 
     model = getattr(models, c['model'])(c)
-    if c['embedding'] is not None:
+
+    if c['char_embedding'] is not None:
+        model.load_vectors(vocab.vectors)
+    if c['word_embedding'] is not None:
         model.load_vectors(vocab.vectors)
 
     if c['use_cuda']:
@@ -51,6 +59,7 @@ def main(args):
 
     train_loss = 0
     global_step = 0
+
     for epoch in range(200):
         for step, train_batch in enumerate(train):
             global_step += 1

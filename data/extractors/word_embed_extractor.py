@@ -12,39 +12,53 @@ import numpy as np
 UNK_IDX = 0
 
 class WordEmbedExtractor(Extractor):
-    '''
-    Return:
-        A dict, of which keys are shown below:
-        dict_keys(['s1_word', 's2_word'])
-    '''
-    def __init__(self):
-        Extractor.__init__(self, 'word', 'embed')
 
-    def extract(self, data, tokenized, vocab, config):
+    def __init__(self):
+        Extractor.__init__(self, name="WordEmbedExtractor")
+
+    def extract(self, data_raw, chars, words, char_vocab, word_vocab, config):
         d = dict()
         s1_word = []
         s2_word = []
-        s1_len = []
-        s2_len = []
+        s1_char = []
+        s2_char = []
+        s1_wlen = []
+        s2_wlen = []
+        s1_clen = []
+        s2_clen = []
         label = []
+        target = []
         sid = []
-        vocab_size = len(vocab)
-        for line in tokenized:
-            line_split = line.strip().split('\t')
-            s1 = line_split[1].split(" ")
-            s2 =line_split[2].split(" ")
-            s1_len.append(len(s1))
-            s2_len.append(len(s2))
-            s1_word.append(vocab.toi(s1))
-            s2_word.append(vocab.toi(s2))
-            label.append(float(line_split[3]))
-            if '\xef\xbb\xbf' in line_split[0]:
-                line_split[0] = line_split[0].replace('\xef\xbb\xbf', '')
-            sid.append(int(line_split[0]))
+
+        for ins in data_raw:
+            label.append(ins['label'])
+            target.append(ins['target'])
+            sid.append(ins['sid'])
+
+        for ins in words:
+            s1_wlen.append(len(ins['s1']))
+            s2_wlen.append(len(ins['s2']))
+            s1_word.append(word_vocab.toi(ins['s1']))
+            s2_word.append(word_vocab.toi(ins['s2']))
+
+        for ins in chars:
+            s1_clen.append(len(ins['s1']))
+            s2_clen.append(len(ins['s2']))
+            s1_char.append(char_vocab.toi(ins['s1']))
+            s2_char.append(char_vocab.toi(ins['s2']))
+            
+
         d['s1_word'] = np.asarray([np.array(s) for s in s1_word])
         d['s2_word'] = np.asarray([np.array(s) for s in s2_word])
-        d['s1_len'] = np.asarray(s1_len)
-        d['s2_len'] = np.asarray(s2_len)
+        d['s1_wlen'] = np.asarray(s1_wlen)
+        d['s2_wlen'] = np.asarray(s2_wlen)
+
+        d['s1_char'] = np.asarray([np.array(s) for s in s1_char])
+        d['s2_char'] = np.asarray([np.array(s) for s in s2_char])
+        d['s1_clen'] = np.asarray(s1_clen)
+        d['s2_clen'] = np.asarray(s2_clen)
+
         d['label'] = np.asarray(label)
         d['sid'] = np.asarray(sid)
+        d['target'] = np.asarray(target)
         return d
