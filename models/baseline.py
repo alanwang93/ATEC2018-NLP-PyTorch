@@ -21,7 +21,7 @@ class SiameseRNN(nn.Module):
         self.mode = None
         self.config = c
 
-        self.char_embed = nn.Embedding(self.vocab_size, self.embed_size, padding_idx=EOS_IDX)
+        self.char_embed = nn.Embedding(self.char_size, self.embed_size, padding_idx=EOS_IDX)
 
         self.rnn = nn.LSTM(input_size=self.embed_size, hidden_size=self.hidden_size, \
                 num_layers=self.num_layers, batch_first=True, dropout=0.)
