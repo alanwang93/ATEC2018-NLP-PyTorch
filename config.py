@@ -49,7 +49,8 @@ siamese = {
     'dropout': 0.3,
     'pos_weight': 2.,
     'representation': 'avg',
-    'sim_fun': 'cosine',
+    'sim_fun': 'dense', # exp, cosine, cosine+, dense
+
 
     # training
     'batch_size': 16,

@@ -150,6 +150,14 @@ class SiameseRNN(nn.Module):
         self.rnn_rvs = nn.LSTM(input_size=self.embed_size, hidden_size=self.hidden_size, \
                 num_layers=self.num_layers, batch_first=True, dropout=0.)
         self.dropout = nn.Dropout(c['dropout'])
+
+        self.linear_in_size = self.hidden_size
+        if self.bidirectional:
+            self.linear_in_size *= 2
+        self.linear_in_size += 2
+        self.linear2_in_size = 50
+        self.linear = nn.Linear(self.linear_in_size, self.linear2_in_size)
+        self.linear2 = nn.Linear(self.linear2_in_size, 1)
         self.sigmoid = nn.Sigmoid()
         self.tanh = nn.Tanh()
         self.relu = nn.ReLU()
@@ -225,8 +233,21 @@ class SiameseRNN(nn.Module):
             out = nn.functional.cosine_similarity(s1_outs, s2_outs)
         elif self.config['sim_fun'] == 'exp':
             out = torch.exp(torch.neg(torch.norm(s1_outs-s2_outs, p=1, dim=1)))
-
+        elif self.config['sim_fun'] == 'dense':
+            others = self.other_features(data)
+            feats = torch.cat((s1_outs * s2_outs, others), dim=1)
+            out1 = self.tanh(self.linear(feats))
+            out = self.tanh(self.linear2(out1))
         return out
+
+    def other_features(self, data):
+        s1_len = data['s1_len'].type(torch.FloatTensor).unsqueeze(1)
+        s2_len = data['s2_len'].type(torch.FloatTensor).unsqueeze(1)
+        others = torch.cat((s1_len, s2_len), dim=1)
+        if self.config['use_cuda']:
+            others = others.cuda(self.config['cuda_num'])
+        return others
+
 
     def contrastive_loss(self, sims, labels, margin=0.1):
         """
