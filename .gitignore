@@ -12,7 +12,7 @@ test/
 *.zip
 *.swp
 *.pkl
-*.txt
+#*.txt
 *.tokenized
 data/embeddings/
 data/processed/
