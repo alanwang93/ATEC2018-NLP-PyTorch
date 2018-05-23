@@ -47,7 +47,7 @@ siamese = {
     'num_layers': 1,
     'bidirectional':True,
     'dropout': 0.3,
-    'pos_weight': 2.,
+    'pos_weight': 3.,
     'representation': 'avg',
     'sim_fun': 'dense', # exp, cosine, cosine+, dense
 

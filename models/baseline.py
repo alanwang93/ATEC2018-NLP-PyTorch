@@ -236,8 +236,8 @@ class SiameseRNN(nn.Module):
         elif self.config['sim_fun'] == 'dense':
             others = self.other_features(data)
             feats = torch.cat((s1_outs * s2_outs, others), dim=1)
-            out1 = self.tanh(self.linear(feats))
-            out = self.tanh(self.linear2(out1))
+            out1 = self.dropout(self.tanh(self.linear(feats)))
+            out =torch.squeeze(self.tanh(self.linear2(out1)))
         return out
 
     def other_features(self, data):
@@ -257,6 +257,8 @@ class SiameseRNN(nn.Module):
             margin: max(sim-margin, 0)
         """
         batch_size = labels.size()[0]
+        if len(sims.size()) == 0:
+            sims = torch.unsqueeze(sims, dim=0)
         loss = torch.tensor(0.)
         if self.config['use_cuda']:
             loss = loss.cuda(self.config['cuda_num'])
@@ -264,7 +266,7 @@ class SiameseRNN(nn.Module):
             loss += l*(1-sims[i])*(1-sims[i])*self.config['pos_weight']
             if sims[i] > margin:
                 loss += (1-l)*sims[i] * sims[i]
-        loss /= batch_size
+        loss = loss/batch_size
         return loss
 
     def load_vectors(self, vectors):
@@ -273,7 +275,7 @@ class SiameseRNN(nn.Module):
 
     def train_step(self, data):
         out = self.forward(data)
-        # cosine constractive loss
+        # constractive loss
         loss = self.contrastive_loss(out, data['label'])
         self.optimizer.zero_grad()
         loss.backward()
