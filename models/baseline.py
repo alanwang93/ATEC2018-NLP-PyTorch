@@ -105,6 +105,9 @@ class SimpleRNN(nn.Module):
         out = self.linear2(self.tanh(linear_out))
         return out
 
+    def load_vectors(self, vectors):
+        print("Use pretrained embedding")
+        self.embed.weight = nn.Parameter(torch.FloatTensor(vectors))
 
     def train_step(self, data):
         out = self.forward(data)
@@ -155,6 +158,7 @@ class SiameseRNN(nn.Module):
         self._init_weights()
 
 
+
     def _init_weights(self):
         # nn.init.normal_(self.embed.weight)
         init_fun = nn.init.orthogonal_
@@ -184,16 +188,17 @@ class SiameseRNN(nn.Module):
         # Non-packed, using `simple_collate_fn`
         s1_out, s1_hidden = self.rnn(s1_embed)
         s2_out, s2_hidden = self.rnn(s2_embed)
-        # s1_out = torch.squeeze(s1_out[row_idx, data['s1_len']-1, :], 1) # last hidden state
-        # s2_out = torch.squeeze(s2_out[row_idx, data['s2_len']-1, :], 1)
-        s1_outs = []
-        s2_outs = []
-        for i in range(batch_size):
-            s1_outs.append(torch.mean(s1_out[i][:data['s1_len'][i]], dim=1))
-            s2_outs.append(torch.mean(s2_out[i][:data['s2_len'][i]], dim=1))
-        s1_outs = torch.cat(s1_outs, dim=1)
-        s2_outs = torch.cat(s2_outs, dim=1)
-
+        if self.config['representation'] == 'last': # last hidden state
+            s1_out = torch.squeeze(s1_out[row_idx, data['s1_len']-1, :], 1) 
+            s2_out = torch.squeeze(s2_out[row_idx, data['s2_len']-1, :], 1)
+        elif self.config['representation'] == 'avg': # average of all hidden states
+            s1_outs = []
+            s2_outs = []
+            for i in range(batch_size):
+                s1_outs.append(torch.mean(s1_out[i][:data['s1_len'][i]], dim=0))
+                s2_outs.append(torch.mean(s2_out[i][:data['s2_len'][i]], dim=0))
+            s1_outs = torch.stack(s1_outs)
+            s2_outs = torch.stack(s2_outs)
 
         if self.bidirectional:
             s1_embed_rvs = self.embed(data['s1_word_rvs'])
@@ -202,33 +207,42 @@ class SiameseRNN(nn.Module):
             s2_embed_rvs = self.dropout(s2_embed_rvs)
             s1_out_rvs, _ = self.rnn_rvs(s1_embed_rvs)
             s2_out_rvs, _ = self.rnn_rvs(s2_embed_rvs)
-            # s1_out_rvs = torch.squeeze(s1_out_rvs[row_idx, data['s1_len']-1, :], 1)
-            # s2_out_rvs = torch.squeeze(s2_out_rvs[row_idx, data['s2_len']-1, :], 1)
-            # s1_out = torch.cat((s1_out, s1_out_rvs), dim=1)
-            # s2_out = torch.cat((s2_out, s2_out_rvs), dim=1)
-            s1_outs_rvs = []
-            s2_outs_rvs = []
-            for i in range(batch_size):
-                s1_outs_rvs.append(torch.mean(s1_out_rvs[i][:data['s1_len'][i]], dim=1))
-                s2_outs_rvs.append(torch.mean(s2_out_rvs[i][:data['s2_len'][i]], dim=1))
-            print(s1_outs.size(), torch.cat(s1_outs_rvs).size())
-            s1_outs_final = torch.cat((torch.cat(s1_outs_rvs, dim=1), s1_outs), dim=1)
-            s2_outs_final = torch.cat((torch.cat(s2_outs_rvs, dim=1), s2_outs), dim=1)
-        # cosine distance
-        out = nn.functional.cosine_similarity(s1_outs_final, s2_outs_final)
-        # out = torch.exp(torch.neg(torch.norm(s1_out-s2_out, p=1, dim=1)))
+            if self.config['representation'] == 'last': # last hidden state
+                s1_out_rvs = torch.squeeze(s1_out_rvs[row_idx, data['s1_len']-1, :], 1)
+                s2_out_rvs = torch.squeeze(s2_out_rvs[row_idx, data['s2_len']-1, :], 1)
+                s1_out = torch.cat((s1_out, s1_out_rvs), dim=1)
+                s2_out = torch.cat((s2_out, s2_out_rvs), dim=1)
+            elif self.config['representation'] == 'avg': # average of all hidden states
+                s1_outs_rvs = []
+                s2_outs_rvs = []
+                for i in range(batch_size):
+                    s1_outs_rvs.append(torch.mean(s1_out_rvs[i][:data['s1_len'][i]], dim=0))
+                    s2_outs_rvs.append(torch.mean(s2_out_rvs[i][:data['s2_len'][i]], dim=0))
+                s1_outs = torch.cat((torch.stack(s1_outs_rvs), s1_outs), dim=1)
+                s2_outs = torch.cat((torch.stack(s2_outs_rvs), s2_outs), dim=1)
+
+        if self.config['sim_fun'] == 'cosine':
+            out = nn.functional.cosine_similarity(s1_outs, s2_outs)
+        elif self.config['sim_fun'] == 'exp':
+            out = torch.exp(torch.neg(torch.norm(s1_outs-s2_outs, p=1, dim=1)))
 
         return out
 
-    def cosine_loss(self, cos, labels, margin=0.1):
+    def contrastive_loss(self, sims, labels, margin=0.1):
+        """
+        Args:
+            sims: similarity between two sentences
+            labels: 1D tensor of 0 or 1
+            margin: max(sim-margin, 0)
+        """
         batch_size = labels.size()[0]
         loss = torch.tensor(0.)
         if self.config['use_cuda']:
             loss = loss.cuda(self.config['cuda_num'])
         for i, l in enumerate(labels):
-            loss += l*(1-cos[i])*(1-cos[i])*3.
-            if cos[i] > margin:
-                loss += (1-l)*cos[i] * cos[i]
+            loss += l*(1-sims[i])*(1-sims[i])*self.config['pos_weight']
+            if sims[i] > margin:
+                loss += (1-l)*sims[i] * sims[i]
         loss /= batch_size
         return loss
 
@@ -239,9 +253,7 @@ class SiameseRNN(nn.Module):
     def train_step(self, data):
         out = self.forward(data)
         # cosine constractive loss
-        loss = self.cosine_loss(out, data['label'])
-        # proba = out
-        # loss = self.bce(proba, data['label'], weights=[1., self.pos_weight])
+        loss = self.contrastive_loss(out, data['label'])
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
@@ -251,11 +263,8 @@ class SiameseRNN(nn.Module):
 
     def evaluate(self, data):
         out = self.forward(data)
-        loss = self.cosine_loss(out, data['label'])
+        loss = self.contrastive_loss(out, data['label'])
         proba = out
-        # cosiine
-        # proba = out
-        # loss = self.bce(proba, data['label'], weights=[1., self.pos_weight])
         target =  data['label'].item()
         pred = proba.item()
         return pred, target, loss.item()

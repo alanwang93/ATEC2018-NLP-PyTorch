@@ -48,6 +48,8 @@ siamese = {
     'bidirectional':True,
     'dropout': 0.3,
     'pos_weight': 2.,
+    'representation': 'avg',
+    'sim_fun': 'cosine',
 
     # training
     'batch_size': 16,

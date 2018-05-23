@@ -54,7 +54,6 @@ def score(pred, target, threshold=0.5):
     target = list(map(int, target))
     TP = TN = FP = FN = 0
     for p, t in zip(pred, target):
-        print("Pred: {0}, Target: {1}".format(p, t))
         if p == 1 and t == 1:
             TP += 1
         elif p == 1 and t == 0:
