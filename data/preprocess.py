@@ -24,7 +24,6 @@ def extract_features(data, tokenized, exts):
     return d
 
 
-
 def main(args):
     c = getattr(config, args.config)
     tokenizer = Tokenizer(config=c)
@@ -41,7 +40,9 @@ def main(args):
             data = f.readlines()
             data = [l.replace('***', '*') for l in data]
             # tokenize
-            tokenized = tokenizer.tokenize_all(data, 'train.tokenized')
+            # remove stop words
+            stop_words_file = None#os.path.join("data/raw", "stop_words_zh.txt")
+            tokenized = tokenizer.tokenize_all(data, 'train.tokenized', stop_words=stop_words_file)
             vocab = Vocab(config=c)
             vocab.build(tokenized)
             exts_train['WordEmbedExtractor']['vocab'] = vocab

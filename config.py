@@ -10,7 +10,7 @@ baseline = {
     'data_root': 'data/processed/baseline/',
     'train': 'data/processed/baseline/train.pkl',
     'valid': 'data/processed/baseline/valid.pkl',
-    'tokenizer': 'word',
+    'tokenizer': 'char',
 
     # model
     'max_vocab': 20000,
@@ -35,19 +35,19 @@ siamese = {
     'data_root': 'data/processed/siamese/',
     'train': 'data/processed/siamese/train.pkl',
     'valid': 'data/processed/siamese/valid.pkl',
-    'tokenizer': 'word',
-    'embedding': 'sgns.financial.char',
+    'tokenizer': 'char',
+    'embedding': 'sgns.weibo.word',
 
     # model
     'max_vocab': 20000,
     'min_freq': 2,
-    'embed_size': 200,
-    'hidden_size': 120,
+    'embed_size': 300,
+    'hidden_size': 200,
     'rnn_cell': 'BasicLSTMCell',
-    'num_layers': 2,
+    'num_layers': 1,
     'bidirectional':True,
-    'dropout': 0.5,
-    'pos_weight': 3.,
+    'dropout': 0.3,
+    'pos_weight': 2.,
 
     # training
     'batch_size': 16,

@@ -16,7 +16,6 @@ class Tokenizer:
         self.config = config
         self.root = os.path.join('data/processed/', self.config['name'])
         self.tokenizer = config['tokenizer']
-        assert self.tokenizer in ['jieba', 'jieba+dict', 'word', 'word+dict']
 
         # build user dictionary
         if 'dict' in self.tokenizer:
@@ -57,22 +56,29 @@ class Tokenizer:
 
         
 
-    def tokenize(self, sentence, tokenizer='jieba', del_punctuation=True):
+    def tokenize(self, sentence, tokenizer='jieba', del_punctuation=True, stop_words=None):
         if del_punctuation:
             pass
             #sentence = ''.join(re.findall(u'[\u4e00-\u9fff]+', sentence))
 
-        if tokenizer in ['jieba', 'jieba+dict']:
+        if tokenizer in ['word', 'word+dict']:
             seg = jieba.cut(sentence)
             word_list = [word for word in seg]
-        elif tokenizer == 'word':
+        elif tokenizer == 'char':
             word_list = list(sentence.decode('utf-8'))
-        elif tokenizer == 'word+dict':
+        elif tokenizer == 'char+dict':
             pass
+        if stop_words is not None:
+            stop_words_list =  [w.strip().decode('utf8') for w in open(stop_words, 'r').readlines()]
+            new_list = []
+            for w in word_list:
+                if w not in stop_words_list:
+                    new_list.append(w)
+            return new_list
         return word_list
 
 
-    def tokenize_all(self, data, filename):
+    def tokenize_all(self, data, filename, stop_words=None):
         tokenized = []
         s1_token = []
         s2_token = []
@@ -81,8 +87,8 @@ class Tokenizer:
                 line_split = line.split('\t')
                 s1 = line_split[1]
                 s2 = line_split[2]
-                s1_tokenized = self.tokenize(s1, self.tokenizer)
-                s2_tokenized = self.tokenize(s2, self.tokenizer)
+                s1_tokenized = self.tokenize(s1, self.tokenizer, stop_words=stop_words)
+                s2_tokenized = self.tokenize(s2, self.tokenizer, stop_words=stop_words)
                 s1_token.append(s1_tokenized)
                 s2_token.append(s2_tokenized)
                 new_line = "{0}\t{1}\t{2}\t{3}\n".format(line_split[0], " ".join(s1_tokenized).encode('utf-8'), \

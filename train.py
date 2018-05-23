@@ -40,13 +40,14 @@ def main(args):
     train = data.DataLoader(train_data, batch_size=c['batch_size'], shuffle=True, collate_fn=simple_collate_fn)
     valid = data.DataLoader(valid_data, batch_size=1, collate_fn=simple_collate_fn)
 
-    print(json.dumps(c, indent=2))
+    logger.info(json.dumps(c, indent=2))
 
     model = getattr(models, c['model'])(c)
-    if c['use_cuda']:
-	   model = model.cuda(c['cuda_num'])
     if c['embedding'] is not None:
         model.load_vectors(vocab.vectors)
+
+    if c['use_cuda']:
+	   model = model.cuda(c['cuda_num'])
 
     train_loss = 0
     global_step = 0
