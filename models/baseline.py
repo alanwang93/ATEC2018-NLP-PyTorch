@@ -151,12 +151,12 @@ class SiameseRNN(nn.Module):
                 num_layers=self.num_layers, batch_first=True, dropout=0.)
         self.dropout = nn.Dropout(c['dropout'])
 
-        self.linear_in_size = self.hidden_size
+        self.linear_in_size = self.hidden_size * 2
         if self.bidirectional:
             self.linear_in_size *= 2
         self.linear_in_size += 2
         self.linear2_in_size = 50
-        self.linear = nn.Linear(self.linear_in_size, self.linear2_in_size)
+        self.linear = nn.Linear(self.linear_in_size, 1)
         self.linear2 = nn.Linear(self.linear2_in_size, 1)
         self.sigmoid = nn.Sigmoid()
         self.tanh = nn.Tanh()
@@ -228,16 +228,17 @@ class SiameseRNN(nn.Module):
                     s2_outs_rvs.append(torch.mean(s2_out_rvs[i][:data['s2_len'][i]], dim=0))
                 s1_outs = torch.cat((torch.stack(s1_outs_rvs), s1_outs), dim=1)
                 s2_outs = torch.cat((torch.stack(s2_outs_rvs), s2_outs), dim=1)
-
+        s1_outs = self.dropout(s1_outs)
+        s2_outs = self.dropout(s2_outs)
         if self.config['sim_fun'] == 'cosine':
             out = nn.functional.cosine_similarity(s1_outs, s2_outs)
         elif self.config['sim_fun'] == 'exp':
             out = torch.exp(torch.neg(torch.norm(s1_outs-s2_outs, p=1, dim=1)))
         elif self.config['sim_fun'] == 'dense':
             others = self.other_features(data)
-            feats = torch.cat((s1_outs * s2_outs, others), dim=1)
-            out1 = self.dropout(self.tanh(self.linear(feats)))
-            out =torch.squeeze(self.tanh(self.linear2(out1)))
+            feats = torch.cat((s1_outs * s2_outs, torch.abs(s1_outs - s2_outs), others), dim=1)
+            # out1 = self.dropout(self.tanh(self.linear(feats)))
+            out =torch.squeeze(self.tanh(self.linear(feats)))
         return out
 
     def other_features(self, data):
@@ -249,7 +250,7 @@ class SiameseRNN(nn.Module):
         return others
 
 
-    def contrastive_loss(self, sims, labels, margin=0.1):
+    def contrastive_loss(self, sims, labels, margin=0.3):
         """
         Args:
             sims: similarity between two sentences
