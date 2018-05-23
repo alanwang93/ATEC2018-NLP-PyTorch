@@ -24,30 +24,34 @@ class Vocab:
     """
     Vocabulary class
     """
-    def __init__(self, config):
+    def __init__(self, config, type, embedding=None):
         """
         Args:
             data: list of samples (s1 s2 label)
         """
         self.config = config
+        self.type = type
+        self.embedding = embedding
         self.root = config['data_root']
         self.unk_token = 'UNK'
         self.sos_token = 'SOS'
         self.eos_token = 'EOS'
         self.tokens = self.freqs = self.itos = self.stoi = self.vectors = None
-        self.keys = ['tokens','freqs','itos','stoi','root','unk_token','sos_token','eos_token','vectors']
+        self.keys = ['tokens','freqs','itos','stoi','root','unk_token','sos_token','eos_token','vectors', 'embedding', 'config', 'type']
 
     def build(self, tokenized=None, rebuild=True):
         if not rebuild and os.path.exists(os.path.join(self.root, 'vocab.pkl')):
             print("Loading vocab")
             self._load()
         elif tokenized is not None:
+            self.config['max_vocab'] = self.config['max_char'] if self.type == 'char' else self.config['max_word']
+
             # Build vocab
-            self.tokens = {"s1_token":[], "s2_token":[]}
-            for line in tokenized:
-                self.tokens['s1_token'].append(line.split('\t')[1].split(' '))
-                self.tokens['s2_token'].append(line.split('\t')[2].split(' '))
-            allwords = list(itertools.chain.from_iterable(self.tokens['s1_token'] + self.tokens['s2_token']))
+            self.tokens = {"s1":[], "s2":[]}
+            for ins in tokenized:
+                self.tokens['s1'].append(ins['s1'])
+                self.tokens['s2'].append(ins['s2'])
+            allwords = list(itertools.chain.from_iterable(self.tokens['s1'] + self.tokens['s2']))
             self.freqs = Counter(allwords)
 
             # Reference: torchtext
@@ -62,15 +66,15 @@ class Vocab:
                 for word, freq in words_and_frequencies:
                     if not (freq < min_freq or len(self.itos) == max_vocab):
                         self.itos.append(word)
-                    f.write("{0} {1}\n".format(word, freq))
+                    f.write("{0} {1}\n".format(word.encode('utf8'), freq))
             self.stoi = defaultdict(unk_idx)
             self.stoi.update({tok: i for i, tok in enumerate(self.itos)})
 
             # TODO: extend vocab 1. words  2. characters
 
             # load vectors
-            if self.config['embedding'] is not None:
-                self.load_vectors(self.config['embedding'])
+            if self.embedding is not None:
+                self.load_vectors(self.embedding)
 
             self._dump()
 
@@ -81,11 +85,11 @@ class Vocab:
         d = dict()
         for k in self.keys:
             d[k] = getattr(self, k)
-        with open(os.path.join(self.root, 'vocab.pkl'), 'w') as f:
+        with open(os.path.join(self.root, 'vocab_{0}.pkl'.format(self.type)), 'w') as f:
             pickle.dump(d, f)
 
     def _load(self):
-        with open(os.path.join(self.root, 'vocab.pkl'), 'r') as f:
+        with open(os.path.join(self.root, 'vocab_{0}.pkl'.format(self.type)), 'r') as f:
             d = pickle.load(f)
         for k in self.keys:
             setattr(self, k, d[k])

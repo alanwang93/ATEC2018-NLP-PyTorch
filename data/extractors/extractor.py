@@ -10,15 +10,11 @@ class Extractor:
     Feature extractor class
     """
 
-    def __init__(self, name, type):
-        """
-        Args:
-
-        """
+    def __init__(self, name):
         self.name = name
-        self.type = type
+        print("Create {0}".format(self.name))
 
-    def extract(self):
+    def extract(self, data_raw, chars, words, **kwargs):
         """
         Should return a dictionary like:
         {'name': numpy.ndarray of shape [len(data),...]}

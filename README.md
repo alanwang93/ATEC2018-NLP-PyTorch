@@ -12,6 +12,9 @@ Other options:
 * `--cuda_num <n>`, 使用编号为n的GPU
 
 ## TODO
-1. 增加一个简单的模型，把整个pipeline完善
-2. 寻找一些预训练好的中文word embedding, 或者找一个大的语料库进行训练
-3. 按照Extractor/TokenExtractor的格式写一些提取其他feature的类
+1. 继续完善pipeline
+2. 找一个大的语料库训练Char Word2Vec
+
+
+## Notes
+1. 在计算score的时候，给pos类的权重越大，threshold（大于这个值认为label是1）也需要越大。
