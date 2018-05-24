@@ -49,12 +49,14 @@ class Tokenizer:
         freqs = Counter(ngrams)
         most_freq = freqs.most_common(num_vocab)
         # save dictionary
+        if not os.path.exists(self.root):
+            os.makedirs(self.root)
         with open(os.path.join(self.root, 'dict.txt'), 'w') as f:
             for w, freq in most_freq:
                 f.write("{0} {1} \n".format(w.encode('utf-8'), freq))
         return most_freq
 
-        
+
 
     def tokenize(self, sentence, tokenizer='char', del_punctuation=True, stop_words=None):
         if del_punctuation:
@@ -93,4 +95,3 @@ class Tokenizer:
                 f.write(new_line)
                 tokenized.append({'s1':s1_tokenized, 's2':s2_tokenized})
         return tokenized
-

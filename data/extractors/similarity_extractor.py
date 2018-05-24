@@ -57,7 +57,7 @@ class SimilarityExtractor(Extractor):
             for i in range(s1_len-2):
                 s1_gram.append(ins['s1'][i]+ins['s1'][i+1]+ins['s1'][i+2])
             for i in range(s2_len-2):
-                s2_gram.append(ins['s2'][i]+ins['s2'][i+1]++ins['s2'][i+2])
+                s2_gram.append(ins['s2'][i]+ins['s2'][i+1]+ins['s2'][i+2])
             inter_len = len(list(set(s1_gram).intersection(s2_gram)))
             jaccard = inter_len / (s1_len + s2_len - inter_len) * 1.
             jaccard_char_trigram.append(jaccard)
@@ -94,7 +94,7 @@ class SimilarityExtractor(Extractor):
         d['LevenshteinDistance_word'] = ('p', np.asarray(LevenshteinDistance_word))
         return d
 
-    def LevenshteinDistance(s1, s2):
+    def LevenshteinDistance(self, s1, s2):
             m = len(s1)+1
             n = len(s2)+1
             d = np.zeros((m, n))
