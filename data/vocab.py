@@ -24,15 +24,15 @@ class Vocab:
     """
     Vocabulary class
     """
-    def __init__(self, config, type, embedding=None):
+    def __init__(self, data_config, type, embedding=None):
         """
         Args:
             data: list of samples (s1 s2 label)
         """
-        self.config = config
+        self.config = data_config
         self.type = type
         self.embedding = embedding
-        self.root = config['data_root']
+        self.root = self.config['data_root']
         self.unk_token = 'UNK'
         self.sos_token = 'SOS'
         self.eos_token = 'EOS'

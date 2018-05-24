@@ -24,34 +24,37 @@ EOS_IDX = 2
 def main(args):
     assert args.config is not None
     c = getattr(config, args.config)
+    data_config = getattr(config, 'data_config')
+
     c['use_cuda'] = not args.disable_cuda and torch.cuda.is_available()
     c['cuda_num'] = args.cuda_num
 
     logger = init_log(os.path.join('log/', args.config))
 
-    char_vocab = Vocab(config=c, type='char')
-    word_vocab = Vocab(config=c, type='word')
+    char_vocab = Vocab(data_config=data_config, type='char')
+    word_vocab = Vocab(data_config=data_config, type='word')
     char_vocab.build(rebuild=False)
     word_vocab.build(rebuild=False)
 
     char_size = len(char_vocab)
     word_size = len(word_vocab)
-    c['char_size'] = char_size
-    c['word_size'] = word_size
+    data_config['char_size'] = char_size
+    data_config['word_size'] = word_size
 
-    train_data = Dataset(c['train'])
-    valid_data = Dataset(c['valid'])
+    train_data = Dataset(data_config['train'])
+    valid_data = Dataset(data_config['valid'])
     valid_size = len(valid_data)
     train = data.DataLoader(train_data, batch_size=c['batch_size'], shuffle=True, collate_fn=simple_collate_fn)
     valid = data.DataLoader(valid_data, batch_size=1, collate_fn=simple_collate_fn)
 
+    logger.info(json.dumps(data_config, indent=2))
     logger.info(json.dumps(c, indent=2))
 
     model = getattr(models, c['model'])(c)
 
-    if c['char_embedding'] is not None:
+    if data_config['char_embedding'] is not None:
         model.load_vectors(vocab.vectors)
-    if c['word_embedding'] is not None:
+    if data_config['word_embedding'] is not None:
         model.load_vectors(vocab.vectors)
 
     if c['use_cuda']:
