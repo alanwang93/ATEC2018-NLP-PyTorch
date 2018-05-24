@@ -11,7 +11,7 @@ siamese = {
     'data_root': 'data/processed/siamese/',
     'train': 'data/processed/siamese/train.pkl',
     'valid': 'data/processed/siamese/valid.pkl',
-    'char_embedding': None, #'sgns.weibo.word',
+    'char_embedding': 'sgns.weibo.word',
     'word_embedding': None,
 
     # model
@@ -19,11 +19,11 @@ siamese = {
     'max_word': 4200,
     'min_freq': 2,
     'embed_size': 300,
-    'hidden_size': 200,
+    'hidden_size': 100,
     'num_layers': 1,
     'bidirectional':True,
-    'dropout': 0.3,
-    'pos_weight': 3.,
+    'dropout': 0.5,
+    'pos_weight': 1.,
     'representation': 'avg',
     'sim_fun': 'dense', # exp, cosine, cosine+, dense
 
