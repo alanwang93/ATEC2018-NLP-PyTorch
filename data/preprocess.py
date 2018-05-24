@@ -50,29 +50,29 @@ def clean_data(raw):
 
 
 def main(args):
-    c = getattr(config, args.config)
-    word_tokenizer = Tokenizer(tokenizer='word+dict', config=c)
-    char_tokenizer = Tokenizer(tokenizer='char', config=c)
+    data_config =  getattr(config, 'data_config')
+    word_tokenizer = Tokenizer(tokenizer='word+dict', data_config=data_config)
+    char_tokenizer = Tokenizer(tokenizer='char', data_config=data_config)
 
-    exts_train = {'WordEmbedExtractor':{'config': c},
+    exts_train = {'WordEmbedExtractor':{},
                   'SimilarityExtractor':{}}
-    exts_valid = {'WordEmbedExtractor':{'config': c},
+    exts_valid = {'WordEmbedExtractor':{},
                   'SimilarityExtractor':{}}
 
     # Train
     if args.mode == 'train':
-        if not os.path.exists(c['data_root']):
-            os.makedirs(c['data_root'])
+        if not os.path.exists(data_config['data_root']):
+            os.makedirs(data_config['data_root'])
         with open('data/raw/train.raw', 'r') as f, codecs.open( \
-                os.path.join(c['data_root'], 'train.pkl'), 'w', encoding='utf-8') as fout:
+                os.path.join(data_config['data_root'], 'train.pkl'), 'w', encoding='utf-8') as fout:
             data_raw = f.readlines()
             data_raw  = clean_data(data_raw)
 
             stop_words_file = None #os.path.join("data/raw", "stop_words_zh.txt")
             char_tokenized = char_tokenizer.tokenize_all(data_raw, 'train.char', stop_words=None)
             word_tokenized = word_tokenizer.tokenize_all(data_raw, 'train.word', stop_words=stop_words_file)
-            char_vocab = Vocab(config=c, type='char', embedding=c['char_embedding'])
-            word_vocab = Vocab(config=c, type='word', embedding=c['word_embedding'])
+            char_vocab = Vocab(data_config=data_config, type='char', embedding=data_config['char_embedding'])
+            word_vocab = Vocab(data_config=data_config, type='word', embedding=data_config['word_embedding'])
             char_vocab.build(char_tokenized)
             word_vocab.build(word_tokenized)
 
@@ -84,7 +84,7 @@ def main(args):
             pickle.dump(train, fout)
 
         with open('data/raw/valid.raw', 'r') as f, codecs.open( \
-                os.path.join(c['data_root'], 'valid.pkl'), 'w', encoding='utf-8') as fout:
+                os.path.join(data_config['data_root'], 'valid.pkl'), 'w', encoding='utf-8') as fout:
             data_raw = f.readlines()
             data_raw  = clean_data(data_raw)
 
@@ -99,16 +99,22 @@ def main(args):
 
 
     elif args.mode == 'test':
-        with open(args.test_in, 'r') as fin:
+        with open(args.test_in, 'r') as fin, open(args.test_out, 'w') as fout:
+            data_raw = fin.readlines()
+            data_raw  = clean_data(data_raw)
+            # char_tokenized = char_tokenizer.tokenize_all(data_raw, 'valid.char', stop_words=None)
+            # word_tokenized = word_tokenizer.tokenize_all(data_raw, 'valid.word', stop_words=stop_words_file)
+
             # TODO
             pass
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config', type=str, default=None)
+    # parser.add_argument('--config', type=str, default=None)
     parser.add_argument('--mode', type=str, default='train')
     parser.add_argument('--test_in', type=str, default=None)
+    parser.add_argument('--test_out', type=str, default=None)
     args = parser.parse_args()
 
     main(args)

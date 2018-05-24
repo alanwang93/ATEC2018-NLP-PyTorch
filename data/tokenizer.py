@@ -12,9 +12,9 @@ import argparse, os, pickle, json, codecs, pickle, re
 
 class Tokenizer:
 
-    def __init__(self, tokenizer, config):
-        self.config = config
-        self.root = os.path.join('data/processed/', self.config['name'])
+    def __init__(self, tokenizer, data_config):
+        self.config = data_config
+        self.root = self.config['data_root']
         self.tokenizer = tokenizer
 
         # build user dictionary

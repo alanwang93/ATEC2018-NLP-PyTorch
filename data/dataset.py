@@ -43,12 +43,18 @@ def simple_collate_fn(batch):
     """
     batch_size = len(batch)
     keys = batch[0].keys()
-    max_wlen = np.max([b['s1_wlen'][1] for b in batch]+[b['s2_wlen'][1] for b in batch])
-    max_clen = np.max([b['s1_clen'][1] for b in batch]+[b['s2_clen'][1] for b in batch])
     d = {"s1_feats": [], 's2_feats': [], 'pair_feats':[]}
+    for k in ['s1_clen', 's2_clen', 's1_wlen', 's2_wlen']:
+        d[k] = [b[k][1] for b in batch]
+    max_wlen = np.max(d['s1_wlen'] + d['s2_wlen'])
+    max_clen = np.max(d['s1_clen'] + d['s2_clen'])    
     added_sfeats = []
+    s1_feats = {}
+    s2_feats = {}
+    pair_feats = {}
 
     for b in batch:
+        added_sfeats = []
         for k, v in b.items():
             level, data = v
             if level == 'c':
@@ -67,17 +73,31 @@ def simple_collate_fn(batch):
                 if k[3:] in added_sfeats:
                     continue # the feats have already been added
                 else:
-                    d['s1_feats'].append(b['s1_'+k[3:]][1])
-                    d['s2_feats'].append(b['s2_'+k[3:]][1])
+                    if not s1_feats.has_key('s1_'+k[3:]):
+                        s1_feats['s1_'+k[3:]] = []
+                        s2_feats['s2_'+k[3:]] = []
+                    s1_feats['s1_'+k[3:]].append(b['s1_'+k[3:]][1])
+                    s2_feats['s2_'+k[3:]].append(b['s2_'+k[3:]][1])
+                    added_sfeats.append(k[3:])
             elif level == 'p':
-                d['pair_feats'].append(data)
+                if not pair_feats.has_key(k):
+                    pair_feats[k] = []
+                pair_feats[k].append(data)
             elif level == 'o':
                 if not d.has_key(k):
                     d[k] = []
-                d[k].append(data)                
+                d[k].append(data)              
+    for k in s1_feats.keys():
+        d['s1_feats'].append(s1_feats[k])  
+        d['s2_feats'].append(s2_feats['s2_'+k[3:]]) 
+    for k in pair_feats.keys():
+        d['pair_feats'].append(pair_feats[k])
     for k in d.keys():
-        print(d[k])
         d[k] = torch.tensor(d[k])
+    d['s1_feats'] = d['s1_feats'].transpose(0, 1)
+    d['s2_feats'] = d['s2_feats'].transpose(0, 1)
+    if (d['pair_feats'].size()[0]) > 0:
+        d['pair_feats'] = d['pair_feats'].transpose(0,1)
     return d
 
 

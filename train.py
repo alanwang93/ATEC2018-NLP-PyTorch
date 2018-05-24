@@ -24,35 +24,38 @@ EOS_IDX = 2
 def main(args):
     assert args.config is not None
     c = getattr(config, args.config)
+    data_config = getattr(config, 'data_config')
+
     c['use_cuda'] = not args.disable_cuda and torch.cuda.is_available()
     c['cuda_num'] = args.cuda_num
 
     logger = init_log(os.path.join('log/', args.config))
 
-    char_vocab = Vocab(config=c, type='char')
-    word_vocab = Vocab(config=c, type='word')
+    char_vocab = Vocab(data_config=data_config, type='char')
+    word_vocab = Vocab(data_config=data_config, type='word')
     char_vocab.build(rebuild=False)
     word_vocab.build(rebuild=False)
 
     char_size = len(char_vocab)
     word_size = len(word_vocab)
-    c['char_size'] = char_size
-    c['word_size'] = word_size
+    data_config['char_size'] = char_size
+    data_config['word_size'] = word_size
 
-    train_data = Dataset(c['train'])
-    valid_data = Dataset(c['valid'])
+    train_data = Dataset(data_config['train'])
+    valid_data = Dataset(data_config['valid'])
     valid_size = len(valid_data)
     train = data.DataLoader(train_data, batch_size=c['batch_size'], shuffle=True, collate_fn=simple_collate_fn)
     valid = data.DataLoader(valid_data, batch_size=1, collate_fn=simple_collate_fn)
 
+    logger.info(json.dumps(data_config, indent=2))
     logger.info(json.dumps(c, indent=2))
 
     model = getattr(models, c['model'])(c)
 
     if c['char_embedding'] is not None:
-        model.load_vectors(vocab.vectors)
+        model.load_vectors(char_vocab.vectors)
     if c['word_embedding'] is not None:
-        model.load_vectors(vocab.vectors)
+        model.load_vectors(word_vocab.vectors)
 
     if c['use_cuda']:
 	   model = model.cuda(c['cuda_num'])
@@ -78,7 +81,7 @@ def main(args):
                     targets.append(target)
                     valid_losses.append(valid_loss)
                 valid_loss = np.mean(valid_losses)
-                for threshold in [0.5, 0.6, 0.7, 0.8]:
+                for threshold in [0.5, 0.6, 0.7, 0.8, 0.85, 0.9]:
                     f1, acc, prec, recall = score(preds, targets, threshold=threshold)
                     logger.info("Valid at {0}, threshold {6}, F1:{1:.3f}, Acc:{2:.3f}, P:{3:.3f}, R:{4:.3f}, Loss:{5:.3f}"\
                             .format(global_step, f1, acc, prec, recall, valid_loss, threshold))

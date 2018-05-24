@@ -6,5 +6,5 @@
 #
 
 # python2 -m utils --split
-python2 -m data.preprocess --config $1
+python2 -m data.preprocess
 
