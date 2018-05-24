@@ -18,10 +18,10 @@ class Dataset(data.Dataset):
         self.dict = pickle.load(open(data_path, 'r'))
         self.keys = self.dict.keys()
         self.data = []
-        for index in range(len(self.dict.values()[0])):
+        for index in range(len(self.dict.values()[0][1])):
             d = {}
             for k in self.keys:
-                d[k] = self.dict[k][index]
+                d[k] = (self.dict[k][0], self.dict[k][1][index])
             self.data.append(d)
 
     def __getitem__(self, index):
@@ -29,6 +29,56 @@ class Dataset(data.Dataset):
 
     def __len__(self):
         return len(self.data)
+
+
+def simple_collate_fn(batch):
+    """
+    Note:
+        feature level: 
+        - 'c': char level
+        - 'w': word level
+        - 's': sentence level
+        - 'p': pair level
+        - 'o': others
+    """
+    batch_size = len(batch)
+    keys = batch[0].keys()
+    max_wlen = np.max([b['s1_wlen'][1] for b in batch]+[b['s2_wlen'][1] for b in batch])
+    max_clen = np.max([b['s1_clen'][1] for b in batch]+[b['s2_clen'][1] for b in batch])
+    d = {"s1_feats": [], 's2_feats': [], 'pair_feats':[]}
+    added_sfeats = []
+
+    for b in batch:
+        for k, v in b.items():
+            level, data = v
+            if level == 'c':
+                if not d.has_key(k):
+                    d[k] = []
+                    d[k+'_rvs'] = []
+                d[k].append(np.pad(data, (0,max_clen - len(data)), mode='constant', constant_values=EOS_IDX))
+                d[k+'_rvs'].append(np.pad(data[::-1], (0,max_clen - len(data)), mode='constant', constant_values=EOS_IDX))
+            elif level == 'w':
+                if not d.has_key(k):
+                    d[k] = []
+                    d[k+'_rvs'] = []
+                d[k].append(np.pad(data, (0,max_wlen - len(data)), mode='constant', constant_values=EOS_IDX))
+                d[k+'_rvs'].append(np.pad(data[::-1], (0,max_wlen - len(data)), mode='constant', constant_values=EOS_IDX))
+            elif level == 's':
+                if k[3:] in added_sfeats:
+                    continue # the feats have already been added
+                else:
+                    d['s1_feats'].append(b['s1_'+k[3:]][1])
+                    d['s2_feats'].append(b['s2_'+k[3:]][1])
+            elif level == 'p':
+                d['pair_feats'].append(data)
+            elif level == 'o':
+                if not d.has_key(k):
+                    d[k] = []
+                d[k].append(data)                
+    for k in d.keys():
+        print(d[k])
+        d[k] = torch.tensor(d[k])
+    return d
 
 
 
@@ -70,20 +120,3 @@ def complex_collate_fn(batch):
                 d[k] = torch.tensor(d[k])[d['s2_indices']]
     return d
 
-def simple_collate_fn(batch):
-    batch_size = len(batch)
-    keys = batch[0].keys()
-    d = {}
-    for k in keys:
-        d[k] = []
-    for b in batch:
-        for k,v in b.items():
-            d[k].append(v)
-    max_len = np.max(d['s1_len']+d['s2_len'])
-    for k in keys:
-        if hasattr(d[k][0], '__len__'):
-            d[k+'_rvs'] = torch.tensor([np.pad(e[::-1], (0,max_len - len(e)), mode='constant', constant_values=EOS_IDX) for e in d[k]])
-            d[k] = torch.tensor([np.pad(e, (0,max_len - len(e)), mode='constant', constant_values=EOS_IDX) for e in d[k]])
-        else:
-            d[k] = torch.tensor(d[k])
-    return d

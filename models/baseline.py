@@ -67,10 +67,10 @@ class SiameseRNN(nn.Module):
 
 
     def forward(self, data):
-        batch_size = data['s1_word'].size()[0]
+        batch_size = data['s1_char'].size()[0]
         row_idx = torch.arange(0, batch_size).long()
-        s1_embed = self.char_embed(data['s1_word'])
-        s2_embed = self.char_embed(data['s2_word'])
+        s1_embed = self.char_embed(data['s1_char'])
+        s2_embed = self.char_embed(data['s2_char'])
         s1_embed = self.dropout(s1_embed)
         s2_embed = self.dropout(s2_embed)
 
@@ -86,8 +86,8 @@ class SiameseRNN(nn.Module):
         s1_out, s1_hidden = self.rnn(s1_embed)
         s2_out, s2_hidden = self.rnn(s2_embed)
         if self.config['representation'] == 'last': # last hidden state
-            s1_out = torch.squeeze(s1_out[row_idx, data['s1_len']-1, :], 1) 
-            s2_out = torch.squeeze(s2_out[row_idx, data['s2_len']-1, :], 1)
+            s1_out = torch.squeeze(s1_out[row_idx, data['s1_clen']-1, :], 1) 
+            s2_out = torch.squeeze(s2_out[row_idx, data['s2_clen']-1, :], 1)
         elif self.config['representation'] == 'avg': # average of all hidden states
             s1_outs = []
             s2_outs = []
@@ -98,23 +98,23 @@ class SiameseRNN(nn.Module):
             s2_outs = torch.stack(s2_outs)
 
         if self.bidirectional:
-            s1_embed_rvs = self.embed(data['s1_word_rvs'])
-            s2_embed_rvs = self.embed(data['s2_word_rvs'])
+            s1_embed_rvs = self.embed(data['s1_char_rvs'])
+            s2_embed_rvs = self.embed(data['s2_char_rvs'])
             s1_embed_rvs = self.dropout(s1_embed_rvs)
             s2_embed_rvs = self.dropout(s2_embed_rvs)
             s1_out_rvs, _ = self.rnn_rvs(s1_embed_rvs)
             s2_out_rvs, _ = self.rnn_rvs(s2_embed_rvs)
             if self.config['representation'] == 'last': # last hidden state
-                s1_out_rvs = torch.squeeze(s1_out_rvs[row_idx, data['s1_len']-1, :], 1)
-                s2_out_rvs = torch.squeeze(s2_out_rvs[row_idx, data['s2_len']-1, :], 1)
+                s1_out_rvs = torch.squeeze(s1_out_rvs[row_idx, data['s1_clen']-1, :], 1)
+                s2_out_rvs = torch.squeeze(s2_out_rvs[row_idx, data['s2_clen']-1, :], 1)
                 s1_out = torch.cat((s1_out, s1_out_rvs), dim=1)
                 s2_out = torch.cat((s2_out, s2_out_rvs), dim=1)
             elif self.config['representation'] == 'avg': # average of all hidden states
                 s1_outs_rvs = []
                 s2_outs_rvs = []
                 for i in range(batch_size):
-                    s1_outs_rvs.append(torch.mean(s1_out_rvs[i][:data['s1_len'][i]], dim=0))
-                    s2_outs_rvs.append(torch.mean(s2_out_rvs[i][:data['s2_len'][i]], dim=0))
+                    s1_outs_rvs.append(torch.mean(s1_out_rvs[i][:data['s1_clen'][i]], dim=0))
+                    s2_outs_rvs.append(torch.mean(s2_out_rvs[i][:data['s2_clen'][i]], dim=0))
                 s1_outs = torch.cat((torch.stack(s1_outs_rvs), s1_outs), dim=1)
                 s2_outs = torch.cat((torch.stack(s2_outs_rvs), s2_outs), dim=1)
         s1_outs = self.dropout(s1_outs)
@@ -124,19 +124,20 @@ class SiameseRNN(nn.Module):
         elif self.config['sim_fun'] == 'exp':
             out = torch.exp(torch.neg(torch.norm(s1_outs-s2_outs, p=1, dim=1)))
         elif self.config['sim_fun'] == 'dense':
-            others = self.other_features(data)
+            others = self.sfeats(data)
             feats = torch.cat((s1_outs * s2_outs, torch.abs(s1_outs - s2_outs), others), dim=1)
             # out1 = self.dropout(self.tanh(self.linear(feats)))
             out =torch.squeeze(self.tanh(self.linear(feats)))
         return out
 
-    def other_features(self, data):
-        s1_len = data['s1_len'].type(torch.FloatTensor).unsqueeze(1)
-        s2_len = data['s2_len'].type(torch.FloatTensor).unsqueeze(1)
-        others = torch.cat((s1_len, s2_len), dim=1)
+    def sfeats(self, data):
+        """ Sentence level features """
+        s1_feats = data['s1_feats'].type(torch.FloatTensor).unsqueeze(1)
+        s2_feats = data['s2_feats'].type(torch.FloatTensor).unsqueeze(1)
+        feats = torch.cat((s1_feats, s2_feats), dim=1)
         if self.config['use_cuda']:
-            others = others.cuda(self.config['cuda_num'])
-        return others
+            feats = feats.cuda(self.config['cuda_num'])
+        return feats
 
 
     def contrastive_loss(self, sims, labels, margin=0.3):

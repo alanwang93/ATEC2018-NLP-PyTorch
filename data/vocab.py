@@ -40,8 +40,8 @@ class Vocab:
         self.keys = ['tokens','freqs','itos','stoi','root','unk_token','sos_token','eos_token','vectors', 'embedding', 'config', 'type']
 
     def build(self, tokenized=None, rebuild=True):
-        if not rebuild and os.path.exists(os.path.join(self.root, 'vocab.pkl')):
-            print("Loading vocab")
+        if not rebuild and os.path.exists(os.path.join(self.root, 'vocab_{0}.pkl'.format(self.type))):
+            print("Loading {0} vocab".format(self.type))
             self._load()
         elif tokenized is not None:
             self.config['max_vocab'] = self.config['max_char'] if self.type == 'char' else self.config['max_word']

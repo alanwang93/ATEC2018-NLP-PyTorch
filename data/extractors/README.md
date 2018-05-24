@@ -2,9 +2,11 @@
 
 
 ## Level
+- Char level: each char has a feature
 - Word level: each word has a feature value, like TF-IDF, or word index
 - Sentence level: each sentence has a value, like sentence length
 - Pair level: each pair has a value, like TF-IDF similarity between the two sentences
+- Other: not used as features
 
 
 ## Type
