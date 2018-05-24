@@ -46,7 +46,7 @@ class WordEmbedExtractor(Extractor):
             s2_clen.append(len(ins['s2']))
             s1_char.append(char_vocab.toi(ins['s1']))
             s2_char.append(char_vocab.toi(ins['s2']))
-            
+
 
         d['s1_word'] = ('w', np.asarray([np.array(s) for s in s1_word]))
         d['s2_word'] = ('w', np.asarray([np.array(s) for s in s2_word]))
