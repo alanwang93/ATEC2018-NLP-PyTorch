@@ -17,6 +17,9 @@ data_config = {
 
 
 siamese = {
+    'name': 'siamese',
+    'model': 'SiameseRNN',
+
     # model
     'embed_size': 300,
     'hidden_size': 100,

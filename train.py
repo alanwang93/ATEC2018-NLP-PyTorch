@@ -50,11 +50,11 @@ def main(args):
     logger.info(json.dumps(data_config, indent=2))
     logger.info(json.dumps(c, indent=2))
 
-    model = getattr(models, c['model'])(c)
+    model = getattr(models, c['model'])(c, data_config)
 
-    if c['char_embedding'] is not None:
+    if data_config['char_embedding'] is not None:
         model.load_vectors(char_vocab.vectors)
-    if c['word_embedding'] is not None:
+    if data_config['word_embedding'] is not None:
         model.load_vectors(word_vocab.vectors)
 
     if c['use_cuda']:

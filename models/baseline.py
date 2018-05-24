@@ -10,16 +10,17 @@ EOS_IDX = 2
 
 class SiameseRNN(nn.Module):
 
-    def __init__(self, c):
+    def __init__(self,  config, data_config):
         super(SiameseRNN, self).__init__()
-        self.char_size = c['char_size']
-        self.embed_size = c['embed_size']
-        self.hidden_size = c['hidden_size']
-        self.num_layers = c['num_layers']
-        self.bidirectional = c['bidirectional']
-        self.pos_weight = c['pos_weight']
+        self.char_size = data_config['char_size']
+        self.embed_size = config['embed_size']
+        self.hidden_size = config['hidden_size']
+        self.num_layers = config['num_layers']
+        self.bidirectional = config['bidirectional']
+        self.pos_weight = config['pos_weight']
         self.mode = None
-        self.config = c
+        self.config = config
+        self.data_config = data_config
 
         self.embed = nn.Embedding(self.char_size, self.embed_size, padding_idx=EOS_IDX)
 
@@ -28,10 +29,10 @@ class SiameseRNN(nn.Module):
         self.rnn_rvs = nn.LSTM(input_size=self.embed_size, hidden_size=self.hidden_size, \
                 num_layers=self.num_layers, batch_first=True, dropout=0.)
 
-        self.dropout = nn.Dropout(c['dropout'])
+        self.dropout = nn.Dropout(config['dropout'])
         self.dropout2 = nn.Dropout(0.2)
 
-        self.linear_in_size = self.hidden_size * 2
+        self.linear_in_size = self.hidden_size
         if self.bidirectional:
             self.linear_in_size *= 2
         self.linear_in_size = self.linear_in_size + 4 + 6
@@ -125,7 +126,7 @@ class SiameseRNN(nn.Module):
         elif self.config['sim_fun'] == 'dense':
             sfeats = self.sfeats(data)
             pair_feats = self.pair_feats(data)
-            feats = torch.cat((s1_outs * s2_outs, torch.abs(s1_outs - s2_outs), sfeats, pair_feats), dim=1)
+            feats = torch.cat((s1_outs * s2_outs, sfeats, pair_feats), dim=1)
             feats = self.dropout2(feats)
             # out1 = self.dropout(self.tanh(self.linear(feats)))
             out =torch.squeeze(self.tanh(self.linear(feats)))
