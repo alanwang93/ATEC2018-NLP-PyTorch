@@ -16,7 +16,7 @@ class WordEmbedExtractor(Extractor):
     def __init__(self):
         Extractor.__init__(self, name="WordEmbedExtractor")
 
-    def extract(self, data_raw, chars, words, char_vocab, word_vocab, config):
+    def extract(self, data_raw, chars, words, char_vocab, word_vocab):
         d = dict()
         s1_word = []
         s2_word = []
