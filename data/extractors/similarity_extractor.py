@@ -31,7 +31,7 @@ class SimilarityExtractor(Extractor):
             for i in range(s2_len):
                 s2_gram.append(ins['s2'][i])
             inter_len = len(list(set(s1_gram).intersection(s2_gram)))
-            jaccard = inter_len / (s1_len + s2_len - inter_len) * 1.
+            jaccard = float(inter_len) / (s1_len + s2_len - inter_len)
             jaccard_char_unigram.append(jaccard)
 
         # jaccard for char bigram
@@ -45,7 +45,7 @@ class SimilarityExtractor(Extractor):
             for i in range(s2_len-1):
                 s2_gram.append(ins['s2'][i]+ins['s2'][i+1])
             inter_len = len(list(set(s1_gram).intersection(s2_gram)))
-            jaccard = inter_len / (s1_len + s2_len - inter_len) * 1.
+            jaccard = float(inter_len) / (s1_len + s2_len - inter_len)
             jaccard_char_bigram.append(jaccard)
 
         # jaccard for char trigram
@@ -59,7 +59,7 @@ class SimilarityExtractor(Extractor):
             for i in range(s2_len-2):
                 s2_gram.append(ins['s2'][i]+ins['s2'][i+1]+ins['s2'][i+2])
             inter_len = len(list(set(s1_gram).intersection(s2_gram)))
-            jaccard = inter_len / (s1_len + s2_len - inter_len) * 1.
+            jaccard = float(inter_len) / (s1_len + s2_len - inter_len)
             jaccard_char_trigram.append(jaccard)
 
         # jaccard for word unigram
@@ -73,7 +73,7 @@ class SimilarityExtractor(Extractor):
             for i in range(s2_len):
                 s2_gram.append(ins['s2'][i])
             inter_len = len(list(set(s1_gram).intersection(s2_gram)))
-            jaccard = inter_len / (s1_len + s2_len - inter_len) * 1.
+            jaccard = float(inter_len) / (s1_len + s2_len - inter_len)
             jaccard_word_unigram.append(jaccard)
 
         # LevenshteinDistance for char
@@ -109,4 +109,4 @@ class SimilarityExtractor(Extractor):
                     else:
                         cost = 1.
                     d[i][j] = min(d[i-1][j]+1., d[i][j-1]+1., d[i-1][j-1]+cost)
-            return d[m-1][n-1]
+            return float(d[m-1][n-1])/(m+n-2)*2.

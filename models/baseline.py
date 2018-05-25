@@ -10,30 +10,32 @@ EOS_IDX = 2
 
 class SiameseRNN(nn.Module):
 
-    def __init__(self, c):
+    def __init__(self,  config, data_config):
         super(SiameseRNN, self).__init__()
-        self.char_size = c['char_size']
-        self.embed_size = c['embed_size']
-        self.hidden_size = c['hidden_size']
-        self.num_layers = c['num_layers']
-        self.bidirectional = c['bidirectional']
-        self.pos_weight = c['pos_weight']
+        self.char_size = data_config['char_size']
+        self.embed_size = config['embed_size']
+        self.hidden_size = config['hidden_size']
+        self.num_layers = config['num_layers']
+        self.bidirectional = config['bidirectional']
+        self.pos_weight = config['pos_weight']
         self.mode = None
-        self.config = c
+        self.config = config
+        self.data_config = data_config
 
-        self.char_embed = nn.Embedding(self.char_size, self.embed_size, padding_idx=EOS_IDX)
+        self.embed = nn.Embedding(self.char_size, self.embed_size, padding_idx=EOS_IDX)
 
         self.rnn = nn.LSTM(input_size=self.embed_size, hidden_size=self.hidden_size, \
                 num_layers=self.num_layers, batch_first=True, dropout=0.)
         self.rnn_rvs = nn.LSTM(input_size=self.embed_size, hidden_size=self.hidden_size, \
                 num_layers=self.num_layers, batch_first=True, dropout=0.)
 
-        self.dropout = nn.Dropout(c['dropout'])
+        self.dropout = nn.Dropout(config['dropout'])
+        self.dropout2 = nn.Dropout(0.2)
 
-        self.linear_in_size = self.hidden_size * 2
+        self.linear_in_size = self.hidden_size
         if self.bidirectional:
             self.linear_in_size *= 2
-        self.linear_in_size += 2
+        self.linear_in_size = self.linear_in_size + 4 + 6
         self.linear2_in_size = 50
         self.linear = nn.Linear(self.linear_in_size, 1)
         self.linear2 = nn.Linear(self.linear2_in_size, 1)
@@ -69,8 +71,8 @@ class SiameseRNN(nn.Module):
     def forward(self, data):
         batch_size = data['s1_char'].size()[0]
         row_idx = torch.arange(0, batch_size).long()
-        s1_embed = self.char_embed(data['s1_char'])
-        s2_embed = self.char_embed(data['s2_char'])
+        s1_embed = self.embed(data['s1_char'])
+        s2_embed = self.embed(data['s2_char'])
         s1_embed = self.dropout(s1_embed)
         s2_embed = self.dropout(s2_embed)
 
@@ -92,8 +94,8 @@ class SiameseRNN(nn.Module):
             s1_outs = []
             s2_outs = []
             for i in range(batch_size):
-                s1_outs.append(torch.mean(s1_out[i][:data['s1_len'][i]], dim=0))
-                s2_outs.append(torch.mean(s2_out[i][:data['s2_len'][i]], dim=0))
+                s1_outs.append(torch.mean(s1_out[i][:data['s1_clen'][i]], dim=0))
+                s2_outs.append(torch.mean(s2_out[i][:data['s2_clen'][i]], dim=0))
             s1_outs = torch.stack(s1_outs)
             s2_outs = torch.stack(s2_outs)
 
@@ -117,27 +119,33 @@ class SiameseRNN(nn.Module):
                     s2_outs_rvs.append(torch.mean(s2_out_rvs[i][:data['s2_clen'][i]], dim=0))
                 s1_outs = torch.cat((torch.stack(s1_outs_rvs), s1_outs), dim=1)
                 s2_outs = torch.cat((torch.stack(s2_outs_rvs), s2_outs), dim=1)
-        s1_outs = self.dropout(s1_outs)
-        s2_outs = self.dropout(s2_outs)
         if self.config['sim_fun'] == 'cosine':
             out = nn.functional.cosine_similarity(s1_outs, s2_outs)
         elif self.config['sim_fun'] == 'exp':
             out = torch.exp(torch.neg(torch.norm(s1_outs-s2_outs, p=1, dim=1)))
         elif self.config['sim_fun'] == 'dense':
-            others = self.sfeats(data)
-            feats = torch.cat((s1_outs * s2_outs, torch.abs(s1_outs - s2_outs), others), dim=1)
+            sfeats = self.sfeats(data)
+            pair_feats = self.pair_feats(data)
+            feats = torch.cat((s1_outs * s2_outs, sfeats, pair_feats), dim=1)
+            feats = self.dropout2(feats)
             # out1 = self.dropout(self.tanh(self.linear(feats)))
             out =torch.squeeze(self.tanh(self.linear(feats)))
         return out
 
     def sfeats(self, data):
         """ Sentence level features """
-        s1_feats = data['s1_feats'].type(torch.FloatTensor).unsqueeze(1)
-        s2_feats = data['s2_feats'].type(torch.FloatTensor).unsqueeze(1)
+        s1_feats = data['s1_feats'].type(torch.FloatTensor)
+        s2_feats = data['s2_feats'].type(torch.FloatTensor)
         feats = torch.cat((s1_feats, s2_feats), dim=1)
         if self.config['use_cuda']:
             feats = feats.cuda(self.config['cuda_num'])
         return feats
+
+    def pair_feats(self, data):
+        feats = data['pair_feats']
+        if self.config['use_cuda']:
+            feats = feats.cuda(self.config['cuda_num'])
+        return feats  
 
 
     def contrastive_loss(self, sims, labels, margin=0.3):
@@ -164,14 +172,14 @@ class SiameseRNN(nn.Module):
     def load_vectors(self, char=None, word=None):
         print("Use pretrained embedding")
         if char is not None:
-            self.char_embed.weight = nn.Parameter(torch.FloatTensor(char))
+            self.embed.weight = nn.Parameter(torch.FloatTensor(char))
 
 
 
     def train_step(self, data):
         out = self.forward(data)
         # constractive loss
-        loss = self.contrastive_loss(out, data['label'])
+        loss = self.contrastive_loss(out, data['target'])
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
@@ -182,7 +190,7 @@ class SiameseRNN(nn.Module):
 
     def evaluate(self, data):
         out = self.forward(data)
-        loss = self.contrastive_loss(out, data['label'])
+        loss = self.contrastive_loss(out, data['target'])
         proba = out
         target =  data['label'].item()
         pred = proba.item()

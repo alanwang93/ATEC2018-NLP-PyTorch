@@ -50,12 +50,12 @@ def main(args):
     logger.info(json.dumps(data_config, indent=2))
     logger.info(json.dumps(c, indent=2))
 
-    model = getattr(models, c['model'])(c)
+    model = getattr(models, c['model'])(c, data_config)
 
     if data_config['char_embedding'] is not None:
-        model.load_vectors(vocab.vectors)
+        model.load_vectors(char_vocab.vectors)
     if data_config['word_embedding'] is not None:
-        model.load_vectors(vocab.vectors)
+        model.load_vectors(word_vocab.vectors)
 
     if c['use_cuda']:
 	   model = model.cuda(c['cuda_num'])
@@ -81,7 +81,7 @@ def main(args):
                     targets.append(target)
                     valid_losses.append(valid_loss)
                 valid_loss = np.mean(valid_losses)
-                for threshold in [0.5, 0.6, 0.7, 0.8]:
+                for threshold in [0.5, 0.6, 0.7, 0.8, 0.85, 0.9]:
                     f1, acc, prec, recall = score(preds, targets, threshold=threshold)
                     logger.info("Valid at {0}, threshold {6}, F1:{1:.3f}, Acc:{2:.3f}, P:{3:.3f}, R:{4:.3f}, Loss:{5:.3f}"\
                             .format(global_step, f1, acc, prec, recall, valid_loss, threshold))
