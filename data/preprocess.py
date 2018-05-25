@@ -55,9 +55,11 @@ def main(args):
     char_tokenizer = Tokenizer(tokenizer='char', data_config=data_config)
 
     exts_train = {'WordEmbedExtractor':{},
-                  'SimilarityExtractor':{}}
+                  'SimilarityExtractor':{},
+                  'WordBoolExtractor':{}}
     exts_valid = {'WordEmbedExtractor':{},
-                  'SimilarityExtractor':{}}
+                  'SimilarityExtractor':{},
+                  'WordBoolExtractor':{}}
 
     # Train
     if args.mode == 'train':
