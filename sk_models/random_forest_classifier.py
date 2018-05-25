@@ -4,7 +4,7 @@ from utils import score
 class RandomForest():
 
     def __init__(self):
-        self.reg = RandomForestClassifier(class_weight={1:10, 0:1})
+        self.reg = RandomForestClassifier(n_estimators=100, class_weight='balanced', max_features=1.0)
 
     def fit(self, X, y):
         self.reg.fit(X, y)
