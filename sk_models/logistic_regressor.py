@@ -14,5 +14,4 @@ class LogisticRegressor():
 
     def score(self, X, y):
         pred = self.predict(X)
-        # print(pred.shape[:])
         return score(pred[:,1], y, 0.5)

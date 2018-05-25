@@ -1,10 +1,10 @@
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import AdaBoostClassifier
 from utils import score
 
-class RandomForest():
+class AdaBoost():
 
     def __init__(self):
-        self.reg = RandomForestClassifier(n_estimators=100, class_weight='balanced', max_features=1.0)
+        self.reg = AdaBoostClassifier(n_estimators=100)
 
     def fit(self, X, y):
         self.reg.fit(X, y)

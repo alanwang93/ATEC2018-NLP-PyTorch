@@ -1,10 +1,10 @@
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.neural_network import MLPClassifier
 from utils import score
 
-class RandomForest():
+class MLP():
 
     def __init__(self):
-        self.reg = RandomForestClassifier(n_estimators=100, class_weight='balanced', max_features=1.0)
+        self.reg = MLPClassifier()
 
     def fit(self, X, y):
         self.reg.fit(X, y)
