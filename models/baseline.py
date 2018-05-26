@@ -22,7 +22,7 @@ class SiameseRNN(nn.Module):
         self.config = config
         self.data_config = data_config
 
-        self.embed = nn.Embedding(self.char_size, self.embed_size, padding_idx=EOS_IDX)
+        self.embed = nn.Embedding(self.char_size, self.embed_size, padding_idx=EOS_IDX, )
 
         self.rnn = nn.LSTM(input_size=self.embed_size, hidden_size=self.hidden_size, \
                 num_layers=self.num_layers, batch_first=True, dropout=0.)
@@ -35,14 +35,16 @@ class SiameseRNN(nn.Module):
         self.linear_in_size = self.hidden_size
         if self.bidirectional:
             self.linear_in_size *= 2
-        self.linear_in_size = self.linear_in_size + 4 + 6
-        self.linear2_in_size = 50
-        self.linear = nn.Linear(self.linear_in_size, 1)
+        self.linear_in_size = self.linear_in_size + 4 + 6 + 13
+        self.linear2_in_size = 100
+        self.linear = nn.Linear(self.linear_in_size, self.linear2_in_size)
         self.linear2 = nn.Linear(self.linear2_in_size, 1)
 
         self.sigmoid = nn.Sigmoid()
         self.tanh = nn.Tanh()
         self.relu = nn.ReLU()
+        self.prelu = nn.PReLU()
+        self.BCELoss = BCELoss
 
         self.optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, self.parameters()), lr=0.001)
 
@@ -109,8 +111,8 @@ class SiameseRNN(nn.Module):
             if self.config['representation'] == 'last': # last hidden state
                 s1_out_rvs = torch.squeeze(s1_out_rvs[row_idx, data['s1_clen']-1, :], 1)
                 s2_out_rvs = torch.squeeze(s2_out_rvs[row_idx, data['s2_clen']-1, :], 1)
-                s1_out = torch.cat((s1_out, s1_out_rvs), dim=1)
-                s2_out = torch.cat((s2_out, s2_out_rvs), dim=1)
+                s1_outs = torch.cat((s1_out, s1_out_rvs), dim=1)
+                s2_outs = torch.cat((s2_out, s2_out_rvs), dim=1)
             elif self.config['representation'] == 'avg': # average of all hidden states
                 s1_outs_rvs = []
                 s2_outs_rvs = []
@@ -127,9 +129,9 @@ class SiameseRNN(nn.Module):
             sfeats = self.sfeats(data)
             pair_feats = self.pair_feats(data)
             feats = torch.cat((s1_outs * s2_outs, sfeats, pair_feats), dim=1)
-            feats = self.dropout2(feats)
-            # out1 = self.dropout(self.tanh(self.linear(feats)))
-            out =torch.squeeze(self.tanh(self.linear(feats)))
+            # feats = self.dropout2(feats)
+            out1 = self.dropout(self.prelu(self.linear(feats)))
+            out = torch.squeeze(self.prelu(self.linear2(out1)), 1)
         return out
 
     def sfeats(self, data):
@@ -148,7 +150,7 @@ class SiameseRNN(nn.Module):
         return feats  
 
 
-    def contrastive_loss(self, sims, labels, margin=0.3):
+    def contrastive_loss(self, sims, labels, margin=0.5):
         """
         Args:
             sims: similarity between two sentences
@@ -177,9 +179,9 @@ class SiameseRNN(nn.Module):
 
 
     def train_step(self, data):
-        out = self.forward(data)
+        out = self.sigmoid(self.forward(data))
         # constractive loss
-        loss = self.contrastive_loss(out, data['target'])
+        loss = 0.*self.contrastive_loss(out, data['target']) + 0.5* self.BCELoss(out, data['target'], [1., self.pos_weight])
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
@@ -189,8 +191,8 @@ class SiameseRNN(nn.Module):
         
 
     def evaluate(self, data):
-        out = self.forward(data)
-        loss = self.contrastive_loss(out, data['target'])
+        out = self.sigmoid(self.forward(data))
+        loss =0.* self.contrastive_loss(out, data['target']) + 0.5 * self.BCELoss(out, data['target'], [1., self.pos_weight])
         proba = out
         target =  data['label'].item()
         pred = proba.item()

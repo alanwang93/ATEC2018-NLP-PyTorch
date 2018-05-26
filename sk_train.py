@@ -38,7 +38,7 @@ for feat in features:
     if valid_data[feat][0] == 's':
         valid_X_features.append(abs(valid_data[feat][1] - valid_data[feat.replace('1', '2')][1]).reshape(-1,1))
     elif valid_data[feat][0] == 'p':
-    	if len(valid_data[feat][1].shape) == 1:
+        if len(valid_data[feat][1].shape) == 1:
         	valid_X_features.append(valid_data[feat][1].reshape(-1,1))
         else:
         	valid_X_features.append(np.squeeze(valid_data[feat][1]))
