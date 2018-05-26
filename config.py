@@ -8,7 +8,7 @@ data_config = {
     'data_root': 'data/processed/',
     'train': 'data/processed/train.pkl',
     'valid': 'data/processed/valid.pkl',
-    'char_embedding': None, #'sgns.weibo.word',
+    'char_embedding': 'sgns.weibo.word',
     'word_embedding': None,
     'max_char': 1000,
     'max_word': 4200,
@@ -22,16 +22,16 @@ siamese = {
 
     # model
     'embed_size': 300,
-    'hidden_size': 100,
-    'num_layers': 1,
+    'hidden_size': 150,
+    'num_layers': 2,
     'bidirectional':True,
     'dropout': 0.5,
-    'pos_weight': 1.,
-    'representation': 'avg',
+    'pos_weight': 2.5,
+    'representation': 'last', # last, avg
     'sim_fun': 'dense', # exp, cosine, cosine+, dense
 
     # training
-    'batch_size': 16,
+    'batch_size': 32,
     'max_iter': 50000,
 }
 

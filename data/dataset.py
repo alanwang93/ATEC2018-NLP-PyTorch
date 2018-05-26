@@ -82,6 +82,8 @@ def simple_collate_fn(batch):
             elif level == 'p':
                 if not pair_feats.has_key(k):
                     pair_feats[k] = []
+                if len(data.shape) == 0:
+                    data = data.reshape(1,)
                 pair_feats[k].append(data)
             elif level == 'o':
                 if not d.has_key(k):
@@ -93,11 +95,14 @@ def simple_collate_fn(batch):
     for k in pair_feats.keys():
         d['pair_feats'].append(pair_feats[k])
     for k in d.keys():
+        if k == 'pair_feats':
+            d[k] = np.concatenate(d[k], axis=1)
+            d[k] = torch.FloatTensor(d[k])
         d[k] = torch.tensor(d[k])
     d['s1_feats'] = d['s1_feats'].transpose(0, 1)
     d['s2_feats'] = d['s2_feats'].transpose(0, 1)
-    if (d['pair_feats'].size()[0]) > 0:
-        d['pair_feats'] = d['pair_feats'].transpose(0,1)
+    # if (d['pair_feats'].size()[0]) > 0:
+        # d['pair_feats'] = d['pair_feats'].transpose(0,1)
     return d
 
 
