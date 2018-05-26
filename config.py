@@ -8,7 +8,7 @@ data_config = {
     'data_root': 'data/processed/',
     'train': 'data/processed/train.pkl',
     'valid': 'data/processed/valid.pkl',
-    'char_embedding': 'sgns.weibo.word',
+    'char_embedding': None, #'sgns.weibo.word',
     'word_embedding': None,
     'max_char': 1000,
     'max_word': 4200,

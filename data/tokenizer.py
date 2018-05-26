@@ -19,7 +19,7 @@ class Tokenizer:
 
         # build user dictionary
         if 'dict' in self.tokenizer:
-            self.create_dictionary()
+            # self.create_dictionary()
             jieba.load_userdict(os.path.join(self.root, 'dict.txt'))
 
 
@@ -62,12 +62,13 @@ class Tokenizer:
         if del_punctuation:
             pass
             #sentence = ''.join(re.findall(u'[\u4e00-\u9fff]+', sentence))
-
+        if type(sentence) != type(u'1'):
+            sentence = sentence.decode('utf8')
         if tokenizer in ['word', 'word+dict']:
             seg = jieba.cut(sentence)
             word_list = [word for word in seg]
         elif tokenizer == 'char':
-            word_list = list(sentence.decode('utf-8'))
+            word_list = list(sentence)
         elif tokenizer == 'char+dict':
             pass
         if stop_words is not None:
