@@ -16,17 +16,17 @@ class MatchPyramid(nn.Module):
         self.data_config = data_config
 
         self.embed = nn.Embedding(self.char_size, self.embed_size, padding_idx=EOS_IDX)
-        self.conv1 = nn.Conv2d(1, 16, 5, padding=2)
-        self.conv2 = nn.Conv2d(16, 32, 3, padding=2)
+        self.conv1 = nn.Conv2d(1, 8, 5, padding=2)
+        self.conv2 = nn.Conv2d(8, 16, 3, padding=2)
         self.relu = nn.ReLU()
         self.maxpool1 = nn.MaxPool2d(2)
         self.maxpool2 = nn.AdaptiveMaxPool2d(output_size=5)
-        self.fc1 = nn.Linear(5*5*32, 10)
-        self.fc2 = nn.Linear(10, 1)
+        self.fc1 = nn.Linear(5*5*16, 100)
+        self.fc2 = nn.Linear(100, 1)
         self.sigmoid = nn.Sigmoid()
         self.dropout = nn.Dropout(config['dropout'])
 
-        self.criterion = BCELoss
+        self.criterion = nn.BCELoss()
         self.optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, self.parameters()), lr=0.001)
 
         self._init_weights()
@@ -63,7 +63,7 @@ class MatchPyramid(nn.Module):
     def train_step(self, data):
         proba = self.sigmoid(self.forward(data)).squeeze(1)
         target = data['target']
-        loss = self.criterion(proba, target, weights=[1.0, 3.0])
+        loss = self.criterion(proba, target)#, weights=[1.0, 1.0])
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
@@ -72,5 +72,5 @@ class MatchPyramid(nn.Module):
     def evaluate(self, data):
         proba = self.sigmoid(self.forward(data)).squeeze(1)
         target =  data['target']
-        loss = self.criterion(proba, target, weights=[1.0, 3.0])
+        loss = self.criterion(proba, target)#, weights=[1.0, 1.0])
         return proba.item(), target.item(), loss.item()
