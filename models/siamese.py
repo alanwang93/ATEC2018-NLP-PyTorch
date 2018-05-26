@@ -90,7 +90,7 @@ class SiameseRNN(nn.Module):
         s1_out, s1_hidden = self.rnn(s1_embed)
         s2_out, s2_hidden = self.rnn(s2_embed)
         if self.config['representation'] == 'last': # last hidden state
-            s1_out = torch.squeeze(s1_out[row_idx, data['s1_clen']-1, :], 1) 
+            s1_out = torch.squeeze(s1_out[row_idx, data['s1_clen']-1, :], 1)
             s2_out = torch.squeeze(s2_out[row_idx, data['s2_clen']-1, :], 1)
         elif self.config['representation'] == 'avg': # average of all hidden states
             s1_outs = []
@@ -147,7 +147,7 @@ class SiameseRNN(nn.Module):
         feats = data['pair_feats']
         if self.config['use_cuda']:
             feats = feats.cuda(self.config['cuda_num'])
-        return feats  
+        return feats
 
 
     def contrastive_loss(self, sims, labels, margin=0.5):
@@ -188,7 +188,7 @@ class SiameseRNN(nn.Module):
         # f1, acc, prec, recall = score(proba.tolist(), data['label'].tolist())
         # print({'loss':loss.item(), 'f1':f1, 'acc':acc, 'prec':prec, 'recall':recall})
         return loss.item()
-        
+
 
     def evaluate(self, data):
         out = self.sigmoid(self.forward(data))

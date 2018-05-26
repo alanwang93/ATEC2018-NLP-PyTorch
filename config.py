@@ -36,3 +36,15 @@ siamese = {
 }
 
 
+match_pyramid = {
+    'name': 'match_pyramid',
+    'model': 'MatchPyramid',
+
+    # model
+    'embed_size': 300,
+    'dropout': 0.5,
+
+    # training
+    'batch_size': 32,
+    'max_iter': 50000,
+}
