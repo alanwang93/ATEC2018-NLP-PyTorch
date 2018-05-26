@@ -63,11 +63,7 @@ class MatchPyramid(nn.Module):
     def train_step(self, data):
         proba = self.sigmoid(self.forward(data)).squeeze(1)
         target = data['target']
-<<<<<<< HEAD
-        loss = self.criterion(proba, target)#, weights=[1.0, 1.0])
-=======
         loss = self.criterion(proba, target, weights=[1.0, 1.0])
->>>>>>> 439285fe709b04b35e3e37cf22282edc1b9088bd
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
@@ -76,9 +72,5 @@ class MatchPyramid(nn.Module):
     def evaluate(self, data):
         proba = self.sigmoid(self.forward(data)).squeeze(1)
         target =  data['target']
-<<<<<<< HEAD
-        loss = self.criterion(proba, target)#, weights=[1.0, 1.0])
-=======
         loss = self.criterion(proba, target, weights=[1.0, 1.0])
->>>>>>> 439285fe709b04b35e3e37cf22282edc1b9088bd
         return proba.item(), target.item(), loss.item()
