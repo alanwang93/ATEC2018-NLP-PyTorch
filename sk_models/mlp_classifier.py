@@ -4,7 +4,7 @@ from utils import score
 class MLP():
 
     def __init__(self):
-        self.reg = MLPClassifier()
+        self.reg = MLPClassifier((100,))
 
     def fit(self, X, y):
         self.reg.fit(X, y)
