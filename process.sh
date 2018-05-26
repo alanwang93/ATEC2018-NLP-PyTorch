@@ -6,5 +6,5 @@
 #
 
 # python2 -m utils --split
-python2 -m data.preprocess
+python2 -m data.preprocess --clean
 

@@ -42,7 +42,7 @@ match_pyramid = {
 
     # model
     'embed_size': 300,
-    'dropout': 0.3,
+    'dropout': 0.2,
 
     # training
     'batch_size': 32,

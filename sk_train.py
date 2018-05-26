@@ -46,7 +46,7 @@ for feat in features:
 valid_X = np.concatenate(valid_X_features, axis=1)
 valid_y = valid_data['label'][1]
 
-clf = LogisticRegressor()
+clf = Bagging()
 clf.fit(train_X, train_y)
 score = clf.score(valid_X, valid_y)
 
