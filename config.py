@@ -17,10 +17,11 @@ data_config = {
 
 
 siamese = {
+    # Basic
     'name': 'siamese',
     'model': 'SiameseRNN',
 
-    # model
+    # Model
     'embed_size': 300,
     'hidden_size': 150,
     'num_layers': 2,
@@ -29,10 +30,14 @@ siamese = {
     'pos_weight': 2.,
     'representation': 'last', # last, avg
     'sim_fun': 'dense',# 'dense', # exp, cosine, cosine+, dense
+    'loss': 'ce', # ce, cl, mixed
+    'cl_margin': 0.3,
+    'ce_alpha': 1.,
 
-    # training
+    # Training
     'batch_size': 32,
     'max_iter': 50000,
+    'patience': 5,
 }
 
 
@@ -47,4 +52,6 @@ match_pyramid = {
     # training
     'batch_size': 32,
     'max_iter': 50000,
+    'patience': 5,
+
 }
