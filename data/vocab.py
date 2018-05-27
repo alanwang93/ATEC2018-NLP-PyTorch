@@ -72,10 +72,6 @@ class Vocab:
 
             # TODO: extend vocab 1. words  2. characters
 
-            # load vectors
-            if self.embedding is not None:
-                self.load_vectors(self.embedding)
-
             self._dump()
 
     def __len__(self):
