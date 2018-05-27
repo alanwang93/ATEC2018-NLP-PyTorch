@@ -16,15 +16,14 @@ from utils import init_log, score, to_cuda
 import numpy as np
 
 model_path = 'checkpoints/siamese_default_best.pkl'
-test_path = 'data/raw/test.pkl'
+test_path = 'data/processed/test.pkl'
 UNK_IDX = 0
 EOS_IDX = 2
 
 def main(inpath, outpath):
-	c = getattr(config, 'siamese')
+    c = getattr(config, 'siamese')
     data_config = getattr(config, 'data_config')
-    c['use_cuda'] = torch.cuda.is_available()
-    c['cuda_num'] = 0
+    c['use_cuda'] = False
     char_vocab = Vocab(data_config=data_config, type='char')
     word_vocab = Vocab(data_config=data_config, type='word')
     char_vocab.build(rebuild=False)
@@ -44,31 +43,32 @@ def main(inpath, outpath):
         word_vocab.load_vectors(word_vocab.embedding)
         model.load_vectors(word_vocab.vectors)
 
-    cp = torch.load(model_path)
+    cp = torch.load(model_path, map_location=lambda storage, loc: storage)
     model.load_state_dict(cp['state_dict'])
     threshold = cp['best_threshold']
+    print("threshold", threshold)
 
     if c['use_cuda']:
         model = model.cuda(c['cuda_num'])
     else:
-    	model = model.cpu()
+        model = model.cpu()
 
 
-	preds = []
-	sids = []
+    preds = []
+    sids = []
+    print("Start prediction")
     for _, test_batch in enumerate(test):
         pred, sid = model.eval().test(to_cuda(test_batch, c))
+        print(sid, pred)
         if pred > threshold:
-        	preds.append(1)
+            preds.append(1)
         else:
-        	preds.append(0)
+            preds.append(0)
         sids.append(sid)
     with open(outpath, 'w') as fout:
-    	for sid, pred in zip(sids, preds):
-    		fout.write('{0}\t{1}\n'.format(sid, pred))
-
-
-
+        for sid, pred in zip(sids, preds):
+            fout.write('{0}\t{1}\n'.format(sid, pred))
 
 if __name__ == '__main__':
     main(sys.argv[1], sys.argv[2])
+
