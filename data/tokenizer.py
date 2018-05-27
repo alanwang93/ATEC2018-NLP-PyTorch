@@ -20,7 +20,7 @@ class Tokenizer:
         # build user dictionary
         if 'dict' in self.tokenizer:
             # self.create_dictionary()
-            jieba.load_userdict(os.path.join(self.root, 'dict.txt'))
+            jieba.load_userdict('data/raw/dict.txt')
 
 
     def create_dictionary(self, num_vocab=5):
