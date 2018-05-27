@@ -26,7 +26,7 @@ class MatchPyramid(nn.Module):
         self.sigmoid = nn.Sigmoid()
         self.dropout = nn.Dropout(config['dropout'])
 
-        self.criterion = nn.BCELoss()
+        self.criterion = BCELoss
         self.optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, self.parameters()), lr=0.001)
 
         self._init_weights()

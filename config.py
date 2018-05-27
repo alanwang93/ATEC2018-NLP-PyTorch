@@ -8,8 +8,8 @@ data_config = {
     'data_root': 'data/processed/',
     'train': 'data/processed/train.pkl',
     'valid': 'data/processed/valid.pkl',
-    'char_embedding': None, #'sgns.weibo.word',
-    'word_embedding': None,
+    'char_embedding': None,#'sgns.financial.char',
+    'word_embedding': 'sgns.financial.char',#None,
     'max_char': 1000,
     'max_word': 4200,
     'min_freq': 2
@@ -26,9 +26,9 @@ siamese = {
     'num_layers': 2,
     'bidirectional':True,
     'dropout': 0.5,
-    'pos_weight': 2.5,
+    'pos_weight': 2.,
     'representation': 'last', # last, avg
-    'sim_fun': 'dense', # exp, cosine, cosine+, dense
+    'sim_fun': 'cosine',# 'dense', # exp, cosine, cosine+, dense
 
     # training
     'batch_size': 32,
