@@ -122,9 +122,11 @@ def main(args):
                 stop_words_file = None #os.path.join("data/raw", "stop_words_zh.txt")
                 char_tokenized = char_tokenizer.tokenize_all(data_raw, 'train.char', stop_words=None)
                 word_tokenized = word_tokenizer.tokenize_all(data_raw, 'train.word', stop_words=stop_words_file)
+                pickle.dump(data_raw, open('data/processed/train_raw.pkl', 'w'))
                 pickle.dump(char_tokenized, open('data/processed/train_char_tokenized.pkl', 'w'))
                 pickle.dump(word_tokenized, open('data/processed/train_word_tokenized.pkl', 'w'))
             else:
+                data_raw = pickle.load(open('data/processed/train_raw.pkl', 'r'))
                 char_tokenized = pickle.load(open('data/processed/train_char_tokenized.pkl', 'r'))
                 word_tokenized = pickle.load(open('data/processed/train_word_tokenized.pkl', 'r'))
 
@@ -147,9 +149,11 @@ def main(args):
                 data_raw  = clean_data(data_raw, data_config)
                 char_tokenized = char_tokenizer.tokenize_all(data_raw, 'valid.char', stop_words=None)
                 word_tokenized = word_tokenizer.tokenize_all(data_raw, 'valid.word', stop_words=stop_words_file)
+                pickle.dump(data_raw, open('data/processed/valid_raw.pkl', 'w'))
                 pickle.dump(char_tokenized, open('data/processed/valid_char_tokenized.pkl', 'w'))
                 pickle.dump(word_tokenized, open('data/processed/valid_word_tokenized.pkl', 'w'))
             else:
+                data_raw = pickle.load(open('data/processed/valid_raw.pkl', 'r'))
                 char_tokenized = pickle.laod(open('data/processed/valid_char_tokenized.pkl', 'r'))
                 word_tokenized = pickle.load(open('data/processed/valid_word_tokenized.pkl', 'r'))
 

@@ -9,9 +9,9 @@ data_config = {
     'train': 'data/processed/train.pkl',
     'valid': 'data/processed/valid.pkl',
     'char_embedding': None,#'sgns.financial.char',
-    'word_embedding': 'sgns.financial.char',#None,
-    'max_char': 1000,
-    'max_word': 4200,
+    'word_embedding': None,#'sgns.financial.char',#None,
+    'max_char': 5000,
+    'max_word': 10000,
     'min_freq': 2
 }
 
@@ -22,11 +22,11 @@ siamese = {
 
     # model
     'embed_size': 300,
-    'hidden_size': 150,
+    'hidden_size': 200,
     'num_layers': 2,
     'bidirectional':True,
-    'dropout': 0.5,
-    'pos_weight': 2.,
+    'dropout': 0.4,
+    'pos_weight': 1.,
     'representation': 'last', # last, avg
     'sim_fun': 'dense',# 'dense', # exp, cosine, cosine+, dense
 

@@ -30,13 +30,13 @@ class SiameseRNN(nn.Module):
                 num_layers=self.num_layers, batch_first=True, dropout=0.)
 
         self.dropout = nn.Dropout(config['dropout'])
-        self.dropout2 = nn.Dropout(0.1)
+        self.dropout2 = nn.Dropout(0.0)
 
         self.linear_in_size = self.hidden_size * 2
         if self.bidirectional:
             self.linear_in_size *= 2
-        self.linear_in_size = self.linear_in_size + 6 + 13
-        self.linear2_in_size = 150
+        self.linear_in_size = self.linear_in_size + 6 + 13 + 4
+        self.linear2_in_size = 200
         self.linear = nn.Linear(self.linear_in_size, self.linear2_in_size)
         self.linear2 = nn.Linear(self.linear2_in_size, 1)
 
@@ -121,8 +121,8 @@ class SiameseRNN(nn.Module):
                     s2_outs_rvs.append(torch.mean(s2_out_rvs[i][:data['s2_wlen'][i]], dim=0))
                 s1_outs = torch.cat((torch.stack(s1_outs_rvs), s1_outs), dim=1)
                 s2_outs = torch.cat((torch.stack(s2_outs_rvs), s2_outs), dim=1)
-        s1_outs = self.dropout2(s1_outs)
-        s2_outs = self.dropout2(s2_outs)
+        # s1_outs = self.dropout2(s1_outs)
+        # s2_outs = self.dropout2(s2_outs)
         if self.config['sim_fun'] == 'cosine':
             out = nn.functional.cosine_similarity(s1_outs, s2_outs)
         elif self.config['sim_fun'] == 'cosine+':
@@ -133,10 +133,10 @@ class SiameseRNN(nn.Module):
         elif self.config['sim_fun'] == 'dense':
             sfeats = self.sfeats(data)
             pair_feats = self.pair_feats(data)
-            feats = torch.cat((torch.abs(s1_outs - s2_outs), s1_outs * s2_outs, pair_feats), dim=1)
+            feats = torch.cat((torch.abs(s1_outs - s2_outs), s1_outs * s2_outs, sfeats, pair_feats), dim=1)
             # feats = self.dropout2(feats)
             out1 = self.dropout2(self.prelu(self.linear(feats)))
-            out = torch.squeeze(self.prelu(self.linear2(out1)), 1)
+            out = torch.squeeze(self.linear2(out1), 1)
         return out
 
     def sfeats(self, data):
@@ -155,7 +155,7 @@ class SiameseRNN(nn.Module):
         return feats
 
 
-    def contrastive_loss(self, sims, labels, margin=0.5):
+    def contrastive_loss(self, sims, labels, margin=0.3):
         """
         Args:
             sims: similarity between two sentences
@@ -187,9 +187,14 @@ class SiameseRNN(nn.Module):
 
     def train_step(self, data):
         out = self.forward(data)
-        proba = self.sigmoid(out)
+        if self.config['sim_fun'] == 'dense':
+            sim = self.tanh(out)
+            proba = self.sigmoid(out)
+        else:
+            sim = out
+            proba = sim/2.+0.5
         # constractive loss
-        loss = 1.*self.contrastive_loss(out, data['target'])# + 0.5* self.BCELoss(out, data['target'], [1., self.pos_weight])
+        loss = 0.5*self.contrastive_loss(sim, data['target'], margin=0.3)# + 0.0* self.BCELoss(proba, data['target'], [1., self.pos_weight])
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
@@ -200,8 +205,13 @@ class SiameseRNN(nn.Module):
 
     def evaluate(self, data):
         out = self.forward(data)
-        proba = self.sigmoid(out)
-        loss = 1.* self.contrastive_loss(out, data['target']) #+ 0.5 * self.BCELoss(out, data['target'], [1., self.pos_weight])
+        if self.config['sim_fun'] == 'dense':
+            sim = self.tanh(out)
+            proba = self.sigmoid(out)
+        else:
+            sim = out
+            proba = sim/2.+0.5
+        loss = 0.5* self.contrastive_loss(sim, data['target'], margin=0.3) #+ 0.0 * self.BCELoss(proba, data['target'], [1., self.pos_weight])
         proba = out
         target =  data['label'].item()
         pred = proba.item()
