@@ -21,6 +21,9 @@ LOG_STEPS = 200 # average train losses over LOG_STEPS steps
 UNK_IDX = 0
 EOS_IDX = 2
 
+best_score = 0.
+best_epoch = 0
+
 def main(args):
     assert args.config is not None
     c = getattr(config, args.config)
@@ -92,8 +95,10 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', type=str, default=None)
+    parser.add_argument('--patient', type=int, default=5)
     parser.add_argument('--cuda_num', type=int, default=2)
     parser.add_argument('--disable_cuda', dest='disable_cuda', action='store_true')
-    args = parser.parse_args()
+    parser.add_argument('--early_stop', dest='early_stop', action='store_true')
 
+    args = parser.parse_args()
     main(args)
