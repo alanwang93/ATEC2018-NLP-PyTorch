@@ -16,7 +16,7 @@ class WordEmbedExtractor(Extractor):
     def __init__(self):
         Extractor.__init__(self, name="WordEmbedExtractor")
 
-    def extract(self, data_raw, chars, words, char_vocab, word_vocab):
+    def extract(self, data_raw, chars, words, char_vocab, word_vocab, mode='train'):
         d = dict()
         s1_word = []
         s2_word = []
@@ -31,8 +31,9 @@ class WordEmbedExtractor(Extractor):
         sid = []
 
         for ins in data_raw:
-            label.append(ins['label'])
-            target.append(ins['target'])
+            if mode == 'train':
+                label.append(ins['label'])
+                target.append(ins['target'])
             sid.append(ins['sid'])
 
         for ins in words:
@@ -57,8 +58,8 @@ class WordEmbedExtractor(Extractor):
         d['s2_char'] = ('c', np.asarray([np.array(s) for s in s2_char]))
         d['s1_clen'] = ('s', np.asarray(s1_clen))
         d['s2_clen'] = ('s', np.asarray(s2_clen))
-
-        d['label'] = ('o', np.asarray(label))
         d['sid'] = ('o', np.asarray(sid))
-        d['target'] = ('o', np.asarray(target))
+        if mode == 'train':
+            d['label'] = ('o', np.asarray(label))
+            d['target'] = ('o', np.asarray(target))
         return d

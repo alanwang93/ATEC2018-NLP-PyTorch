@@ -220,3 +220,12 @@ class SiameseRNN(nn.Module):
         target =  data['label'].item()
         pred = proba.item()
         return pred, target, loss.item()
+
+    def test(self, data):
+        out = self.forward(data)
+        if self.config['sim_fun'] == 'dense':
+            proba = self.sigmoid(out)
+        else:
+            proba = out/2.+0.5
+        pred = proba.item()
+        return pred, data['sid'].item()

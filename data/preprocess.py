@@ -38,7 +38,7 @@ def replace_all(sent, target, candidates):
     return sent
 
 
-def clean_data(raw, data_config):
+def clean_data(raw, data_config, mode='train'):
     """
     Clean data and return a structured one.
 
@@ -70,8 +70,11 @@ def clean_data(raw, data_config):
             l = replace_all(l, target, candidates)
 
         s = l.strip().split('\t')
-        data_raw.append({'sid': int(s[0]), 's1':s[1], 's2':s[2],\
-                'label':int(s[3]), 'target':float(s[3])})
+        if mode == 'train':
+            data_raw.append({'sid': int(s[0]), 's1':s[1], 's2':s[2],\
+                    'label':int(s[3]), 'target':float(s[3])})
+        elif mode == 'test':
+            data_raw.append({'sid': int(s[0]), 's1':s[1], 's2':s[2]})
     # tokenize and remove stop words
     print("Start tokenization for preprocessing")
     tokenizer = Tokenizer(tokenizer='word+dict', data_config=data_config)
@@ -90,10 +93,12 @@ def clean_data(raw, data_config):
                         s1[i] = target
                 for i, s in enumerate(s2):
                     if s == c:
-                        s2[i] = target                       
-        cleaned_data_raw.append({'sid': d['sid'], 's1':"".join(s1), 's2':"".join(s2),\
-                'label':d['label'], 'target':d['target']})
-
+                        s2[i] = target
+        if mode == 'train':                       
+            cleaned_data_raw.append({'sid': d['sid'], 's1':"".join(s1), 's2':"".join(s2),\
+                    'label':d['label'], 'target':d['target']})
+        elif mode == 'test':
+            cleaned_data_raw.append({'sid': d['sid'], 's1':"".join(s1), 's2':"".join(s2)})
     return cleaned_data_raw
 
 
@@ -109,6 +114,9 @@ def main(args):
     exts_valid = {'WordEmbedExtractor':{},
                   'SimilarityExtractor':{},
                   'WordBoolExtractor':{}}
+    exts_test = {'WordEmbedExtractor':{},
+                  'SimilarityExtractor':{},
+                  'WordBoolExtractor':{}}
 
     # Train
     if args.mode == 'train':
@@ -119,7 +127,7 @@ def main(args):
             if args.clean:
                 data_raw = f.readlines()
                 data_raw  = clean_data(data_raw, data_config)
-                stop_words_file = None #os.path.join("data/raw", "stop_words_zh.txt")
+                stop_words_file = "data/raw/simple_stop_words.txt"
                 char_tokenized = char_tokenizer.tokenize_all(data_raw, 'train.char', stop_words=None)
                 word_tokenized = word_tokenizer.tokenize_all(data_raw, 'train.word', stop_words=stop_words_file)
                 pickle.dump(data_raw, open('data/processed/train_raw.pkl', 'w'))
@@ -165,14 +173,21 @@ def main(args):
 
 
     elif args.mode == 'test':
-        with open(args.test_in, 'r') as fin, open(args.test_out, 'w') as fout:
-            data_raw = fin.readlines()
-            data_raw  = clean_data(data_raw)
-            # char_tokenized = char_tokenizer.tokenize_all(data_raw, 'valid.char', stop_words=None)
-            # word_tokenized = word_tokenizer.tokenize_all(data_raw, 'valid.word', stop_words=stop_words_file)
+        with open(args.test_in, 'r') as fin:
+            char_vocab = Vocab(data_config=data_config, type='char')
+            word_vocab = Vocab(data_config=data_config, type='word')
+            char_vocab.build(rebuild=False)
+            word_vocab.build(rebuild=False)
 
-            # TODO
-            pass
+            data_raw = fin.readlines()
+            data_raw  = clean_data(data_raw, data_config)
+            stop_words_file = "data/raw/simple_stop_words.txt"
+            char_tokenized = char_tokenizer.tokenize_all(data_raw, 'test.char', stop_words=None)
+            word_tokenized = word_tokenizer.tokenize_all(data_raw, 'test.word', stop_words=stop_words_file)
+            exts_test['WordEmbedExtractor']['char_vocab'] = char_vocab
+            exts_test['WordEmbedExtractor']['word_vocab'] = word_vocab
+            valid = extract_features(data_raw, char_tokenized, word_tokenized, exts_test)
+            pickle.dump(valid, open('data/processed/test.pkl', 'w'))
 
 
 if __name__ == '__main__':
@@ -180,7 +195,6 @@ if __name__ == '__main__':
     # parser.add_argument('--config', type=str, default=None)
     parser.add_argument('--mode', type=str, default='train')
     parser.add_argument('--test_in', type=str, default=None)
-    parser.add_argument('--test_out', type=str, default=None)
     parser.add_argument('--clean', dest='clean', action='store_true')
     args = parser.parse_args()
 
