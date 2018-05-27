@@ -12,17 +12,18 @@ class SiameseRNN(nn.Module):
 
     def __init__(self,  config, data_config):
         super(SiameseRNN, self).__init__()
-        self.char_size = data_config['word_size']
+        self.mode = 'char'
+        self.l = self.mode[0] + 'len'
+        self.vocab_size = data_config[self.mode+'_size']
         self.embed_size = config['embed_size']
         self.hidden_size = config['hidden_size']
         self.num_layers = config['num_layers']
         self.bidirectional = config['bidirectional']
         self.pos_weight = config['pos_weight']
-        self.mode = None
         self.config = config
         self.data_config = data_config
 
-        self.embed = nn.Embedding(self.char_size, self.embed_size, padding_idx=EOS_IDX, )
+        self.embed = nn.Embedding(self.vocab_size, self.embed_size, padding_idx=EOS_IDX, )
 
         self.rnn = nn.LSTM(input_size=self.embed_size, hidden_size=self.hidden_size, \
                 num_layers=self.num_layers, batch_first=True, dropout=0.)
@@ -37,8 +38,10 @@ class SiameseRNN(nn.Module):
             self.linear_in_size *= 2
         self.linear_in_size = self.linear_in_size + 6 + 13 + 4
         self.linear2_in_size = 200
-        self.linear = nn.Linear(self.linear_in_size, self.linear2_in_size)
-        self.linear2 = nn.Linear(self.linear2_in_size, 1)
+        self.linear3_in_size = 100
+        self.linear = nn.Linear(self.linear_in_size, 1)
+        self.linear2 = nn.Linear(self.linear2_in_size, self.linear3_in_size)
+        self.linear3 = nn.Linear(self.linear3_in_size, 1)
 
         self.sigmoid = nn.Sigmoid()
         self.tanh = nn.Tanh()
@@ -73,8 +76,8 @@ class SiameseRNN(nn.Module):
     def forward(self, data):
         batch_size = data['s1_char'].size()[0]
         row_idx = torch.arange(0, batch_size).long()
-        s1_embed = self.embed(data['s1_word'])
-        s2_embed = self.embed(data['s2_word'])
+        s1_embed = self.embed(data['s1_'+self.mode])
+        s2_embed = self.embed(data['s2_'+self.mode])
         s1_embed = self.dropout(s1_embed)
         s2_embed = self.dropout(s2_embed)
 
@@ -90,35 +93,35 @@ class SiameseRNN(nn.Module):
         s1_out, s1_hidden = self.rnn(s1_embed)
         s2_out, s2_hidden = self.rnn(s2_embed)
         if self.config['representation'] == 'last': # last hidden state
-            s1_out = torch.squeeze(s1_out[row_idx, data['s1_wlen']-1, :], 1)
-            s2_out = torch.squeeze(s2_out[row_idx, data['s2_wlen']-1, :], 1)
+            s1_out = torch.squeeze(s1_out[row_idx, data['s1_'+self.l]-1, :], 1)
+            s2_out = torch.squeeze(s2_out[row_idx, data['s2_'+self.l]-1, :], 1)
         elif self.config['representation'] == 'avg': # average of all hidden states
             s1_outs = []
             s2_outs = []
             for i in range(batch_size):
-                s1_outs.append(torch.mean(s1_out[i][:data['s1_wlen'][i]], dim=0))
-                s2_outs.append(torch.mean(s2_out[i][:data['s2_wlen'][i]], dim=0))
+                s1_outs.append(torch.mean(s1_out[i][:data['s1_'+self.l][i]], dim=0))
+                s2_outs.append(torch.mean(s2_out[i][:data['s2_'+self.l][i]], dim=0))
             s1_outs = torch.stack(s1_outs)
             s2_outs = torch.stack(s2_outs)
 
         if self.bidirectional:
-            s1_embed_rvs = self.embed(data['s1_word_rvs'])
-            s2_embed_rvs = self.embed(data['s2_word_rvs'])
+            s1_embed_rvs = self.embed(data['s1_'+self.mode+'_rvs'])
+            s2_embed_rvs = self.embed(data['s2_'+self.mode+'_rvs'])
             s1_embed_rvs = self.dropout(s1_embed_rvs)
             s2_embed_rvs = self.dropout(s2_embed_rvs)
             s1_out_rvs, _ = self.rnn_rvs(s1_embed_rvs)
             s2_out_rvs, _ = self.rnn_rvs(s2_embed_rvs)
             if self.config['representation'] == 'last': # last hidden state
-                s1_out_rvs = torch.squeeze(s1_out_rvs[row_idx, data['s1_wlen']-1, :], 1)
-                s2_out_rvs = torch.squeeze(s2_out_rvs[row_idx, data['s2_wlen']-1, :], 1)
+                s1_out_rvs = torch.squeeze(s1_out_rvs[row_idx, data['s1_'+self.l]-1, :], 1)
+                s2_out_rvs = torch.squeeze(s2_out_rvs[row_idx, data['s2_'+self.l]-1, :], 1)
                 s1_outs = torch.cat((s1_out, s1_out_rvs), dim=1)
                 s2_outs = torch.cat((s2_out, s2_out_rvs), dim=1)
             elif self.config['representation'] == 'avg': # average of all hidden states
                 s1_outs_rvs = []
                 s2_outs_rvs = []
                 for i in range(batch_size):
-                    s1_outs_rvs.append(torch.mean(s1_out_rvs[i][:data['s1_wlen'][i]], dim=0))
-                    s2_outs_rvs.append(torch.mean(s2_out_rvs[i][:data['s2_wlen'][i]], dim=0))
+                    s1_outs_rvs.append(torch.mean(s1_out_rvs[i][:data['s1_'+self.l][i]], dim=0))
+                    s2_outs_rvs.append(torch.mean(s2_out_rvs[i][:data['s2_'+self.l][i]], dim=0))
                 s1_outs = torch.cat((torch.stack(s1_outs_rvs), s1_outs), dim=1)
                 s2_outs = torch.cat((torch.stack(s2_outs_rvs), s2_outs), dim=1)
         # s1_outs = self.dropout2(s1_outs)
@@ -135,8 +138,9 @@ class SiameseRNN(nn.Module):
             pair_feats = self.pair_feats(data)
             feats = torch.cat((torch.abs(s1_outs - s2_outs), s1_outs * s2_outs, sfeats, pair_feats), dim=1)
             # feats = self.dropout2(feats)
-            out1 = self.dropout2(self.prelu(self.linear(feats)))
-            out = torch.squeeze(self.linear2(out1), 1)
+            # out1 = self.dropout2(self.prelu(self.linear(feats)))
+            # out2 = self.dropout2(self.prelu(self.linear2(out1)))
+            out = torch.squeeze(self.linear(feats), 1)
         return out
 
     def sfeats(self, data):
@@ -194,7 +198,7 @@ class SiameseRNN(nn.Module):
             sim = out
             proba = sim/2.+0.5
         # constractive loss
-        loss = 0.5*self.contrastive_loss(sim, data['target'], margin=0.3)# + 0.0* self.BCELoss(proba, data['target'], [1., self.pos_weight])
+        loss = 0.5*self.contrastive_loss(sim, data['target'], margin=self.config['cl_margin'])# + 0.0* self.BCELoss(proba, data['target'], [1., self.pos_weight])
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
@@ -211,7 +215,7 @@ class SiameseRNN(nn.Module):
         else:
             sim = out
             proba = sim/2.+0.5
-        loss = 0.5* self.contrastive_loss(sim, data['target'], margin=0.3) #+ 0.0 * self.BCELoss(proba, data['target'], [1., self.pos_weight])
+        loss = 0.5* self.contrastive_loss(sim, data['target'], margin=self.config['cl_margin']) #+ 0.0 * self.BCELoss(proba, data['target'], [1., self.pos_weight])
         proba = out
         target =  data['label'].item()
         pred = proba.item()
