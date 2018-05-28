@@ -100,8 +100,8 @@ def simple_collate_fn(batch):
             d[k] = torch.FloatTensor(d[k])
 	elif '_word' in k or '_char' in k:
 	    d[k] = torch.LongTensor(d[k])
-        else:
-	    d[k] = torch.tensor(d[k])
+    else:
+        d[k] = torch.tensor(d[k])
     d['s1_feats'] = d['s1_feats'].transpose(0, 1)
     d['s2_feats'] = d['s2_feats'].transpose(0, 1)
     # if (d['pair_feats'].size()[0]) > 0:
