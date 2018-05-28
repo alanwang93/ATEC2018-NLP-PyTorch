@@ -36,7 +36,7 @@ class SiameseRNN(nn.Module):
         self.linear_in_size = self.hidden_size * 2
         if self.bidirectional:
             self.linear_in_size *= 2
-        self.linear_in_size = self.linear_in_size + 6 + 124 + 4
+        self.linear_in_size = self.linear_in_size + 6 + 124 + 4 #similarity; word_bool; len
         self.linear2_in_size = 100
         # self.linear3_in_size = 100
         self.linear = nn.Linear(self.linear_in_size, self.linear2_in_size)
