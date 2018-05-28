@@ -24,11 +24,14 @@ for feat in features:
     if train_data[feat][0] == 's':
         train_X_features.append(abs(train_data[feat][1] - train_data[feat.replace('1', '2')][1]).reshape(-1,1))
     elif train_data[feat][0] == 'p':
-    	if len(train_data[feat][1].shape) == 1:
-        	train_X_features.append(train_data[feat][1].reshape(-1,1))
+        if feat == 'word_bool':
+           train_X_features.append(np.squeeze(train_data[feat][1]))
+        elif len(train_data[feat][1].shape) == 1:
+            train_X_features.append(train_data[feat][1].reshape(-1,1))
         else:
-        	train_X_features.append(np.squeeze(train_data[feat][1]))
+            train_X_features.append(np.squeeze(train_data[feat][1]))
 train_X = np.concatenate(train_X_features, axis=1)
+print("Train shape", train_X.shape)
 train_y = train_data['label'][1]
 
 # valid data preprocessing
@@ -38,7 +41,9 @@ for feat in features:
     if valid_data[feat][0] == 's':
         valid_X_features.append(abs(valid_data[feat][1] - valid_data[feat.replace('1', '2')][1]).reshape(-1,1))
     elif valid_data[feat][0] == 'p':
-        if len(valid_data[feat][1].shape) == 1:
+        if feat == 'word_bool':
+           valid_X_features.append(np.squeeze(valid_data[feat][1]))
+        elif len(valid_data[feat][1].shape) == 1:
         	valid_X_features.append(valid_data[feat][1].reshape(-1,1))
         else:
         	valid_X_features.append(np.squeeze(valid_data[feat][1]))
@@ -46,7 +51,7 @@ for feat in features:
 valid_X = np.concatenate(valid_X_features, axis=1)
 valid_y = valid_data['label'][1]
 
-clf = Bagging()
+clf = LogisticRegressor()
 clf.fit(train_X, train_y)
 score = clf.score(valid_X, valid_y)
 
