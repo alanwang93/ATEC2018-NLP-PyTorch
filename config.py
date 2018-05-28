@@ -25,9 +25,9 @@ siamese = {
     'word_embedding': None,#'sgns.financial.char',#None,
 
     # Model
-    'embed_size': 300,
-    'hidden_size': 200,
-    'num_layers': 2,
+    'embed_size': 200,
+    'hidden_size': 100,
+    'num_layers': 1,
     'bidirectional':True,
     'dropout': 0.5,
     'pos_weight': 3.0,
