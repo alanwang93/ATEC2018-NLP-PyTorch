@@ -49,17 +49,17 @@ class WordEmbedExtractor(Extractor):
             s2_char.append(char_vocab.toi(ins['s2']))
 
 
-        d['s1_word'] = ('w', np.asarray([np.array(s) for s in s1_word]))
-        d['s2_word'] = ('w', np.asarray([np.array(s) for s in s2_word]))
-        d['s1_wlen'] = ('s', np.asarray(s1_wlen))
-        d['s2_wlen'] = ('s', np.asarray(s2_wlen))
+        d['s1_word'] = ('w', np.asarray([np.array(s) for s in s1_word]), 0)
+        d['s2_word'] = ('w', np.asarray([np.array(s) for s in s2_word]), 0)
+        d['s1_wlen'] = ('s', np.asarray(s1_wlen), 1)
+        d['s2_wlen'] = ('s', np.asarray(s2_wlen), 1)
 
-        d['s1_char'] = ('c', np.asarray([np.array(s) for s in s1_char]))
-        d['s2_char'] = ('c', np.asarray([np.array(s) for s in s2_char]))
-        d['s1_clen'] = ('s', np.asarray(s1_clen))
-        d['s2_clen'] = ('s', np.asarray(s2_clen))
+        d['s1_char'] = ('c', np.asarray([np.array(s) for s in s1_char]), 0)
+        d['s2_char'] = ('c', np.asarray([np.array(s) for s in s2_char]), 0)
+        d['s1_clen'] = ('s', np.asarray(s1_clen), 1)
+        d['s2_clen'] = ('s', np.asarray(s2_clen), 1)
         d['sid'] = ('o', np.asarray(sid))
         if mode == 'train':
-            d['label'] = ('o', np.asarray(label))
-            d['target'] = ('o', np.asarray(target))
+            d['label'] = ('o', np.asarray(label), 0)
+            d['target'] = ('o', np.asarray(target), 0)
         return d
