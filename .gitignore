@@ -6,6 +6,8 @@ __pycache__/
 # yifan
 *~
 checkpoints/
+submissions/
+*.tar.gz
 test/
 .DS_Store
 *.DS_Store
