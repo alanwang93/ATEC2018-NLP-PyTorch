@@ -26,12 +26,12 @@ siamese = {
     'hidden_size': 200,
     'num_layers': 2,
     'bidirectional':True,
-    'dropout': 0.4,
-    'pos_weight': 1.,
+    'dropout': 0.5,
+    'pos_weight': 3.0,
     'representation': 'last', # last, avg
     'sim_fun': 'dense',# 'dense', # exp, cosine, cosine+, dense
     'loss': 'ce', # ce, cl, mixed
-    'cl_margin': 0.3,
+    'cl_margin': 0.4,
     'ce_alpha': 1.,
 
     # Training
