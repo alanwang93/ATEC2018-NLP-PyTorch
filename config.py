@@ -35,6 +35,30 @@ siamese = {
     'ce_alpha': 1.,
 
     # Training
+    'batch_size': 16,
+    'max_iter': 50000,
+    'patience': 5,
+}
+
+light_siamese = {
+    # Basic
+    'name': 'light_siamese',
+    'model': 'SiameseRNN',
+
+    # Model
+    'embed_size': 150,
+    'hidden_size': 100,
+    'num_layers': 1,
+    'bidirectional':True,
+    'dropout': 0.5,
+    'pos_weight': 3.0,
+    'representation': 'last', # last, avg
+    'sim_fun': 'dense',# 'dense', # exp, cosine, cosine+, dense
+    'loss': 'ce', # ce, cl, mixed
+    'cl_margin': 0.4,
+    'ce_alpha': 1.,
+
+    # Training
     'batch_size': 32,
     'max_iter': 50000,
     'patience': 5,
