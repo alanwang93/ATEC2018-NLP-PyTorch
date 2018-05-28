@@ -77,9 +77,9 @@ class SimilarityExtractor(Extractor):
             jaccard_word_unigram.append(jaccard)
 
         # LevenshteinDistance for char
-        for ins in chars:
-            dis = self.LevenshteinDistance(ins['s1'], ins['s2'])
-            LevenshteinDistance_char.append(dis)
+        # for ins in chars:
+            # dis = self.LevenshteinDistance(ins['s1'], ins['s2'])
+            # LevenshteinDistance_char.append(dis)
 
         # LevenshteinDistance for word
         for ins in words:
@@ -90,7 +90,7 @@ class SimilarityExtractor(Extractor):
         d['jaccard_char_bigram'] = ('p', np.asarray(jaccard_char_bigram), 1)
         d['jaccard_char_trigram'] = ('p', np.asarray(jaccard_char_trigram), 1)
         d['jaccard_word_unigram'] = ('p', np.asarray(jaccard_word_unigram), 1)
-        d['LevenshteinDistance_char'] = ('p', np.asarray(LevenshteinDistance_char), 1)
+        # d['LevenshteinDistance_char'] = ('p', np.asarray(LevenshteinDistance_char), 1)
         d['LevenshteinDistance_word'] = ('p', np.asarray(LevenshteinDistance_word), 1)
         return d
 

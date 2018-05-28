@@ -43,9 +43,9 @@ def split_data(in_file, out_dir, train_ratio=0.95):
         valid_file = open(os.path.join(out_dir, 'valid.raw'), 'w')
         for s in train:
             train_file.write(s)
+        train_file.close()
         for s in valid:
             valid_file.write(s)
-        train_file.close()
         valid_file.close()
 
 def score(pred, target, threshold=0.5):

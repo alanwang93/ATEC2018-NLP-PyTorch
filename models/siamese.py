@@ -12,7 +12,7 @@ class SiameseRNN(nn.Module):
 
     def __init__(self,  config, data_config):
         super(SiameseRNN, self).__init__()
-        self.mode = 'char'
+        self.mode = 'word'
         self.l = self.mode[0] + 'len'
         self.vocab_size = data_config[self.mode+'_size']
         self.embed_size = config['embed_size']
@@ -23,7 +23,7 @@ class SiameseRNN(nn.Module):
         self.config = config
         self.data_config = data_config
 
-        self.embed = nn.Embedding(self.vocab_size, self.embed_size, padding_idx=EOS_IDX, )
+        self.embed = nn.Embedding(self.vocab_size, self.embed_size, padding_idx=EOS_IDX)
 
         self.rnn = nn.LSTM(input_size=self.embed_size, hidden_size=self.hidden_size, \
                 num_layers=self.num_layers, batch_first=True, dropout=0.)
@@ -36,7 +36,7 @@ class SiameseRNN(nn.Module):
         self.linear_in_size = self.hidden_size * 2
         if self.bidirectional:
             self.linear_in_size *= 2
-        self.linear_in_size = self.linear_in_size + 6 + 124 + 4 #similarity; word_bool; len
+        self.linear_in_size = self.linear_in_size# + 6 +4 +124 #similarity; len; word_bool
         self.linear2_in_size = 100
         # self.linear3_in_size = 100
         self.linear = nn.Linear(self.linear_in_size, self.linear2_in_size)
@@ -130,15 +130,14 @@ class SiameseRNN(nn.Module):
             out = nn.functional.cosine_similarity(s1_outs, s2_outs)
         elif self.config['sim_fun'] == 'cosine+':
             pass
-
         elif self.config['sim_fun'] == 'exp':
             out = torch.exp(torch.neg(torch.norm(s1_outs-s2_outs, p=1, dim=1)))
         elif self.config['sim_fun'] == 'dense':
-            sfeats = self.sfeats(data)
-            pair_feats = self.pair_feats(data)
-            feats = torch.cat((torch.abs(s1_outs - s2_outs), s1_outs * s2_outs, sfeats, pair_feats), dim=1)
+            # sfeats = self.sfeats(data)
+            # pair_feats = self.pair_feats(data)
+            feats = torch.cat((torch.abs(s1_outs - s2_outs), s1_outs * s2_outs), dim=1)#, sfeats, pair_feats), dim=1)
             feats = self.dropout2(feats)
-            out1 = self.dropout2(self.prelu(self.linear(feats)))
+            out1 = self.dropout2(self.relu(self.linear(feats)))
             # out2 = self.dropout2(self.prelu(self.linear2(out1)))
             out = torch.squeeze(self.linear2(out1), 1)
         return out
@@ -188,7 +187,6 @@ class SiameseRNN(nn.Module):
             self.embed.weight = nn.Parameter(torch.FloatTensor(word))
 
 
-
     def train_step(self, data):
         out = self.forward(data)
         if self.config['sim_fun'] == 'dense':
@@ -198,7 +196,11 @@ class SiameseRNN(nn.Module):
             sim = out
             proba = sim/2.+0.5
         # constractive loss
-        loss = 0.0*self.contrastive_loss(sim, data['target'], margin=self.config['cl_margin']) + 0.5* self.BCELoss(proba, data['target'], [1., self.pos_weight])
+        loss = 0.
+        if 'ce' in self.config['loss']:
+            loss += self.config['ce_alpha'] * self.BCELoss(proba, data['target'], [1., self.pos_weight])
+        if 'cl' in self.config['loss']:
+            loss += self.contrastive_loss(sim, data['target'], margin=self.config['cl_margin']) 
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
@@ -215,8 +217,14 @@ class SiameseRNN(nn.Module):
         else:
             sim = out
             proba = sim/2.+0.5
-        loss = 0.0* self.contrastive_loss(sim, data['target'], margin=self.config['cl_margin']) + 0.5 * self.BCELoss(proba, data['target'], [1., self.pos_weight])
-        return proba.item(),  data['label'].item(), loss.item()
+        loss = 0.
+        if 'ce' in self.config['loss']:
+            loss += self.config['ce_alpha'] * self.BCELoss(proba, data['target'], [1., self.pos_weight])
+        if 'cl' in self.config['loss']:
+            loss += self.contrastive_loss(sim, data['target'], margin=self.config['cl_margin']) 
+        loss *= data['s1_char'].size()[0]
+        return proba.tolist(),  data['label'].tolist(), loss.item()
+
 
     def test(self, data):
         out = self.forward(data)
