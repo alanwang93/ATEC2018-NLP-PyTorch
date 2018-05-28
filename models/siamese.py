@@ -31,17 +31,17 @@ class SiameseRNN(nn.Module):
                 num_layers=self.num_layers, batch_first=True, dropout=0.)
 
         self.dropout = nn.Dropout(config['dropout'])
-        self.dropout2 = nn.Dropout(0.0)
+        self.dropout2 = nn.Dropout(0.3)
 
         self.linear_in_size = self.hidden_size * 2
         if self.bidirectional:
             self.linear_in_size *= 2
         self.linear_in_size = self.linear_in_size + 6 + 13 + 4
-        self.linear2_in_size = 200
-        self.linear3_in_size = 100
-        self.linear = nn.Linear(self.linear_in_size, 1)
-        self.linear2 = nn.Linear(self.linear2_in_size, self.linear3_in_size)
-        self.linear3 = nn.Linear(self.linear3_in_size, 1)
+        self.linear2_in_size = 100
+        # self.linear3_in_size = 100
+        self.linear = nn.Linear(self.linear_in_size, self.linear2_in_size)
+        self.linear2 = nn.Linear(self.linear2_in_size, 1)
+        # self.linear3 = nn.Linear(self.linear3_in_size, 1)
 
         self.sigmoid = nn.Sigmoid()
         self.tanh = nn.Tanh()
@@ -137,10 +137,10 @@ class SiameseRNN(nn.Module):
             sfeats = self.sfeats(data)
             pair_feats = self.pair_feats(data)
             feats = torch.cat((torch.abs(s1_outs - s2_outs), s1_outs * s2_outs, sfeats, pair_feats), dim=1)
-            # feats = self.dropout2(feats)
-            # out1 = self.dropout2(self.prelu(self.linear(feats)))
+            feats = self.dropout2(feats)
+            out1 = self.dropout2(self.prelu(self.linear(feats)))
             # out2 = self.dropout2(self.prelu(self.linear2(out1)))
-            out = torch.squeeze(self.linear(feats), 1)
+            out = torch.squeeze(self.linear2(out1), 1)
         return out
 
     def sfeats(self, data):
@@ -198,7 +198,7 @@ class SiameseRNN(nn.Module):
             sim = out
             proba = sim/2.+0.5
         # constractive loss
-        loss = 0.5*self.contrastive_loss(sim, data['target'], margin=self.config['cl_margin'])# + 0.0* self.BCELoss(proba, data['target'], [1., self.pos_weight])
+        loss = 0.0*self.contrastive_loss(sim, data['target'], margin=self.config['cl_margin']) + 0.5* self.BCELoss(proba, data['target'], [1., self.pos_weight])
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
@@ -215,11 +215,8 @@ class SiameseRNN(nn.Module):
         else:
             sim = out
             proba = sim/2.+0.5
-        loss = 0.5* self.contrastive_loss(sim, data['target'], margin=self.config['cl_margin']) #+ 0.0 * self.BCELoss(proba, data['target'], [1., self.pos_weight])
-        proba = out
-        target =  data['label'].item()
-        pred = proba.item()
-        return pred, target, loss.item()
+        loss = 0.0* self.contrastive_loss(sim, data['target'], margin=self.config['cl_margin']) + 0.5 * self.BCELoss(proba, data['target'], [1., self.pos_weight])
+        return proba.item(),  data['label'].item(), loss.item()
 
     def test(self, data):
         out = self.forward(data)
