@@ -162,7 +162,7 @@ def main(args):
                 pickle.dump(word_tokenized, open('data/processed/valid_word_tokenized.pkl', 'w'))
             else:
                 data_raw = pickle.load(open('data/processed/valid_raw.pkl', 'r'))
-                char_tokenized = pickle.laod(open('data/processed/valid_char_tokenized.pkl', 'r'))
+                char_tokenized = pickle.load(open('data/processed/valid_char_tokenized.pkl', 'r'))
                 word_tokenized = pickle.load(open('data/processed/valid_word_tokenized.pkl', 'r'))
 
             exts_valid['WordEmbedExtractor']['char_vocab'] = char_vocab
