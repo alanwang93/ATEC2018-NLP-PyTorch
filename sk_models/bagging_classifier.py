@@ -1,7 +1,6 @@
 from sklearn.ensemble import BaggingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
-from imblearn.ensemble import BalancedBaggingClassifier
 
 from utils import score
 
@@ -10,7 +9,7 @@ class Bagging():
     def __init__(self):
     	base = LogisticRegression(class_weight='balanced', C=10.)
     	# base = DecisionTreeClassifier(max_depth=4, class_weight='balanced')
-        self.reg = BalancedBaggingClassifier(base_estimator=base, n_estimators=30, max_samples=0.6)
+        self.reg = BaggingClassifier(base_estimator=base, n_estimators=30, max_samples=0.6)
 
     def fit(self, X, y):
         self.reg.fit(X, y)
