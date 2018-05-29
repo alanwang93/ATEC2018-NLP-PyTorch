@@ -62,13 +62,13 @@ def simple_collate_fn(batch):
                 if not d.has_key(k):
                     d[k] = []
                     d[k+'_rvs'] = []
-                d[k].append(np.pad(data, (0,max_clen - len(data)), mode='constant', constant_values=EOS_IDX))
+                d[k].append(np.pad(data, (0,int(max_clen - len(data))), mode='constant', constant_values=EOS_IDX))
                 d[k+'_rvs'].append(np.pad(data[::-1], (0,max_clen - len(data)), mode='constant', constant_values=EOS_IDX))
             elif level == 'w':
                 if not d.has_key(k):
                     d[k] = []
                     d[k+'_rvs'] = []
-                d[k].append(np.pad(data, (0,max_wlen - len(data)), mode='constant', constant_values=EOS_IDX))
+                d[k].append(np.pad(data, (0,int(max_wlen - len(data))), mode='constant', constant_values=EOS_IDX))
                 d[k+'_rvs'].append(np.pad(data[::-1], (0,max_wlen - len(data)), mode='constant', constant_values=EOS_IDX))
             elif level == 's':
                 if k[3:] in added_sfeats:

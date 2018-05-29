@@ -21,13 +21,13 @@ siamese = {
     'name': 'siamese',
     'model': 'SiameseRNN',
 
-    'char_embedding': None,#'sgns.financial.char',
+    'char_embedding': 'sgns.financial.char',
     'word_embedding': None,#'sgns.financial.char',#None,
 
     # Model
-    'embed_size': 200,
-    'hidden_size': 100,
-    'num_layers': 1,
+    'embed_size': 300,
+    'hidden_size': 200,
+    'num_layers': 2,
     'bidirectional':True,
     'dropout': 0.5,
     'pos_weight': 3.0,
@@ -38,9 +38,9 @@ siamese = {
     'ce_alpha': 1.,
 
     # Training
-    'batch_size': 64,
+    'batch_size': 128,
     'max_iter': 50000,
-    'patience': 5,
+    'patience': 10,
 }
 
 light_siamese = {
