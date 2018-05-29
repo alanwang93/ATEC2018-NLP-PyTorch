@@ -17,7 +17,7 @@ class MatchPyramid(nn.Module):
         self.data_config = data_config
 
         self.embed = nn.Embedding(self.vocab_size, self.embed_size, padding_idx=EOS_IDX)
-        self.conv1 = nn.Conv2d(1, self.config['conv1_channel'], kernel_size=5, padding=2)
+        self.conv1 = nn.Conv2d(1, self.config['conv1_channel'], kernel_size=3, padding=2)
         self.conv2 = nn.Conv2d(self.config['conv1_channel'], self.config['conv2_channel'], kernel_size=3, padding=2)
         self.relu = nn.ReLU()
         self.tanh = nn. Tanh()
@@ -54,7 +54,7 @@ class MatchPyramid(nn.Module):
         output = output.view((batch_size, -1))
         output = self.fc1(output)
         output = self.tanh(output)
-        output = self.dropout(output)
+        # output = self.dropout(output)
         output = self.fc2(output)
         return output
 

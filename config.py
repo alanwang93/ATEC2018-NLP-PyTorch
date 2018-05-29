@@ -80,7 +80,7 @@ match_pyramid = {
 
     # model
     'embed_size': 300,
-    'dropout': 0.2,
+    'dropout': 0.5,
     'conv1_channel': 20,
     'conv2_channel': 200,
     'dp_out': 1,
@@ -89,6 +89,6 @@ match_pyramid = {
     'batch_size': 64,
     'max_iter': 50000,
     'patience': 5,
-    'max_grad_norm': 5.,
+    'max_grad_norm': 10.,
 
 }
