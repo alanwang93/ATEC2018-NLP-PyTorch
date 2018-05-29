@@ -39,7 +39,7 @@ siamese = {
 
     # Training
     'batch_size': 64,
-    'max_iter': 50000,
+    'max_iter': 500000,
     'patience': 10,
 }
 
