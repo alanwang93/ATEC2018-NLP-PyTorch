@@ -33,10 +33,10 @@ class SiameseRNN(nn.Module):
         self.dropout = nn.Dropout(config['dropout'])
         self.dropout2 = nn.Dropout(0.3)
 
-        self.linear_in_size = self.hidden_size * 2
+        self.linear_in_size = self.hidden_size
         if self.bidirectional:
             self.linear_in_size *= 2
-        self.linear_in_size = self.linear_in_size# + 6 +4 +124 #similarity; len; word_bool
+        self.linear_in_size = self.linear_in_size + 7 +124 #similarity:5; len:4->2; word_bool:124
         self.linear2_in_size = 100
         # self.linear3_in_size = 100
         self.linear = nn.Linear(self.linear_in_size, self.linear2_in_size)
@@ -133,9 +133,9 @@ class SiameseRNN(nn.Module):
         elif self.config['sim_fun'] == 'exp':
             out = torch.exp(torch.neg(torch.norm(s1_outs-s2_outs, p=1, dim=1)))
         elif self.config['sim_fun'] == 'dense':
-            # sfeats = self.sfeats(data)
-            # pair_feats = self.pair_feats(data)
-            feats = torch.cat((torch.abs(s1_outs - s2_outs), s1_outs * s2_outs), dim=1)#, sfeats, pair_feats), dim=1)
+            sfeats = self.sfeats(data)
+            pair_feats = self.pair_feats(data)
+            feats = torch.cat((s1_outs * s2_outs, sfeats, pair_feats), dim=1)
             feats = self.dropout2(feats)
             out1 = self.dropout2(self.relu(self.linear(feats)))
             # out2 = self.dropout2(self.prelu(self.linear2(out1)))
@@ -146,7 +146,7 @@ class SiameseRNN(nn.Module):
         """ Sentence level features """
         s1_feats = data['s1_feats'].type(torch.FloatTensor)
         s2_feats = data['s2_feats'].type(torch.FloatTensor)
-        feats = torch.cat((s1_feats, s2_feats), dim=1)
+        feats = torch.abs(s1_feats-s2_feats).float()
         if self.config['use_cuda']:
             feats = feats.cuda(self.config['cuda_num'])
         return feats

@@ -62,13 +62,13 @@ def simple_collate_fn(batch):
                 if not d.has_key(k):
                     d[k] = []
                     d[k+'_rvs'] = []
-                d[k].append(np.pad(data, (0,int(max_clen - len(data))), mode='constant', constant_values=EOS_IDX))
+                d[k].append(np.pad(data, (0,max_clen - len(data)), mode='constant', constant_values=EOS_IDX))
                 d[k+'_rvs'].append(np.pad(data[::-1], (0,max_clen - len(data)), mode='constant', constant_values=EOS_IDX))
             elif level == 'w':
                 if not d.has_key(k):
                     d[k] = []
                     d[k+'_rvs'] = []
-                d[k].append(np.pad(data, (0,int(max_wlen - len(data))), mode='constant', constant_values=EOS_IDX))
+                d[k].append(np.pad(data, (0,max_wlen - len(data)), mode='constant', constant_values=EOS_IDX))
                 d[k+'_rvs'].append(np.pad(data[::-1], (0,max_wlen - len(data)), mode='constant', constant_values=EOS_IDX))
             elif level == 's':
                 if k[3:] in added_sfeats:
@@ -102,8 +102,8 @@ def simple_collate_fn(batch):
             d[k] = torch.FloatTensor(d[k])
         elif '_word' in k or '_char' in k: # embed
             d[k] = torch.LongTensor(d[k])
-        elif k == 'sfeats':
-            d[k] = np.concatenate(d[k], axis=1)
+        elif k in ['s1_feats', 's2_feats' ]:
+            d[k] = np.stack(d[k], axis=1)
             d[k] = torch.tensor(d[k])
         else:
             d[k] = torch.tensor(d[k])

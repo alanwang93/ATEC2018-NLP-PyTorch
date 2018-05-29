@@ -111,6 +111,7 @@ class Vocab:
             line0 = list(map(int, f.readline().strip().split(' ')))
             num_vocab, embed_size = line0[0], line0[1]
             self.vectors = np.random.randn(len(self.itos), embed_size)
+            self.vectors[EOS_IDX, :] = 0.
             for i in range(num_vocab):
                 line = f.readline()
                 s = line.strip().split(' ')

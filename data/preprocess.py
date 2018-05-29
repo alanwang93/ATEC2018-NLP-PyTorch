@@ -126,7 +126,7 @@ def main(args):
                 os.path.join(data_config['data_root'], 'train.pkl'), 'w', encoding='utf-8') as fout:
             if args.clean:
                 data_raw = f.readlines()
-                data_raw  = clean_data(data_raw, data_config)
+                data_raw  = clean_data(data_raw, data_config, mode=args.mode)
                 stop_words_file = "data/raw/simple_stop_words.txt"
                 char_tokenized = char_tokenizer.tokenize_all(data_raw, 'train.char', stop_words=None, mode=args.mode)
                 word_tokenized = word_tokenizer.tokenize_all(data_raw, 'train.word', stop_words=stop_words_file, mode=args.mode)
@@ -142,6 +142,8 @@ def main(args):
             word_vocab = Vocab(data_config=data_config, type='word', embedding=data_config['word_embedding'])
             char_vocab.build(char_tokenized)
             word_vocab.build(word_tokenized)
+            char_vocab.load_vectors(char_vocab.embedding)
+            word_vocab.load_vectors(word_vocab.embedding)
 
             exts_train['WordEmbedExtractor']['char_vocab'] = char_vocab
             exts_train['WordEmbedExtractor']['word_vocab'] = word_vocab
@@ -154,7 +156,7 @@ def main(args):
                 os.path.join(data_config['data_root'], 'valid.pkl'), 'w', encoding='utf-8') as fout:
             if args.clean:
                 data_raw = f.readlines()
-                data_raw  = clean_data(data_raw, data_config)
+                data_raw  = clean_data(data_raw, data_config, mode=args.mode)
                 char_tokenized = char_tokenizer.tokenize_all(data_raw, 'valid.char', stop_words=None, mode=args.mode)
                 word_tokenized = word_tokenizer.tokenize_all(data_raw, 'valid.word', stop_words=stop_words_file, mode=args.mode)
                 pickle.dump(data_raw, open('data/processed/valid_raw.pkl', 'w'))

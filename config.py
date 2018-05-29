@@ -21,8 +21,8 @@ siamese = {
     'name': 'siamese',
     'model': 'SiameseRNN',
 
-    'char_embedding': 'sgns.financial.char',
-    'word_embedding': None,#'sgns.financial.char',#None,
+    'char_embedding': None, #'sgns.financial.char',
+    'word_embedding': 'sgns.financial.char',#None,
 
     # Model
     'embed_size': 300,
@@ -38,7 +38,7 @@ siamese = {
     'ce_alpha': 1.,
 
     # Training
-    'batch_size': 128,
+    'batch_size': 16,
     'max_iter': 50000,
     'patience': 10,
 }

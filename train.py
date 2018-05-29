@@ -29,8 +29,9 @@ def main(args):
     data_config = getattr(config, 'data_config')
     c['use_cuda'] = not args.disable_cuda and torch.cuda.is_available()
     c['cuda_num'] = args.cuda_num
+    c['suffix'] = args.suffix
 
-    logger = init_log(os.path.join('log/', args.config))
+    logger = init_log(os.path.join('log/', args.config+'_'+args.suffix))
 
     # Build vocab
     char_vocab = Vocab(data_config=data_config, type='char')
@@ -55,10 +56,8 @@ def main(args):
     model = getattr(models, c['model'])(c, data_config)
 
     if c['char_embedding'] is not None:
-        char_vocab.load_vectors(char_vocab.embedding)
         model.load_vectors(char_vocab.vectors)
     if c['word_embedding'] is not None:
-        word_vocab.load_vectors(word_vocab.embedding)
         model.load_vectors(word_vocab.vectors)
 
     if c['use_cuda']:

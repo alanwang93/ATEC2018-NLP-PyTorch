@@ -13,7 +13,7 @@ import re
 import pickle
 import torch
 
-np.random.seed(666)
+np.random.seed(233)
 
 def init_log(filename):
     logger = logging.getLogger()
