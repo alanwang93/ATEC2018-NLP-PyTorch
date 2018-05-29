@@ -31,13 +31,13 @@ class SiameseRNN(nn.Module):
                 num_layers=self.num_layers, batch_first=True, dropout=0.)
 
         self.dropout = nn.Dropout(config['dropout'])
-        self.dropout2 = nn.Dropout(0.3)
+        self.dropout2 = nn.Dropout(0.5)
 
-        self.linear_in_size = self.hidden_size
+        self.linear_in_size = self.hidden_size * 4
         if self.bidirectional:
             self.linear_in_size *= 2
         self.linear_in_size = self.linear_in_size + 7 +124 #similarity:5; len:4->2; word_bool:124
-        self.linear2_in_size = 100
+        self.linear2_in_size = 200
         # self.linear3_in_size = 100
         self.linear = nn.Linear(self.linear_in_size, self.linear2_in_size)
         self.linear2 = nn.Linear(self.linear2_in_size, 1)
@@ -135,7 +135,7 @@ class SiameseRNN(nn.Module):
         elif self.config['sim_fun'] == 'dense':
             sfeats = self.sfeats(data)
             pair_feats = self.pair_feats(data)
-            feats = torch.cat((s1_outs * s2_outs, sfeats, pair_feats), dim=1)
+            feats = torch.cat((s1_outs, s2_outs, torch.abs(s1_outs-s2_outs),s1_outs * s2_outs, sfeats, pair_feats), dim=1)
             feats = self.dropout2(feats)
             out1 = self.dropout2(self.relu(self.linear(feats)))
             # out2 = self.dropout2(self.prelu(self.linear2(out1)))

@@ -8,8 +8,8 @@ data_config = {
     'data_root': 'data/processed/',
     'train': 'data/processed/train.pkl',
     'valid': 'data/processed/valid.pkl',
-    'char_embedding': 'sgns.financial.char',
-    'word_embedding': 'sgns.financial.char',#None,
+    'char_embedding': None,#'sgns.financial.char',
+    'word_embedding': None,#'sgns.financial.char',#None,
     'max_char': 1500,
     'max_word': 6000,
     'min_freq': 2
@@ -30,11 +30,11 @@ siamese = {
     'num_layers': 2,
     'bidirectional':True,
     'dropout': 0.5,
-    'pos_weight': 3.0,
+    'pos_weight': 3.5,
     'representation': 'last', # last, avg
     'sim_fun': 'dense',# 'dense', # exp, cosine, cosine+, dense
-    'loss': 'ce', # ce, cl, mixed
-    'cl_margin': 0.4,
+    'loss': 'ce+cl', # ce, cl, cl+ce
+    'cl_margin': 0.3,
     'ce_alpha': 1.,
 
     # Training
