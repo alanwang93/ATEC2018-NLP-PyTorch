@@ -12,7 +12,7 @@ class SiameseRNN(nn.Module):
 
     def __init__(self,  config, data_config):
         super(SiameseRNN, self).__init__()
-        self.mode = 'word'
+        self.mode = 'char'
         self.l = self.mode[0] + 'len'
         self.vocab_size = data_config[self.mode+'_size']
         self.embed_size = config['embed_size']

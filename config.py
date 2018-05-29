@@ -22,7 +22,7 @@ siamese = {
     'model': 'SiameseRNN',
 
     'char_embedding': None, #'sgns.financial.char',
-    'word_embedding': 'sgns.financial.char',#None,
+    'word_embedding': None, #'sgns.financial.char',#None,
 
     # Model
     'embed_size': 300,
@@ -81,10 +81,14 @@ match_pyramid = {
     # model
     'embed_size': 300,
     'dropout': 0.2,
+    'conv1_channel': 20,
+    'conv2_channel': 200,
+    'dp_out': 1,
 
     # training
-    'batch_size': 32,
+    'batch_size': 64,
     'max_iter': 50000,
     'patience': 5,
+    'max_grad_norm': 5.,
 
 }

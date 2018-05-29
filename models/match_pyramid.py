@@ -10,19 +10,20 @@ EOS_IDX = 2
 class MatchPyramid(nn.Module):
     def __init__(self, config, data_config):
         super(MatchPyramid, self).__init__()
-        self.mode = 'char'
+        self.mode = 'word'
         self.vocab_size = data_config[self.mode + '_size']
         self.embed_size = config['embed_size']
         self.config = config
         self.data_config = data_config
 
         self.embed = nn.Embedding(self.vocab_size, self.embed_size, padding_idx=EOS_IDX)
-        self.conv1 = nn.Conv2d(1, 8, 5, padding=2)
-        self.conv2 = nn.Conv2d(8, 16, 3, padding=2)
+        self.conv1 = nn.Conv2d(1, self.config['conv1_channel'], kernel_size=5, padding=2)
+        self.conv2 = nn.Conv2d(self.config['conv1_channel'], self.config['conv2_channel'], kernel_size=3, padding=2)
         self.relu = nn.ReLU()
+        self.tanh = nn. Tanh()
         self.maxpool1 = nn.MaxPool2d(2)
-        self.admaxpool2 = nn.AdaptiveMaxPool2d(output_size=5)
-        self.fc1 = nn.Linear(5*5*16, 100)
+        self.admaxpool2 = nn.AdaptiveMaxPool2d(output_size=self.config['dp_out'])
+        self.fc1 = nn.Linear(self.config['dp_out']*self.config['dp_out']*self.config['conv2_channel'], 100)
         self.fc2 = nn.Linear(100, 1)
         self.sigmoid = nn.Sigmoid()
         self.dropout = nn.Dropout(config['dropout'])
@@ -46,12 +47,13 @@ class MatchPyramid(nn.Module):
         embed_2 = torch.transpose(embed_2, 1, 2)
         matching = torch.bmm(embed_1, embed_2).unsqueeze(1)
         output = self.conv1(matching)
-        output = self.relu(output)
+        output = self.tanh(output)
         output = self.maxpool1(output)
-        output = self.relu(self.conv2(output))
+        output = self.tanh(self.conv2(output))
         output = self.admaxpool2(output)
         output = output.view((batch_size, -1))
         output = self.fc1(output)
+        output = self.tanh(output)
         output = self.dropout(output)
         output = self.fc2(output)
         return output
@@ -66,14 +68,16 @@ class MatchPyramid(nn.Module):
     def train_step(self, data):
         proba = self.sigmoid(self.forward(data)).squeeze(1)
         target = data['target']
-        loss = self.criterion(proba, target, weights=[1.0, 1.0])
+        loss = self.criterion(proba, target, weights=[1.0, 3.0])
         self.optimizer.zero_grad()
         loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.parameters(), self.config['max_grad_norm'])
         self.optimizer.step()
         return loss.item()
 
     def evaluate(self, data):
         proba = self.sigmoid(self.forward(data)).squeeze(1)
         target =  data['target']
-        loss = self.criterion(proba, target, weights=[1.0, 1.0])
-        return proba.item(), target.item(), loss.item()
+        loss = self.criterion(proba, target, weights=[1.0, 3.0])
+        loss *= data['s1_char'].size()[0]
+        return proba.tolist(),  data['label'].tolist(), loss.item()

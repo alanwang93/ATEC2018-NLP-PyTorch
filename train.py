@@ -64,6 +64,7 @@ def main(args):
         model = model.cuda(c['cuda_num'])
 
     train_loss = 0.
+    loss_size = 0
     global_step = 0
     best_f1 = 0.
     best_epoch = 0
@@ -72,12 +73,14 @@ def main(args):
     """ Training """
     for epoch in range(200):
         for step, train_batch in enumerate(train):
+            loss_size += train_batch['s1_clen'].size()[0]
             global_step += 1
             train_batch = to_cuda(train_batch, c)
             train_loss += model.train(mode=True).train_step(train_batch)
             if global_step % LOG_STEPS == 0:
-                logger.info("Step {0}, train loss: {1}".format(global_step, train_loss/LOG_STEPS))
+                logger.info("Step {0}, train loss: {1}".format(global_step, train_loss/loss_size))
                 train_loss = 0.
+                loss_size = 0
         logger.info("Epoch {0} done".format(epoch))
 
         """ Test on validate set """

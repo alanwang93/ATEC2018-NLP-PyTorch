@@ -1,6 +1,6 @@
 # bash pack.sh <folder name>
 rm -r submissions/$1
-mkdir submissions/$1/
+mkdir submissions/$1
 cp *.py submissions/$1/
 cp *.sh submissions/$1/
 mkdir submissions/$1/checkpoints
