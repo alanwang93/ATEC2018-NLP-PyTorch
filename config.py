@@ -38,7 +38,7 @@ siamese = {
     'ce_alpha': 1.,
 
     # Training
-    'batch_size': 16,
+    'batch_size': 64,
     'max_iter': 50000,
     'patience': 10,
 }

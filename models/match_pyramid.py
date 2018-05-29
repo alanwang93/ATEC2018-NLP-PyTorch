@@ -21,7 +21,7 @@ class MatchPyramid(nn.Module):
         self.conv2 = nn.Conv2d(8, 16, 3, padding=2)
         self.relu = nn.ReLU()
         self.maxpool1 = nn.MaxPool2d(2)
-        self.maxpool2 = nn.AdaptiveMaxPool2d(output_size=5)
+        self.admaxpool2 = nn.AdaptiveMaxPool2d(output_size=5)
         self.fc1 = nn.Linear(5*5*16, 100)
         self.fc2 = nn.Linear(100, 1)
         self.sigmoid = nn.Sigmoid()
@@ -49,7 +49,7 @@ class MatchPyramid(nn.Module):
         output = self.relu(output)
         output = self.maxpool1(output)
         output = self.relu(self.conv2(output))
-        output = self.maxpool2(output)
+        output = self.admaxpool2(output)
         output = output.view((batch_size, -1))
         output = self.fc1(output)
         output = self.dropout(output)
@@ -60,6 +60,8 @@ class MatchPyramid(nn.Module):
         print("Use pretrained embedding")
         if char is not None:
             self.embed.weight = nn.Parameter(torch.FloatTensor(char))
+        if word is not None:
+            self.embed.weight = nn.Parameter(torch.FloatTensor(word))
 
     def train_step(self, data):
         proba = self.sigmoid(self.forward(data)).squeeze(1)
