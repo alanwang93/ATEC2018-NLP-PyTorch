@@ -7,7 +7,8 @@
 import config
 import jieba
 from collections import Counter
-import argparse, os, pickle, json, codecs, pickle, re
+import argparse, os, json, codecs, re
+import cPickle as pickle
 
 
 class Tokenizer:

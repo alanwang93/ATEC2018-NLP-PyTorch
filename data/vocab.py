@@ -9,8 +9,9 @@
 """
 from collections import Counter, defaultdict
 import jieba
-import pickle, os, itertools
+import os, itertools
 import numpy as np
+import cPickle as pickle
 
 UNK_IDX = 0
 EOS_IDX = 2

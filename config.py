@@ -8,10 +8,10 @@ data_config = {
     'data_root': 'data/processed/',
     'train': 'data/processed/train.pkl',
     'valid': 'data/processed/valid.pkl',
-    'char_embedding': None,#'sgns.financial.char',
-    'word_embedding': None,#'sgns.financial.char',#None,
-    'max_char': 5000,
-    'max_word': 10000,
+    'char_embedding': 'sgns.financial.char',
+    'word_embedding': 'sgns.financial.char',#None,
+    'max_char': 1500,
+    'max_word': 6000,
     'min_freq': 2
 }
 
@@ -20,6 +20,9 @@ siamese = {
     # Basic
     'name': 'siamese',
     'model': 'SiameseRNN',
+
+    'char_embedding': None,#'sgns.financial.char',
+    'word_embedding': None,#'sgns.financial.char',#None,
 
     # Model
     'embed_size': 200,
@@ -35,7 +38,7 @@ siamese = {
     'ce_alpha': 1.,
 
     # Training
-    'batch_size': 16,
+    'batch_size': 64,
     'max_iter': 50000,
     'patience': 5,
 }
@@ -44,6 +47,9 @@ light_siamese = {
     # Basic
     'name': 'light_siamese',
     'model': 'SiameseRNN',
+
+    'char_embedding': None,#'sgns.financial.char',
+    'word_embedding': None,#'sgns.financial.char',#None,
 
     # Model
     'embed_size': 150,
@@ -68,6 +74,9 @@ light_siamese = {
 match_pyramid = {
     'name': 'match_pyramid',
     'model': 'MatchPyramid',
+
+    'char_embedding': None,#'sgns.financial.char',
+    'word_embedding': None,#'sgns.financial.char',#None,
 
     # model
     'embed_size': 300,

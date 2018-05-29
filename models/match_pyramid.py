@@ -10,12 +10,13 @@ EOS_IDX = 2
 class MatchPyramid(nn.Module):
     def __init__(self, config, data_config):
         super(MatchPyramid, self).__init__()
-        self.char_size = data_config['char_size']
+        self.mode = 'char'
+        self.vocab_size = data_config[self.mode + '_size']
         self.embed_size = config['embed_size']
         self.config = config
         self.data_config = data_config
 
-        self.embed = nn.Embedding(self.char_size, self.embed_size, padding_idx=EOS_IDX)
+        self.embed = nn.Embedding(self.vocab_size, self.embed_size, padding_idx=EOS_IDX)
         self.conv1 = nn.Conv2d(1, 8, 5, padding=2)
         self.conv2 = nn.Conv2d(8, 16, 3, padding=2)
         self.relu = nn.ReLU()
@@ -36,9 +37,9 @@ class MatchPyramid(nn.Module):
         pass
 
     def forward(self, data):
-        batch_size = data['s1_char'].size()[0]
-        embed_1 = self.embed(data['s1_char'])
-        embed_2 = self.embed(data['s2_char'])
+        batch_size = data['s1_'+self.mode].size()[0]
+        embed_1 = self.embed(data['s1_'+self.mode])
+        embed_2 = self.embed(data['s2_'+self.mode])
         embed_1 = self.dropout(embed_1)
         embed_2 = self.dropout(embed_2)
         # dot matching

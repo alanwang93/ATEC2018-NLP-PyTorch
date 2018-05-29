@@ -13,8 +13,8 @@ from .tokenizer import Tokenizer
 import config
 import jieba
 from collections import Counter
-import argparse, os, pickle, json, codecs, pickle
-
+import argparse, os, json, codecs
+import cPickle as pickle
 
 def extract_features(data_raw, chars, words, exts):
     d = dict()
