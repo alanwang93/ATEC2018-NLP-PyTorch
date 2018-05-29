@@ -132,6 +132,8 @@ class SiameseRNN(nn.Module):
             pass
         elif self.config['sim_fun'] == 'exp':
             out = torch.exp(torch.neg(torch.norm(s1_outs-s2_outs, p=1, dim=1)))
+        elif self.config['sim_fun'] == 'gesd':
+            out = torch.rsqrt(torch.norm(s1_outs-s2_outs, p=2, dim=1)) * (1./ (1+torch.exp(-1*(torch.bmm(s1_outs.unsqueeze(1), s2_outs.unsqueeze(2)).squeeze()+1.))))
         elif self.config['sim_fun'] == 'dense':
             sfeats = self.sfeats(data)
             pair_feats = self.pair_feats(data)
