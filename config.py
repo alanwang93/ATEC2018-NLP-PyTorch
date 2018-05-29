@@ -43,6 +43,33 @@ siamese = {
     'patience': 10,
 }
 
+gesd_siamese = {
+    # Basic
+    'name': 'siamese',
+    'model': 'SiameseRNN',
+
+    'char_embedding': None, #'sgns.financial.char',
+    'word_embedding': None, #'sgns.financial.char',#None,
+
+    # Model
+    'embed_size': 300,
+    'hidden_size': 200,
+    'num_layers': 2,
+    'bidirectional':True,
+    'dropout': 0.5,
+    'pos_weight': 3.5,
+    'representation': 'last', # last, avg
+    'sim_fun': 'gesd',# 'dense', # exp, cosine, cosine+, dense
+    'loss': 'cl', # ce, cl, cl+ce
+    'cl_margin': 0.3,
+    'ce_alpha': 1.,
+
+    # Training
+    'batch_size': 64,
+    'max_iter': 50000,
+    'patience': 10,
+}
+
 light_siamese = {
     # Basic
     'name': 'light_siamese',
