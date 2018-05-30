@@ -30,10 +30,10 @@ siamese = {
     'num_layers': 2,
     'bidirectional':True,
     'dropout': 0.5,
-    'pos_weight': 3.5,
+    'pos_weight': 3.0,
     'representation': 'last', # last, avg
     'sim_fun': 'dense',# 'dense', # exp, cosine, cosine+, dense
-    'loss': 'ce+cl', # ce, cl, cl+ce
+    'loss': 'ce', # ce, cl, cl+ce
     'cl_margin': 0.3,
     'ce_alpha': 1.,
 
@@ -53,14 +53,14 @@ gesd_siamese = {
 
     # Model
     'embed_size': 300,
-    'hidden_size': 200,
+    'hidden_size': 150,
     'num_layers': 2,
     'bidirectional':True,
     'dropout': 0.5,
-    'pos_weight': 3.5,
+    'pos_weight': 2.0,
     'representation': 'last', # last, avg
     'sim_fun': 'gesd',# 'dense', # exp, cosine, cosine+, dense
-    'loss': 'cl', # ce, cl, cl+ce
+    'loss': 'ce', # ce, cl, cl+ce
     'cl_margin': 0.3,
     'ce_alpha': 1.,
 
