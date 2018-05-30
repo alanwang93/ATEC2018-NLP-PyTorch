@@ -111,10 +111,10 @@ class AttSiameseRNN(nn.Module):
         att_matrix = torch.bmm(s1_out, att_matrix.transpose(1,2)) # [batch, s1_len, d] x [batch, s2_len, d]
         s1_importance, _ = torch.max(att_matrix, dim=2) # batch, s1_len
         s1_weights = F.softmax(s1_importance, dim=1).unsqueeze(1) # batch, 1, s1_len
-        s1_outs = torch.bmm(s1_weights, s1_out).squeeze()
+        s1_outs = torch.bmm(s1_weights, s1_out).squeeze(1)
         s2_importance, _ = torch.max(att_matrix, dim=1) # batch, s2_len
         s2_weights = F.softmax(s2_importance, dim=1).unsqueeze(1)
-        s2_outs = torch.bmm(s2_weights, s2_out).squeeze()
+        s2_outs = torch.bmm(s2_weights, s2_out).squeeze(1)
 
         if self.config['sim_fun'] == 'cosine':
             out = nn.functional.cosine_similarity(s1_outs, s2_outs)

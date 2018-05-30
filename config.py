@@ -158,15 +158,14 @@ ainn = {
     'char_embedding': None,#'sgns.financial.char',
     'word_embedding': None,#'sgns.financial.char',#None,
     # model
-    'embed_size': 100,
-    'dropout': 0.5,
-    'channel_size': 3,
-    'max_grad_norm': 10,
-    'len': 4,
+    'embed_size': 200,
+    'dropout': 0.0,
+    'channel_size': 20,
+    'len': 20,
 
     # training
-    'batch_size': 32,
+    'batch_size': 64,
     'max_iter': 50000,
     'patience': 5,
-    'max_grad_norm': 10.,
+    'max_grad_norm': 5.,
 }

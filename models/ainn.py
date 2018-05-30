@@ -64,7 +64,7 @@ class AINN(nn.Module):
         c = torch.transpose(c, 1, 3)
         # print("c", c.size())
 
-        A = self.relu(self.conv_together(c))
+        A = self.tanh(self.conv_together(c))
         # print("A", A.size())
 
         r1, _ = torch.max(A, 3)
@@ -98,7 +98,7 @@ class AINN(nn.Module):
     def train_step(self, data):
         proba = self.sigmoid(self.forward(data)).squeeze(1)
         target = data['target']
-        loss = self.criterion(proba, target, weights=[1.0, 3.0])
+        loss = self.criterion(proba, target, weights=[1.0, 4.0])
         self.optimizer.zero_grad()
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.parameters(), self.config['max_grad_norm'])
@@ -108,5 +108,5 @@ class AINN(nn.Module):
     def evaluate(self, data):
         proba = self.sigmoid(self.forward(data)).squeeze(1)
         target =  data['target']
-        loss = self.criterion(proba, target, weights=[1.0, 3.0])
+        loss = self.criterion(proba, target, weights=[1.0, 4.0])
         return proba.tolist(),  data['label'].tolist(), loss.item()
