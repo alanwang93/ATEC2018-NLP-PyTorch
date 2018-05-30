@@ -62,6 +62,8 @@ def main(args):
 
     if c['use_cuda']:
         model = model.cuda(c['cuda_num'])
+    else:
+        model = model.cpu()
 
     train_loss = 0.
     loss_size = 0

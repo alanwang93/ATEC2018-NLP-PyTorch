@@ -53,6 +53,8 @@ class AINN(nn.Module):
         h2_t = h2.unsqueeze(1).repeat(1, h1_t.size()[1], 1, 1)
 
         c = torch.FloatTensor([])
+        if self.config['use_cuda']:
+            c = c.cuda(self.config['cuda_num'])
         for i in range(h2_t.size()[2]):
             c = torch.cat((c, h1_t, h2_t[:, :, i].unsqueeze(2)), 2)
         c = torch.transpose(c, 1, 2)

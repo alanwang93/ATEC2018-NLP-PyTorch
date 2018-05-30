@@ -119,6 +119,9 @@ ainn = {
     'name': 'ainn',
     'model': 'AINN',
 
+    'char_embedding': None, #'sgns.financial.char',
+    'word_embedding': None, #'sgns.financial.char',#None,
+
     # model
     'embed_size': 300,
     'dropout': 0.2,
