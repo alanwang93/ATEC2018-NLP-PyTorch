@@ -13,7 +13,7 @@ import re
 import pickle
 import torch
 
-np.random.seed(666)
+np.random.seed(233)
 
 def init_log(filename):
     logger = logging.getLogger()
@@ -43,9 +43,9 @@ def split_data(in_file, out_dir, train_ratio=0.95):
         valid_file = open(os.path.join(out_dir, 'valid.raw'), 'w')
         for s in train:
             train_file.write(s)
+        train_file.close()
         for s in valid:
             valid_file.write(s)
-        train_file.close()
         valid_file.close()
 
 def score(pred, target, threshold=0.5):
@@ -92,9 +92,9 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--raw', type=str, default='data/raw/atec_nlp_sim_train.csv')
+    parser.add_argument('--raw', type=str, default='data/raw/atec_nlp_sim_train_full.csv')
     parser.add_argument('--out_dir', type=str, default='data/raw/')
-    parser.add_argument('--train_ratio', type=float, default=0.9)
+    parser.add_argument('--train_ratio', type=float, default=0.95)
     parser.add_argument('--split', dest='split', action='store_true')
     args = parser.parse_args()
 

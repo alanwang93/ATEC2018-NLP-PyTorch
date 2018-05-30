@@ -7,7 +7,8 @@
 import config
 import jieba
 from collections import Counter
-import argparse, os, pickle, json, codecs, pickle, re
+import argparse, os, json, codecs, re
+import cPickle as pickle
 
 
 class Tokenizer:
@@ -19,8 +20,8 @@ class Tokenizer:
 
         # build user dictionary
         if 'dict' in self.tokenizer:
-            self.create_dictionary()
-            jieba.load_userdict(os.path.join(self.root, 'dict.txt'))
+            # self.create_dictionary()
+            jieba.load_userdict('data/raw/dict.txt')
 
 
     def create_dictionary(self, num_vocab=5):
@@ -62,12 +63,13 @@ class Tokenizer:
         if del_punctuation:
             pass
             #sentence = ''.join(re.findall(u'[\u4e00-\u9fff]+', sentence))
-
+        if type(sentence) != type(u'1'):
+            sentence = sentence.decode('utf8')
         if tokenizer in ['word', 'word+dict']:
             seg = jieba.cut(sentence)
             word_list = [word for word in seg]
         elif tokenizer == 'char':
-            word_list = list(sentence.decode('utf-8'))
+            word_list = list(sentence)
         elif tokenizer == 'char+dict':
             pass
         if stop_words is not None:
@@ -80,7 +82,7 @@ class Tokenizer:
         return word_list
 
 
-    def tokenize_all(self, data_raw, save_to, stop_words=None):
+    def tokenize_all(self, data_raw, save_to, stop_words=None, mode='train'):
         """
         Return:
             A list of dictionary: [{'s1':[w1, w2, ...], 's2': [w1, w2, ...]}]
@@ -90,8 +92,11 @@ class Tokenizer:
             for ins in data_raw:
                 s1_tokenized = self.tokenize(ins['s1'], self.tokenizer, stop_words=stop_words)
                 s2_tokenized = self.tokenize(ins['s2'], self.tokenizer, stop_words=stop_words)
-                new_line = "{0}\t{1}\t{2}\t{3}\n".format(ins['sid'], " ".join(s1_tokenized).encode('utf-8'), \
-                    ' '.join(s2_tokenized).encode('utf-8'), ins['label'])
-                f.write(new_line)
+                if mode == 'train':
+                    new_line = "{0}\t{1}\t{2}\t{3}\n".format(ins['sid'], " ".join(s1_tokenized).encode('utf-8'), \
+                            ' '.join(s2_tokenized).encode('utf-8'), ins['label'])
+                    f.write(new_line)
+                else:
+                    pass 
                 tokenized.append({'s1':s1_tokenized, 's2':s2_tokenized})
         return tokenized

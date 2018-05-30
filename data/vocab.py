@@ -9,8 +9,9 @@
 """
 from collections import Counter, defaultdict
 import jieba
-import pickle, os, itertools
+import os, itertools
 import numpy as np
+import cPickle as pickle
 
 UNK_IDX = 0
 EOS_IDX = 2
@@ -72,10 +73,6 @@ class Vocab:
 
             # TODO: extend vocab 1. words  2. characters
 
-            # load vectors
-            if self.embedding is not None:
-                self.load_vectors(self.embedding)
-
             self._dump()
 
     def __len__(self):
@@ -114,6 +111,7 @@ class Vocab:
             line0 = list(map(int, f.readline().strip().split(' ')))
             num_vocab, embed_size = line0[0], line0[1]
             self.vectors = np.random.randn(len(self.itos), embed_size)
+            self.vectors[EOS_IDX, :] = 0.
             for i in range(num_vocab):
                 line = f.readline()
                 s = line.strip().split(' ')

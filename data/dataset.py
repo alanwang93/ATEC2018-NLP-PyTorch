@@ -2,7 +2,8 @@ import torch
 from torch.utils import data
 import extractors
 from vocab import Vocab
-import argparse, os, pickle, json, codecs, pickle, itertools
+import argparse, os, pickle, json, codecs, itertools
+import cPickle as pickle
 import numpy as np
 
 UNK_IDX = 0
@@ -94,15 +95,18 @@ def simple_collate_fn(batch):
         d['s2_feats'].append(s2_feats['s2_'+k[3:]]) 
     for k in pair_feats.keys():
         d['pair_feats'].append(pair_feats[k])
+
     for k in d.keys():
         if k == 'pair_feats':
             d[k] = np.concatenate(d[k], axis=1)
             d[k] = torch.FloatTensor(d[k])
-        d[k] = torch.tensor(d[k])
-    d['s1_feats'] = d['s1_feats'].transpose(0, 1)
-    d['s2_feats'] = d['s2_feats'].transpose(0, 1)
-    # if (d['pair_feats'].size()[0]) > 0:
-        # d['pair_feats'] = d['pair_feats'].transpose(0,1)
+        elif '_word' in k or '_char' in k: # embed
+            d[k] = torch.LongTensor(d[k])
+        elif k in ['s1_feats', 's2_feats' ]:
+            d[k] = np.stack(d[k], axis=1)
+            d[k] = torch.tensor(d[k])
+        else:
+            d[k] = torch.tensor(d[k])
     return d
 
 
@@ -143,5 +147,6 @@ def complex_collate_fn(batch):
                 d[k] = torch.tensor(d[k])[d['s1_indices']]
             if 's2' in k:
                 d[k] = torch.tensor(d[k])[d['s2_indices']]
+
     return d
 
