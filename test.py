@@ -37,10 +37,8 @@ def main(inpath, outpath):
     test = data.DataLoader(test_data, batch_size=1, collate_fn=simple_collate_fn)
     model = getattr(models, c['model'])(c, data_config)
     if data_config['char_embedding'] is not None:
-        char_vocab.load_vectors(char_vocab.embedding)
         model.load_vectors(char_vocab.vectors)
     if data_config['word_embedding'] is not None:
-        word_vocab.load_vectors(word_vocab.embedding)
         model.load_vectors(word_vocab.vectors)
 
     cp = torch.load(model_path, map_location=lambda storage, loc: storage)

@@ -30,16 +30,16 @@ siamese = {
     'num_layers': 2,
     'bidirectional':True,
     'dropout': 0.5,
-    'pos_weight': 3.5,
+    'pos_weight': 3.0,
     'representation': 'last', # last, avg
     'sim_fun': 'dense',# 'dense', # exp, cosine, cosine+, dense
-    'loss': 'ce+cl', # ce, cl, cl+ce
+    'loss': 'ce', # ce, cl, cl+ce
     'cl_margin': 0.3,
     'ce_alpha': 1.,
 
     # Training
     'batch_size': 64,
-    'max_iter': 50000,
+    'max_iter': 500000,
     'patience': 10,
 }
 
@@ -53,14 +53,14 @@ gesd_siamese = {
 
     # Model
     'embed_size': 300,
-    'hidden_size': 200,
+    'hidden_size': 150,
     'num_layers': 2,
     'bidirectional':True,
     'dropout': 0.5,
-    'pos_weight': 3.5,
+    'pos_weight': 2.0,
     'representation': 'last', # last, avg
     'sim_fun': 'gesd',# 'dense', # exp, cosine, cosine+, dense
-    'loss': 'cl', # ce, cl, cl+ce
+    'loss': 'ce', # ce, cl, cl+ce
     'cl_margin': 0.3,
     'ce_alpha': 1.,
 
@@ -69,6 +69,37 @@ gesd_siamese = {
     'max_iter': 50000,
     'patience': 10,
 }
+
+att_siamese = {
+    # Basic
+    'name': 'att_siamese',
+    'model': 'AttSiameseRNN',
+
+    'char_embedding': None,#'sgns.financial.char',
+    'word_embedding': None,#'sgns.financial.char',#None,
+
+    'char_embedding': None, #'sgns.financial.char',
+    'word_embedding': None, #'sgns.financial.char',#None,
+
+    # Model
+    'embed_size': 150,
+    'hidden_size': 150,
+    'num_layers': 2,
+    'bidirectional':False,
+    'dropout': 0.5,
+    'pos_weight': 3.0,
+    'representation': 'last', # last, avg
+    'sim_fun': 'dense',# 'dense', # exp, cosine, cosine+, dense
+    'loss': 'ce', # ce, cl, cl+ce
+    'cl_margin': 0.3,
+    'ce_alpha': 1.,
+
+    # Training
+    'batch_size': 32,
+    'max_iter': 500000,
+    'patience': 10,
+}
+
 
 light_siamese = {
     # Basic
@@ -107,8 +138,12 @@ match_pyramid = {
 
     # model
     'embed_size': 300,
+    'dropout': 0.5,
+    'conv1_channel': 20,
+    'conv2_channel': 200,
+    'dp_out': 1,
     'dropout': 0.2,
-    'max_grad_norm': 10,
+    'max_grad_norm': 10.,
 
     # training
     'batch_size': 32,
@@ -120,9 +155,8 @@ ainn = {
     'name': 'ainn',
     'model': 'AINN',
 
-    'char_embedding': None, #'sgns.financial.char',
-    'word_embedding': None, #'sgns.financial.char',#None,
-
+    'char_embedding': None,#'sgns.financial.char',
+    'word_embedding': None,#'sgns.financial.char',#None,
     # model
     'embed_size': 100,
     'dropout': 0.5,
@@ -133,5 +167,6 @@ ainn = {
     # training
     'batch_size': 32,
     'max_iter': 50000,
-
+    'patience': 5,
+    'max_grad_norm': 10.,
 }

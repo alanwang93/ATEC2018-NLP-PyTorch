@@ -133,7 +133,8 @@ class SiameseRNN(nn.Module):
         elif self.config['sim_fun'] == 'exp':
             out = torch.exp(torch.neg(torch.norm(s1_outs-s2_outs, p=1, dim=1)))
         elif self.config['sim_fun'] == 'gesd':
-            out = torch.rsqrt(torch.norm(s1_outs-s2_outs, p=2, dim=1)) * (1./ (1+torch.exp(-1*(torch.bmm(s1_outs.unsqueeze(1), s2_outs.unsqueeze(2)).squeeze()+1.))))
+            out = torch.rsqrt(torch.norm(s1_outs-s2_outs, p=2, dim=1))
+            out = out * (1./ (1.+torch.exp(-1*(torch.bmm(s1_outs.unsqueeze(1), s2_outs.unsqueeze(2)).squeeze()+1.))))
         elif self.config['sim_fun'] == 'dense':
             sfeats = self.sfeats(data)
             pair_feats = self.pair_feats(data)
@@ -194,6 +195,9 @@ class SiameseRNN(nn.Module):
         if self.config['sim_fun'] == 'dense':
             sim = self.tanh(out)
             proba = self.sigmoid(out)
+        elif self.config['sim_fun'] == 'gesd':
+            sim = out
+            proba = out
         else:
             sim = out
             proba = sim/2.+0.5
@@ -224,7 +228,6 @@ class SiameseRNN(nn.Module):
             loss += self.config['ce_alpha'] * self.BCELoss(proba, data['target'], [1., self.pos_weight])
         if 'cl' in self.config['loss']:
             loss += self.contrastive_loss(sim, data['target'], margin=self.config['cl_margin']) 
-        loss *= data['s1_char'].size()[0]
         return proba.tolist(),  data['label'].tolist(), loss.item()
 
 
