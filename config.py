@@ -72,29 +72,32 @@ gesd_siamese = {
 
 att_siamese = {
     # Basic
-    'name': 'light_siamese',
-    'model': 'SiameseRNN',
+    'name': 'att_siamese',
+    'model': 'AttSiameseRNN',
 
     'char_embedding': None,#'sgns.financial.char',
     'word_embedding': None,#'sgns.financial.char',#None,
 
+    'char_embedding': None, #'sgns.financial.char',
+    'word_embedding': None, #'sgns.financial.char',#None,
+
     # Model
     'embed_size': 150,
-    'hidden_size': 100,
-    'num_layers': 1,
-    'bidirectional':True,
+    'hidden_size': 150,
+    'num_layers': 2,
+    'bidirectional':False,
     'dropout': 0.5,
     'pos_weight': 3.0,
     'representation': 'last', # last, avg
     'sim_fun': 'dense',# 'dense', # exp, cosine, cosine+, dense
-    'loss': 'ce', # ce, cl, mixed
-    'cl_margin': 0.4,
+    'loss': 'ce', # ce, cl, cl+ce
+    'cl_margin': 0.3,
     'ce_alpha': 1.,
 
     # Training
     'batch_size': 32,
-    'max_iter': 50000,
-    'patience': 5,
+    'max_iter': 500000,
+    'patience': 10,
 }
 
 
@@ -151,6 +154,8 @@ ainn = {
     'name': 'ainn',
     'model': 'AINN',
 
+    'char_embedding': None,#'sgns.financial.char',
+    'word_embedding': None,#'sgns.financial.char',#None,
     # model
     'embed_size': 300,
     'dropout': 0.2,

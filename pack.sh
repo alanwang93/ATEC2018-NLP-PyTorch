@@ -3,6 +3,8 @@ rm -r submissions/$1
 mkdir submissions/$1
 cp *.py submissions/$1/
 cp *.sh submissions/$1/
+mkdir submissions/$1/log
+cp log/$1 submissions/log/$1
 mkdir submissions/$1/checkpoints
 cp checkpoints/$1.pkl submissions/$1/checkpoints/$1.pkl
 mkdir submissions/$1/models

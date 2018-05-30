@@ -9,10 +9,10 @@ UNK_IDX = 0
 EOS_IDX = 2
 
 
-class SiameseRNN(nn.Module):
+class AttSiameseRNN(nn.Module):
 
     def __init__(self,  config, data_config):
-        super(SiameseRNN, self).__init__()
+        super(AttSiameseRNN, self).__init__()
         self.mode = 'char'
         self.l = self.mode[0] + 'len'
         self.vocab_size = data_config[self.mode+'_size']
@@ -37,7 +37,7 @@ class SiameseRNN(nn.Module):
         # Attention
         self.att = nn.Linear(self.hidden_size, self.hidden_size, bias=False)
 
-        self.linear_in_size = self.hidden_size
+        self.linear_in_size = self.hidden_size * 4
         if self.bidirectional:
             self.linear_in_size *= 2
         self.linear_in_size = self.linear_in_size + 7 +124 #similarity:5; len:4->2; word_bool:124
@@ -96,17 +96,6 @@ class SiameseRNN(nn.Module):
         # Non-packed, using `simple_collate_fn`
         s1_out, s1_hidden = self.rnn(s1_embed)
         s2_out, s2_hidden = self.rnn(s2_embed)
-        if self.config['representation'] == 'last': # last hidden state
-            s1_out = torch.squeeze(s1_out[row_idx, data['s1_'+self.l]-1, :], 1)
-            s2_out = torch.squeeze(s2_out[row_idx, data['s2_'+self.l]-1, :], 1)
-        elif self.config['representation'] == 'avg': # average of all hidden states
-            s1_outs = []
-            s2_outs = []
-            for i in range(batch_size):
-                s1_outs.append(torch.mean(s1_out[i][:data['s1_'+self.l][i]], dim=0))
-                s2_outs.append(torch.mean(s2_out[i][:data['s2_'+self.l][i]], dim=0))
-            s1_outs = torch.stack(s1_outs)
-            s2_outs = torch.stack(s2_outs)
 
         if self.bidirectional:
             s1_embed_rvs = self.embed(data['s1_'+self.mode+'_rvs'])
@@ -115,31 +104,17 @@ class SiameseRNN(nn.Module):
             s2_embed_rvs = self.dropout(s2_embed_rvs)
             s1_out_rvs, _ = self.rnn_rvs(s1_embed_rvs)
             s2_out_rvs, _ = self.rnn_rvs(s2_embed_rvs)
-            if self.config['representation'] == 'last': # last hidden state
-                s1_out_rvs = torch.squeeze(s1_out_rvs[row_idx, data['s1_'+self.l]-1, :], 1)
-                s2_out_rvs = torch.squeeze(s2_out_rvs[row_idx, data['s2_'+self.l]-1, :], 1)
-                s1_outs = torch.cat((s1_out, s1_out_rvs), dim=1)
-                s2_outs = torch.cat((s2_out, s2_out_rvs), dim=1)
-            elif self.config['representation'] == 'avg': # average of all hidden states
-                s1_outs_rvs = []
-                s2_outs_rvs = []
-                for i in range(batch_size):
-                    s1_outs_rvs.append(torch.mean(s1_out_rvs[i][:data['s1_'+self.l][i]], dim=0))
-                    s2_outs_rvs.append(torch.mean(s2_out_rvs[i][:data['s2_'+self.l][i]], dim=0))
-                s1_outs = torch.cat((torch.stack(s1_outs_rvs), s1_outs), dim=1)
-                s2_outs = torch.cat((torch.stack(s2_outs_rvs), s2_outs), dim=1)
-        # s1_outs = self.dropout2(s1_outs)
-        # s2_outs = self.dropout2(s2_outs)
+
 
         # Attention
-        att_matrix = self.att(s2_outs.transpose(1, 2))
-        att_matrix = torch.bmm(s1_outs, att_matrix)
-        s1_importance = torch.max(att_matrix, dim=2) # batch, s1_len
-        s1_weights = F.softmax(s1_importance, dim=1).unsqueeze(1) # batch, 1, ßs1_len
-        s1_outs = torch.bmm(s1_weights, s1_outs)
-        s2_importance = torch.max(att_matrix, dim=1) # batch, s2_len
+        att_matrix = self.att(s2_out)
+        att_matrix = torch.bmm(s1_out, att_matrix.transpose(1,2)) # [batch, s1_len, d] x [batch, s2_len, d]
+        s1_importance, _ = torch.max(att_matrix, dim=2) # batch, s1_len
+        s1_weights = F.softmax(s1_importance, dim=1).unsqueeze(1) # batch, 1, s1_len
+        s1_outs = torch.bmm(s1_weights, s1_out).squeeze()
+        s2_importance, _ = torch.max(att_matrix, dim=1) # batch, s2_len
         s2_weights = F.softmax(s2_importance, dim=1).unsqueeze(1)
-        s2_outs = torch.bmm(s2_weights, s2_outs)
+        s2_outs = torch.bmm(s2_weights, s2_out).squeeze()
 
         if self.config['sim_fun'] == 'cosine':
             out = nn.functional.cosine_similarity(s1_outs, s2_outs)
@@ -150,7 +125,7 @@ class SiameseRNN(nn.Module):
         elif self.config['sim_fun'] == 'dense':
             sfeats = self.sfeats(data)
             pair_feats = self.pair_feats(data)
-            feats = torch.cat((s1_outs * s2_outs, sfeats, pair_feats), dim=1)
+            feats = torch.cat((s1_outs, s2_outs, torch.abs(s1_outs-s2_outs),s1_outs * s2_outs, sfeats, pair_feats), dim=1)
             feats = self.dropout2(feats)
             out1 = self.dropout2(self.relu(self.linear(feats)))
             # out2 = self.dropout2(self.prelu(self.linear2(out1)))
@@ -237,7 +212,6 @@ class SiameseRNN(nn.Module):
             loss += self.config['ce_alpha'] * self.BCELoss(proba, data['target'], [1., self.pos_weight])
         if 'cl' in self.config['loss']:
             loss += self.contrastive_loss(sim, data['target'], margin=self.config['cl_margin']) 
-        loss *= data['s1_char'].size()[0]
         return proba.tolist(),  data['label'].tolist(), loss.item()
 
 
