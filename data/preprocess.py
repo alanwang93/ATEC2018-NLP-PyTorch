@@ -142,8 +142,10 @@ def main(args):
             word_vocab = Vocab(data_config=data_config, type='word', embedding=data_config['word_embedding'])
             char_vocab.build(char_tokenized)
             word_vocab.build(word_tokenized)
-            char_vocab.load_vectors(char_vocab.embedding)
-            word_vocab.load_vectors(word_vocab.embedding)
+            if char_vocab.embedding is not None:
+                char_vocab.load_vectors(char_vocab.embedding)
+            if word_vocab.embedding is not None:
+                word_vocab.load_vectors(word_vocab.embedding)
 
             exts_train['WordEmbedExtractor']['char_vocab'] = char_vocab
             exts_train['WordEmbedExtractor']['word_vocab'] = word_vocab
