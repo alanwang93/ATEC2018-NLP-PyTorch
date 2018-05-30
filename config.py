@@ -70,6 +70,34 @@ gesd_siamese = {
     'patience': 10,
 }
 
+att_siamese = {
+    # Basic
+    'name': 'light_siamese',
+    'model': 'SiameseRNN',
+
+    'char_embedding': None,#'sgns.financial.char',
+    'word_embedding': None,#'sgns.financial.char',#None,
+
+    # Model
+    'embed_size': 150,
+    'hidden_size': 100,
+    'num_layers': 1,
+    'bidirectional':True,
+    'dropout': 0.5,
+    'pos_weight': 3.0,
+    'representation': 'last', # last, avg
+    'sim_fun': 'dense',# 'dense', # exp, cosine, cosine+, dense
+    'loss': 'ce', # ce, cl, mixed
+    'cl_margin': 0.4,
+    'ce_alpha': 1.,
+
+    # Training
+    'batch_size': 32,
+    'max_iter': 50000,
+    'patience': 5,
+}
+
+
 light_siamese = {
     # Basic
     'name': 'light_siamese',
@@ -111,6 +139,21 @@ match_pyramid = {
     'conv1_channel': 20,
     'conv2_channel': 200,
     'dp_out': 1,
+    'dropout': 0.2,
+
+    # training
+    'batch_size': 32,
+    'max_iter': 50000,
+}
+
+
+ainn = {
+    'name': 'ainn',
+    'model': 'AINN',
+
+    # model
+    'embed_size': 300,
+    'dropout': 0.2,
 
     # training
     'batch_size': 64,

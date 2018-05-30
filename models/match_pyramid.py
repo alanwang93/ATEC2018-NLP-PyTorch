@@ -46,6 +46,7 @@ class MatchPyramid(nn.Module):
         # dot matching
         embed_2 = torch.transpose(embed_2, 1, 2)
         matching = torch.bmm(embed_1, embed_2).unsqueeze(1)
+        print("embded size", matching.size())
         output = self.conv1(matching)
         output = self.tanh(output)
         output = self.maxpool1(output)
