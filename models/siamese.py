@@ -144,7 +144,7 @@ class SiameseRNN(nn.Module):
             # out2 = self.dropout2(self.prelu(self.linear2(out1)))
             out = torch.squeeze(self.linear2(out1), 1)
         return out
-
+         
     def sfeats(self, data):
         """ Sentence level features """
         s1_feats = data['s1_feats'].type(torch.FloatTensor)

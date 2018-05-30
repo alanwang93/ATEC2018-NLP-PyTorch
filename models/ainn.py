@@ -17,7 +17,9 @@ class AINN(nn.Module):
 
         self.embed = nn.Embedding(self.char_size, self.embed_size, padding_idx=EOS_IDX)
         self.conv_separate = nn.Conv2d(1, 1, 3)
+        self.conv_together = nn.Conv2d(config['pool_size'], config['pool_size'], (1, 2), stride=(1, 2))
         self.relu = nn.ReLU()
+        self.admaxpool = nn.AdaptiveMaxPool2d(output_size=config['pool_size'])
         self.sigmoid = nn.Sigmoid()
         self.dropout = nn.Dropout(config['dropout'])
 
@@ -43,8 +45,8 @@ class AINN(nn.Module):
 
         h1 = self.relu(self.conv_separate(embed_1)).squeeze(1)
         h2 = self.relu(self.conv_separate(embed_2)).squeeze(1)
-
-        self.conv_together = nn.Conv2d(h1.size()[-1], h1.size()[-1], (1, 2), stride=(1, 2))
+        h1 = self.admaxpool(h1)
+        h2 = self.admaxpool(h2)
 
         # print("h1",h1.size())
         # print("h2",h2.size())
@@ -53,6 +55,8 @@ class AINN(nn.Module):
         h2_t = h2.unsqueeze(1).repeat(1, h1_t.size()[1], 1, 1)
 
         c = torch.FloatTensor([])
+        if self.config['use_cuda']:
+            c = c.cuda(self.config['cuda_num'])
         for i in range(h2_t.size()[2]):
             c = torch.cat((c, h1_t, h2_t[:, :, i].unsqueeze(2)), 2)
         c = torch.transpose(c, 1, 2)
@@ -61,8 +65,11 @@ class AINN(nn.Module):
 
         A = self.relu(self.conv_together(c))
         # print("A", A.size())
+
         r1, _ = torch.max(A, 3)
         r2, _ = torch.max(A, 2)
+        # print("r1", r1.size())
+        # print("r2", r2.size())
 
         r1 = torch.transpose(r1, 1, 2)
         r2 = torch.transpose(r2, 1, 2)
@@ -72,10 +79,14 @@ class AINN(nn.Module):
         # print("h2",h2.size())
         # print("r2",r2.size())
 
-        R1 = (h1 * r1).view(-1)
-        R2 = (h2 * r2).view(-1)
+        R1 = (h1 * r1).view((batch_size, -1)).unsqueeze(1)
+        R2 = (h2 * r2).view(batch_size, -1).unsqueeze(2)
 
-        output = torch.dot(R1, R2)
+        # print("R1",R1.size())
+        # print("R2",R2.size())
+
+        output = torch.bmm(R1, R2).squeeze(2)
+        # print("output",output.size())
         return output
 
     def load_vectors(self, char=None, word=None):
@@ -84,17 +95,18 @@ class AINN(nn.Module):
             self.embed.weight = nn.Parameter(torch.FloatTensor(char))
 
     def train_step(self, data):
-        proba = self.sigmoid(self.forward(data))
+        proba = self.sigmoid(self.forward(data)).squeeze(1)
         target = data['target']
         loss = self.criterion(proba, target, weights=[1.0, 3.0])
         self.optimizer.zero_grad()
         loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.parameters(), self.config['max_grad_norm'])
         self.optimizer.step()
         return loss.item()
 
-
     def evaluate(self, data):
-        proba = self.sigmoid(self.forward(data))
+        proba = self.sigmoid(self.forward(data)).squeeze(1)
         target =  data['target']
         loss = self.criterion(proba, target, weights=[1.0, 3.0])
-        return proba.item(), target.item(), loss.item()
+        loss *= data['s1_char'].size()[0]
+        return proba.tolist(),  data['label'].tolist(), loss.item()

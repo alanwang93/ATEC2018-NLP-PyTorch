@@ -143,6 +143,7 @@ match_pyramid = {
     'conv2_channel': 200,
     'dp_out': 1,
     'dropout': 0.2,
+    'max_grad_norm': 10.,
 
     # training
     'batch_size': 32,
@@ -159,11 +160,12 @@ ainn = {
     # model
     'embed_size': 300,
     'dropout': 0.2,
+    'pool_size': 5,
+    'max_grad_norm': 10,
 
     # training
-    'batch_size': 64,
+    'batch_size': 32,
     'max_iter': 50000,
     'patience': 5,
     'max_grad_norm': 10.,
-
 }
