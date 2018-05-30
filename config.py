@@ -124,10 +124,11 @@ ainn = {
     'word_embedding': None, #'sgns.financial.char',#None,
 
     # model
-    'embed_size': 300,
-    'dropout': 0.2,
-    'pool_size': 5,
+    'embed_size': 100,
+    'dropout': 0.5,
+    'channel_size': 3,
     'max_grad_norm': 10,
+    'len': 4,
 
     # training
     'batch_size': 32,

@@ -20,7 +20,7 @@ class MatchPyramid(nn.Module):
         self.conv1 = nn.Conv2d(1, self.config['conv1_channel'], kernel_size=5, padding=2)
         self.conv2 = nn.Conv2d(self.config['conv1_channel'], self.config['conv2_channel'], kernel_size=3, padding=2)
         self.relu = nn.ReLU()
-        self.tanh = nn. Tanh()
+        self.tanh = nn.Tanh()
         self.maxpool1 = nn.MaxPool2d(2)
         self.admaxpool2 = nn.AdaptiveMaxPool2d(output_size=self.config['dp_out'])
         self.fc1 = nn.Linear(self.config['dp_out']*self.config['dp_out']*self.config['conv2_channel'], 100)

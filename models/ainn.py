@@ -17,9 +17,10 @@ class AINN(nn.Module):
 
         self.embed = nn.Embedding(self.char_size, self.embed_size, padding_idx=EOS_IDX)
         self.conv_separate = nn.Conv2d(1, 1, 3)
-        self.conv_together = nn.Conv2d(config['pool_size'], config['pool_size'], (1, 2), stride=(1, 2))
+        self.conv_together = nn.Conv2d(config['channel_size'], config['channel_size'], (1, 2), stride=(1, 2))
         self.relu = nn.ReLU()
-        self.admaxpool = nn.AdaptiveMaxPool2d(output_size=config['pool_size'])
+        self.tanh = nn.Tanh()
+        self.admaxpool = nn.AdaptiveMaxPool2d(output_size=(config['len'], config['channel_size']))
         self.sigmoid = nn.Sigmoid()
         self.dropout = nn.Dropout(config['dropout'])
 
@@ -43,8 +44,8 @@ class AINN(nn.Module):
         # print("h1_pre",embed_1.size())
         # print("h2_pre",embed_2.size())
 
-        h1 = self.relu(self.conv_separate(embed_1)).squeeze(1)
-        h2 = self.relu(self.conv_separate(embed_2)).squeeze(1)
+        h1 = self.tanh(self.conv_separate(embed_1)).squeeze(1)
+        h2 = self.tanh(self.conv_separate(embed_2)).squeeze(1)
         h1 = self.admaxpool(h1)
         h2 = self.admaxpool(h2)
 
@@ -79,7 +80,7 @@ class AINN(nn.Module):
         # print("h2",h2.size())
         # print("r2",r2.size())
 
-        R1 = (h1 * r1).view((batch_size, -1)).unsqueeze(1)
+        R1 = (h1 * r1).view(batch_size, -1).unsqueeze(1)
         R2 = (h2 * r2).view(batch_size, -1).unsqueeze(2)
 
         # print("R1",R1.size())
@@ -108,5 +109,4 @@ class AINN(nn.Module):
         proba = self.sigmoid(self.forward(data)).squeeze(1)
         target =  data['target']
         loss = self.criterion(proba, target, weights=[1.0, 3.0])
-        loss *= data['s1_char'].size()[0]
         return proba.tolist(),  data['label'].tolist(), loss.item()
