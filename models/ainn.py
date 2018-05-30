@@ -17,7 +17,9 @@ class AINN(nn.Module):
 
         self.embed = nn.Embedding(self.char_size, self.embed_size, padding_idx=EOS_IDX)
         self.conv_separate = nn.Conv2d(1, 1, 3)
+        self.conv_together = nn.Conv2d(config['pool_size'], config['pool_size'], (1, 2), stride=(1, 2))
         self.relu = nn.ReLU()
+        self.admaxpool = nn.AdaptiveMaxPool2d(output_size=config['pool_size'])
         self.sigmoid = nn.Sigmoid()
         self.dropout = nn.Dropout(config['dropout'])
 
@@ -43,8 +45,8 @@ class AINN(nn.Module):
 
         h1 = self.relu(self.conv_separate(embed_1)).squeeze(1)
         h2 = self.relu(self.conv_separate(embed_2)).squeeze(1)
-
-        self.conv_together = nn.Conv2d(h1.size()[-1], h1.size()[-1], (1, 2), stride=(1, 2))
+        h1 = self.admaxpool(h1)
+        h2 = self.admaxpool(h2)
 
         # print("h1",h1.size())
         # print("h2",h2.size())
@@ -61,8 +63,11 @@ class AINN(nn.Module):
 
         A = self.relu(self.conv_together(c))
         # print("A", A.size())
+
         r1, _ = torch.max(A, 3)
         r2, _ = torch.max(A, 2)
+        # print("r1", r1.size())
+        # print("r2", r2.size())
 
         r1 = torch.transpose(r1, 1, 2)
         r2 = torch.transpose(r2, 1, 2)
