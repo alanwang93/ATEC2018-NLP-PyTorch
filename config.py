@@ -108,6 +108,7 @@ match_pyramid = {
     # model
     'embed_size': 300,
     'dropout': 0.2,
+    'max_grad_norm': 10,
 
     # training
     'batch_size': 32,
@@ -126,6 +127,7 @@ ainn = {
     'embed_size': 300,
     'dropout': 0.2,
     'pool_size': 5,
+    'max_grad_norm': 10,
 
     # training
     'batch_size': 32,

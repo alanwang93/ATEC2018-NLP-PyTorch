@@ -79,10 +79,14 @@ class AINN(nn.Module):
         # print("h2",h2.size())
         # print("r2",r2.size())
 
-        R1 = (h1 * r1).view(-1)
-        R2 = (h2 * r2).view(-1)
+        R1 = (h1 * r1).view((batch_size, -1)).unsqueeze(1)
+        R2 = (h2 * r2).view(batch_size, -1).unsqueeze(2)
 
-        output = torch.dot(R1, R2)
+        # print("R1",R1.size())
+        # print("R2",R2.size())
+
+        output = torch.bmm(R1, R2).squeeze(2)
+        # print("output",output.size())
         return output
 
     def load_vectors(self, char=None, word=None):
@@ -91,17 +95,18 @@ class AINN(nn.Module):
             self.embed.weight = nn.Parameter(torch.FloatTensor(char))
 
     def train_step(self, data):
-        proba = self.sigmoid(self.forward(data))
+        proba = self.sigmoid(self.forward(data)).squeeze(1)
         target = data['target']
         loss = self.criterion(proba, target, weights=[1.0, 3.0])
         self.optimizer.zero_grad()
         loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.parameters(), self.config['max_grad_norm'])
         self.optimizer.step()
         return loss.item()
 
-
     def evaluate(self, data):
-        proba = self.sigmoid(self.forward(data))
+        proba = self.sigmoid(self.forward(data)).squeeze(1)
         target =  data['target']
         loss = self.criterion(proba, target, weights=[1.0, 3.0])
-        return proba.item(), target.item(), loss.item()
+        loss *= data['s1_char'].size()[0]
+        return proba.tolist(),  data['label'].tolist(), loss.item()
