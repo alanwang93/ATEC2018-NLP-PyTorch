@@ -125,11 +125,10 @@ ainn = {
     # model
     'embed_size': 300,
     'dropout': 0.2,
+    'pool_size': 5,
 
     # training
-    'batch_size': 64,
+    'batch_size': 32,
     'max_iter': 50000,
-    'patience': 5,
-    'max_grad_norm': 5.,
 
 }
