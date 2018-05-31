@@ -83,16 +83,17 @@ att_siamese = {
 
     # Model
     'embed_size': 150,
-    'hidden_size': 150,
+    'hidden_size': 100,
     'num_layers': 2,
-    'bidirectional':False,
+    'bidirectional':True,
     'dropout': 0.5,
     'pos_weight': 3.0,
-    'representation': 'last', # last, avg
-    'sim_fun': 'dense',# 'dense', # exp, cosine, cosine+, dense
-    'loss': 'ce', # ce, cl, cl+ce
-    'cl_margin': 0.3,
+    # 'representation': 'last', # last, avg
+    'sim_fun': 'cosine',# 'dense', # exp, cosine, cosine+, dense
+    'loss': 'cl', # ce, cl, cl+ce
+    'cl_margin': 0.1,
     'ce_alpha': 1.,
+    'one_att': True,
 
     # Training
     'batch_size': 32,
@@ -160,7 +161,7 @@ ainn = {
     # model
     'embed_size': 200,
     'dropout': 0.0,
-    'channel_size': 20,
+    'channel_size': 200,
     'len': 20,
 
     # training

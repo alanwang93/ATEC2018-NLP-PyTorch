@@ -34,13 +34,16 @@ class AttSiameseRNN(nn.Module):
         self.dropout = nn.Dropout(config['dropout'])
         self.dropout2 = nn.Dropout(0.3)
 
-        # Attention
-        self.att = nn.Linear(self.hidden_size, self.hidden_size, bias=False)
-
         self.linear_in_size = self.hidden_size * 4
+        self.lstm_size = self.hidden_size
         if self.bidirectional:
+            self.lstm_size *= 2
             self.linear_in_size *= 2
         self.linear_in_size = self.linear_in_size + 7 +124 #similarity:5; len:4->2; word_bool:124
+        # Attention
+        self.att = nn.Linear(self.lstm_size, self.lstm_size, bias=False)
+
+
         self.linear2_in_size = 100
         # self.linear3_in_size = 100
         self.linear = nn.Linear(self.linear_in_size, self.linear2_in_size)
@@ -104,11 +107,11 @@ class AttSiameseRNN(nn.Module):
             s2_embed_rvs = self.dropout(s2_embed_rvs)
             s1_out_rvs, _ = self.rnn_rvs(s1_embed_rvs)
             s2_out_rvs, _ = self.rnn_rvs(s2_embed_rvs)
-
-
+            s1_out = torch.cat((s1_out, s1_out_rvs), dim=2)
+            s2_out = torch.cat((s2_out, s2_out_rvs), dim=2)
         # Attention
         att_matrix = self.att(s2_out)
-        att_matrix = torch.bmm(s1_out, att_matrix.transpose(1,2)) # [batch, s1_len, d] x [batch, s2_len, d]
+        att_matrix = self.tanh(torch.bmm(s1_out, att_matrix.transpose(1,2))) # [batch, s1_len, d] x [batch, s2_len, d]
         s1_importance, _ = torch.max(att_matrix, dim=2) # batch, s1_len
         s1_weights = F.softmax(s1_importance, dim=1).unsqueeze(1) # batch, 1, s1_len
         s1_outs = torch.bmm(s1_weights, s1_out).squeeze(1)
@@ -122,6 +125,9 @@ class AttSiameseRNN(nn.Module):
             pass
         elif self.config['sim_fun'] == 'exp':
             out = torch.exp(torch.neg(torch.norm(s1_outs-s2_outs, p=1, dim=1)))
+        elif self.config['sim_fun'] == 'gesd':
+            out = torch.rsqrt(torch.norm(s1_outs-s2_outs, p=2, dim=1))
+            out = out * (1./ (1.+torch.exp(-1*(torch.bmm(s1_outs.unsqueeze(1), s2_outs.unsqueeze(2)).squeeze()+1.))))
         elif self.config['sim_fun'] == 'dense':
             sfeats = self.sfeats(data)
             pair_feats = self.pair_feats(data)

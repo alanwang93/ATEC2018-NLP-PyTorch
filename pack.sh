@@ -1,6 +1,7 @@
 # bash pack.sh <folder name>
 rm -r submissions/$1
 mkdir submissions/$1
+echo $1 $2 > submissions/$1/model_name
 cp *.py submissions/$1/
 cp *.sh submissions/$1/
 mkdir submissions/$1/log
