@@ -82,7 +82,7 @@ def main(args):
             train_batch = to_cuda(train_batch, c)
             batch_loss = model.train(mode=True).train_step(train_batch)*batch_size
             train_loss += batch_loss
-            logger.info("train loss: {0}, batch size {1}".format(batch_loss, batch_size))
+            #logger.info("train loss: {0}, batch size {1}".format(batch_loss, batch_size))
             if global_step % LOG_STEPS == 0:
                 logger.info("Step {0}, train loss: {1}".format(global_step, train_loss/loss_size))
                 train_loss = 0.
