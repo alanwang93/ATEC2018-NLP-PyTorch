@@ -43,6 +43,8 @@ def main(args):
     data_config['char_size'] = char_size
     data_config['word_size'] = word_size
 
+    model = getattr(models, c['model'])(c, data_config)
+
     # Build datasets
     train_data = Dataset(data_config['train'])
     valid_data = Dataset(data_config['valid'])
@@ -53,7 +55,6 @@ def main(args):
     logger.info(json.dumps(data_config, indent=2))
     logger.info(json.dumps(c, indent=2))
 
-    model = getattr(models, c['model'])(c, data_config)
 
     if c['char_embedding'] is not None:
         model.load_vectors(char_vocab.vectors)
@@ -81,7 +82,7 @@ def main(args):
             train_batch = to_cuda(train_batch, c)
             batch_loss = model.train(mode=True).train_step(train_batch)*batch_size
             train_loss += batch_loss
-            # logger.info("Step {0}, train loss: {1}".format(global_step, batch_loss/batch_size))
+            logger.info("train loss: {0}, batch size {1}".format(batch_loss, batch_size))
             if global_step % LOG_STEPS == 0:
                 logger.info("Step {0}, train loss: {1}".format(global_step, train_loss/loss_size))
                 train_loss = 0.
@@ -99,7 +100,7 @@ def main(args):
             preds.extend(batch_pred)
             targets.extend(batch_target)
             valid_losses.append(batch_valid_loss*batch_size)
-            print("valid batch loss",batch_valid_loss)
+            logger.info("valid batch loss {0}, batch size {1}".format(batch_valid_loss, batch_size))
         valid_loss = np.sum(valid_losses) / valid_size
         for threshold in [0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9]:
             f1, acc, prec, recall = score(preds, targets, threshold=threshold)

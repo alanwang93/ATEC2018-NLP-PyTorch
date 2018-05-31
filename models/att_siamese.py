@@ -34,7 +34,7 @@ class AttSiameseRNN(nn.Module):
         self.dropout = nn.Dropout(config['dropout'])
         self.dropout2 = nn.Dropout(0.3)
 
-        self.linear_in_size = self.hidden_size * 4
+        self.linear_in_size = self.hidden_size
         self.lstm_size = self.hidden_size
         if self.bidirectional:
             self.lstm_size *= 2
@@ -131,9 +131,9 @@ class AttSiameseRNN(nn.Module):
         elif self.config['sim_fun'] == 'dense':
             sfeats = self.sfeats(data)
             pair_feats = self.pair_feats(data)
-            feats = torch.cat((s1_outs, s2_outs, torch.abs(s1_outs-s2_outs),s1_outs * s2_outs, sfeats, pair_feats), dim=1)
+            feats = torch.cat((s1_outs * s2_outs, sfeats, pair_feats), dim=1)
             feats = self.dropout2(feats)
-            out1 = self.dropout2(self.relu(self.linear(feats)))
+            out1 = self.dropout2(self.prelu(self.linear(feats)))
             # out2 = self.dropout2(self.prelu(self.linear2(out1)))
             out = torch.squeeze(self.linear2(out1), 1)
         return out
@@ -199,6 +199,7 @@ class AttSiameseRNN(nn.Module):
             loss += self.contrastive_loss(sim, data['target'], margin=self.config['cl_margin']) 
         self.optimizer.zero_grad()
         loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.parameters(), self.config['max_grad_norm'])
         self.optimizer.step()
         # f1, acc, prec, recall = score(proba.tolist(), data['label'].tolist())
         # print({'loss':loss.item(), 'f1':f1, 'acc':acc, 'prec':prec, 'recall':recall})
