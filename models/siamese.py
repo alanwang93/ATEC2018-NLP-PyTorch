@@ -31,17 +31,26 @@ class SiameseRNN(nn.Module):
                 num_layers=self.num_layers, batch_first=True, dropout=0.)
 
         self.dropout = nn.Dropout(config['dropout'])
-        self.dropout2 = nn.Dropout(0.5)
+        self.dropout2 = nn.Dropout(config['dropout2'])
 
-        self.linear_in_size = self.hidden_size * 4
+        self.linear_in_size = self.hidden_size
+        self.lstm_size = self.hidden_size
         if self.bidirectional:
+            self.lstm_size *= 2
             self.linear_in_size *= 2
-        self.linear_in_size = self.linear_in_size + 7 +124 #similarity:5; len:4->2; word_bool:124
-        self.linear2_in_size = 400
-        self.linear3_in_size = 200
-        self.linear = nn.Linear(self.linear_in_size, self.linear2_in_size)
-        self.linear2 = nn.Linear(self.linear2_in_size, self.linear3_in_size)
-        self.linear3 = nn.Linear(self.linear3_in_size, 1)
+        if config['sim_fun'] == 'dense+':
+            self.linear_in_size = config['dense_plus_size']
+
+        self.linear_in_size *= 4
+        if config['sim_fun'] in ['dense', 'dense+']:
+            self.linear_in_size = self.linear_in_size + 7 +124 #similarity:5; len:4->2; word_bool:124
+            self.linear2_in_size = 400
+            self.linear3_in_size = 200
+            self.linear = nn.Linear(self.linear_in_size, self.linear2_in_size)
+            self.linear2 = nn.Linear(self.linear2_in_size, self.linear3_in_size)
+            self.linear3 = nn.Linear(self.linear3_in_size, 1)
+        if config['sim_fun'] == 'dense+':
+            self.dense_plus = nn.Linear(self.lstm_size, config['dense_plus_size'])
 
         self.sigmoid = nn.Sigmoid()
         self.tanh = nn.Tanh()
@@ -145,14 +154,20 @@ class SiameseRNN(nn.Module):
         elif self.config['sim_fun'] == 'gesd':
             out = torch.rsqrt(torch.norm(s1_outs-s2_outs, p=2, dim=1))
             out = out * (1./ (1.+torch.exp(-1*(torch.bmm(s1_outs.unsqueeze(1), s2_outs.unsqueeze(2)).squeeze()+1.))))
-        elif self.config['sim_fun'] == 'dense':
-            sfeats = self.sfeats(data)
-            pair_feats = self.pair_feats(data)
+        elif self.config['sim_fun'] in ['dense', 'dense+']:
+            if self.config['sim_fun'] == 'dense+':
+                s1_outs = self.dense_plus(s1_outs)
+                s2_outs = self.dense_plus(s2_outs)
+            sfeats = self.tanh(self.sfeats(data))
+            pair_feats = self.tanh(self.pair_feats(data))
+            s1_outs = self.tanh(s1_outs)
+            s2_outs = self.tanh(s2_outs)
             feats = torch.cat((s1_outs, s2_outs, torch.abs(s1_outs-s2_outs),s1_outs * s2_outs, sfeats, pair_feats), dim=1)
             feats = self.dropout2(feats)
             out1 = self.dropout2(self.prelu(self.linear(feats)))
             out2 = self.dropout2(self.prelu(self.linear2(out1)))
             out = torch.squeeze(self.linear3(out2), 1)
+
         return out
          
     def sfeats(self, data):
@@ -213,6 +228,7 @@ class SiameseRNN(nn.Module):
             proba = sim/2.+0.5
         # constractive loss
         loss = 0.
+
         if 'ce' in self.config['loss']:
             loss += self.config['ce_alpha'] * self.BCELoss(proba, data['target'], [1., self.pos_weight])
         if 'cl' in self.config['loss']:
@@ -220,10 +236,7 @@ class SiameseRNN(nn.Module):
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
-        # f1, acc, prec, recall = score(proba.tolist(), data['label'].tolist())
-        # print({'loss':loss.item(), 'f1':f1, 'acc':acc, 'prec':prec, 'recall':recall})
         return loss.item()
-
 
     def evaluate(self, data):
         out = self.forward(data)

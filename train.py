@@ -31,7 +31,7 @@ def main(args):
     c['cuda_num'] = args.cuda_num
     c['suffix'] = args.suffix
 
-    logger = init_log(os.path.join('log/', args.config+'_'+args.suffix))
+    logger = init_log(os.path.join('log/', args.config+'_'+args.suffix+'_best'))
 
     # Build vocab
     char_vocab = Vocab(data_config=data_config, type='char')
@@ -80,9 +80,9 @@ def main(args):
             loss_size += batch_size
             global_step += 1
             train_batch = to_cuda(train_batch, c)
-            batch_loss = model.train(mode=True).train_step(train_batch)*batch_size
+            batch_loss = model.train(mode=True).train_step(train_batch)
+            batch_loss *= batch_size
             train_loss += batch_loss
-            #logger.info("train loss: {0}, batch size {1}".format(batch_loss, batch_size))
             if global_step % LOG_STEPS == 0:
                 logger.info("Step {0}, train loss: {1}".format(global_step, train_loss/loss_size))
                 train_loss = 0.
@@ -100,9 +100,9 @@ def main(args):
             preds.extend(batch_pred)
             targets.extend(batch_target)
             valid_losses.append(batch_valid_loss*batch_size)
-            logger.info("valid batch loss {0}, batch size {1}".format(batch_valid_loss, batch_size))
+            #logger.info("valid batch loss {0}, batch size {1}".format(batch_valid_loss, batch_size))
         valid_loss = np.sum(valid_losses) / valid_size
-        for threshold in [0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9]:
+        for threshold in np.arange(0.45, 0.85, 0.01):
             f1, acc, prec, recall = score(preds, targets, threshold=threshold)
             logger.info("Valid at epoch {0}, threshold {6}, F1:{1:.3f}, Acc:{2:.3f}, P:{3:.3f}, R:{4:.3f}, Loss:{5:.3f}"\
                     .format(epoch, f1, acc, prec, recall, valid_loss, threshold))
@@ -155,7 +155,7 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', type=str, default=None)
-    parser.add_argument('--cuda_num', type=int, default=2)
+    parser.add_argument('--cuda_num', type=int, default=0)
     parser.add_argument('--disable_cuda', dest='disable_cuda', action='store_true')
     parser.add_argument('--suffix', type=str, default='default')
     parser.add_argument('--save_all', dest='save_all', action='store_true', help='save model at every epoch')

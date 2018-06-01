@@ -35,6 +35,8 @@ class WordEmbedExtractor(Extractor):
             if mode == 'train':
                 label.append(ins['label'])
                 target.append(ins['target'])
+                if ins['target'] != 0. and ins['target'] != 1.:
+                    print(ins)
             sid.append(ins['sid'])
 
         for ins in words:

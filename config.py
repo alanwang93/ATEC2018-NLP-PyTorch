@@ -25,17 +25,18 @@ siamese = {
     'word_embedding': None, #'sgns.financial.char',#None,
 
     # Model
-    'embed_size': 300,
+    'embed_size': 200,
     'hidden_size': 200,
     'num_layers': 2,
     'bidirectional':True,
     'dropout': 0.5,
+    'dropout2': 0.5,
     'pos_weight': 3.0,
     'representation': 'max', # last, avg, max
-    'sim_fun': 'dense',# 'dense', # exp, cosine, cosine+, dense
+    'sim_fun': 'dense', # exp, cosine, cosine+, dense
     'loss': 'ce', # ce, cl, cl+ce
-    'cl_margin': 0.3,
     'ce_alpha': 1.,
+    'cl_margin': 0.3,
 
     # Training
     'batch_size': 64,
@@ -57,6 +58,7 @@ gesd_siamese = {
     'num_layers': 2,
     'bidirectional':True,
     'dropout': 0.5,
+    'dropout2': 0.5,
     'pos_weight': 2.0,
     'representation': 'last', # last, avg
     'sim_fun': 'gesd',# 'dense', # exp, cosine, cosine+, dense
@@ -114,6 +116,7 @@ light_siamese = {
     'num_layers': 1,
     'bidirectional':True,
     'dropout': 0.5,
+    'dropout2': 0.5,
     'pos_weight': 3.0,
     'representation': 'last', # last, avg
     'sim_fun': 'dense',# 'dense', # exp, cosine, cosine+, dense
@@ -158,9 +161,9 @@ ainn = {
     'word_embedding': None,#'sgns.financial.char',#None,
     # model
     'embed_size': 200,
-    'dropout': 0.0,
+    'dropout': 0.2,
     'channel_size': 200,
-    'len': 20,
+    'len': 10,
 
     # training
     'batch_size': 64,
@@ -168,3 +171,33 @@ ainn = {
     'patience': 5,
     'max_grad_norm': 5.,
 }
+
+siamese_large = {
+    # Basic
+    'name': 'siamese',
+    'model': 'SiameseRNN',
+
+    'char_embedding': None, #'sgns.financial.char',
+    'word_embedding': None, #'sgns.financial.char',#None,
+
+    # Model
+    'embed_size': 200,
+    'hidden_size': 200,
+    'num_layers': 2,
+    'bidirectional':True,
+    'dropout': 0.5,
+    'dropout2': 0.3,
+    'pos_weight': 3.0,
+    'representation': 'last', # last, avg, max
+    'sim_fun': 'dense', # exp, cosine, cosine+, dense
+    'loss': 'ce', # ce, cl, cl+ce
+    'ce_alpha': 1.,
+    'cl_margin': 0.3,
+
+    # Training
+    'batch_size': 64,
+    'max_iter': 500000,
+    'patience': 10,
+}
+
+
