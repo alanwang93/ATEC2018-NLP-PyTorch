@@ -18,3 +18,9 @@ Other options:
 
 ## Notes
 1. 在计算score的时候，给pos类的权重越大，threshold（大于这个值认为label是1）也需要越大。
+
+## Results
+2018-05-29: 0.6188, siamese_char_best
+2018-05-30: 0.5808, att_siamese_default_best
+2018-05-30: 0.6142, att_siamese_small_embed_best
+2018-05-31: 0.6265, siamese_large_best

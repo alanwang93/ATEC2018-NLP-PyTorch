@@ -49,7 +49,7 @@ def clean_data(raw, data_config, mode='train'):
         'label' is an integer, while 'target' is a float, used to compute loss
     """
     # replace
-    # TODO: mis-written words -> correct ones, traditional -> simplified
+    remove_duplicates = True
     raw  = [l.replace('***', '*').replace(' ', '') for l in raw] 
     data_raw = []
     tra2sim = json.load(open('data/raw/tra2sim.txt','r'))
@@ -82,8 +82,9 @@ def clean_data(raw, data_config, mode='train'):
     tokenized = tokenizer.tokenize_all(data_raw, 'train.word.tmp', stop_words=stop_words_file, mode=mode)
 
     cleaned_data_raw = []
-    # char level replacement
+
     for (d, tokenized) in zip(data_raw, tokenized):
+        # char level replacement
         for target, candidates in rep_char:
             s1 = tokenized['s1']
             s2 = tokenized['s2']
@@ -94,6 +95,14 @@ def clean_data(raw, data_config, mode='train'):
                 for i, s in enumerate(s2):
                     if s == c:
                         s2[i] = target
+            
+            if remove_duplicates:
+                # remove duplicates
+                s1_unique = [w for w in s1 if w not in s2]
+                s2_unique = [w for w in s2 if w not in s1]
+                s1 = s1_unique
+                s2 = s2_unique
+
         if mode == 'train':                       
             cleaned_data_raw.append({'sid': d['sid'], 's1':"".join(s1), 's2':"".join(s2),\
                     'label':d['label'], 'target':d['target']})
