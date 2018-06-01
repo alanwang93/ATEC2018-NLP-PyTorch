@@ -31,7 +31,7 @@ siamese = {
     'bidirectional':True,
     'dropout': 0.5,
     'pos_weight': 3.0,
-    'representation': 'last', # last, avg
+    'representation': 'max', # last, avg, max
     'sim_fun': 'dense',# 'dense', # exp, cosine, cosine+, dense
     'loss': 'ce', # ce, cl, cl+ce
     'cl_margin': 0.3,
@@ -75,30 +75,28 @@ att_siamese = {
     'name': 'att_siamese',
     'model': 'AttSiameseRNN',
 
-    'char_embedding': None,#'sgns.financial.char',
+    'char_embedding': 'sgns.financial.char',
     'word_embedding': None,#'sgns.financial.char',#None,
 
-    'char_embedding': None, #'sgns.financial.char',
-    'word_embedding': None, #'sgns.financial.char',#None,
-
     # Model
-    'embed_size': 150,
-    'hidden_size': 100,
+    'embed_size': 300,
+    'hidden_size': 150,
     'num_layers': 2,
     'bidirectional':True,
     'dropout': 0.5,
     'pos_weight': 3.0,
     # 'representation': 'last', # last, avg
-    'sim_fun': 'cosine',# 'dense', # exp, cosine, cosine+, dense
-    'loss': 'cl', # ce, cl, cl+ce
+    'sim_fun': 'dense',# 'dense', # exp, cosine, cosine+, dense
+    'loss': 'ce', # ce, cl, cl+ce
     'cl_margin': 0.1,
     'ce_alpha': 1.,
     'one_att': True,
 
     # Training
-    'batch_size': 32,
+    'batch_size': 16,
     'max_iter': 500000,
     'patience': 10,
+    'max_grad_norm': 10.,
 }
 
 

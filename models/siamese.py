@@ -37,11 +37,11 @@ class SiameseRNN(nn.Module):
         if self.bidirectional:
             self.linear_in_size *= 2
         self.linear_in_size = self.linear_in_size + 7 +124 #similarity:5; len:4->2; word_bool:124
-        self.linear2_in_size = 200
-        # self.linear3_in_size = 100
+        self.linear2_in_size = 400
+        self.linear3_in_size = 200
         self.linear = nn.Linear(self.linear_in_size, self.linear2_in_size)
-        self.linear2 = nn.Linear(self.linear2_in_size, 1)
-        # self.linear3 = nn.Linear(self.linear3_in_size, 1)
+        self.linear2 = nn.Linear(self.linear2_in_size, self.linear3_in_size)
+        self.linear3 = nn.Linear(self.linear3_in_size, 1)
 
         self.sigmoid = nn.Sigmoid()
         self.tanh = nn.Tanh()
@@ -103,6 +103,9 @@ class SiameseRNN(nn.Module):
                 s2_outs.append(torch.mean(s2_out[i][:data['s2_'+self.l][i]], dim=0))
             s1_outs = torch.stack(s1_outs)
             s2_outs = torch.stack(s2_outs)
+        elif self.config['representation'] == 'max':
+            s1_out, _ = torch.max(s1_out, 1)
+            s2_out, _ = torch.max(s2_out, 1)
 
         if self.bidirectional:
             s1_embed_rvs = self.embed(data['s1_'+self.mode+'_rvs'])
@@ -124,8 +127,15 @@ class SiameseRNN(nn.Module):
                     s2_outs_rvs.append(torch.mean(s2_out_rvs[i][:data['s2_'+self.l][i]], dim=0))
                 s1_outs = torch.cat((torch.stack(s1_outs_rvs), s1_outs), dim=1)
                 s2_outs = torch.cat((torch.stack(s2_outs_rvs), s2_outs), dim=1)
-        # s1_outs = self.dropout2(s1_outs)
-        # s2_outs = self.dropout2(s2_outs)
+            elif self.config['representation'] == 'max':
+                s1_out_rvs, _ = torch.max(s1_out_rvs, 1)
+                s2_out_rvs, _ = torch.max(s2_out_rvs, 1)
+                s1_outs = torch.cat((s1_out, s1_out_rvs), dim=1)
+                s2_outs = torch.cat((s2_out, s2_out_rvs), dim=1)
+
+        s1_outs = self.dropout2(s1_outs)
+        s2_outs = self.dropout2(s2_outs)
+
         if self.config['sim_fun'] == 'cosine':
             out = nn.functional.cosine_similarity(s1_outs, s2_outs)
         elif self.config['sim_fun'] == 'cosine+':
@@ -140,9 +150,9 @@ class SiameseRNN(nn.Module):
             pair_feats = self.pair_feats(data)
             feats = torch.cat((s1_outs, s2_outs, torch.abs(s1_outs-s2_outs),s1_outs * s2_outs, sfeats, pair_feats), dim=1)
             feats = self.dropout2(feats)
-            out1 = self.dropout2(self.relu(self.linear(feats)))
-            # out2 = self.dropout2(self.prelu(self.linear2(out1)))
-            out = torch.squeeze(self.linear2(out1), 1)
+            out1 = self.dropout2(self.prelu(self.linear(feats)))
+            out2 = self.dropout2(self.prelu(self.linear2(out1)))
+            out = torch.squeeze(self.linear3(out2), 1)
         return out
          
     def sfeats(self, data):

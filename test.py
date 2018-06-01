@@ -15,13 +15,15 @@ import itertools, argparse, os, json
 from utils import init_log, score, to_cuda
 import numpy as np
 
-model_path = 'checkpoints/siamese_default_best.pkl'
+l = open('model_name', 'r').readline().strip().split()
+
+model_path = 'checkpoints/{0}.pkl'.format(l[0])
 test_path = 'data/processed/test.pkl'
 UNK_IDX = 0
 EOS_IDX = 2
 
 def main(inpath, outpath):
-    c = getattr(config, 'siamese')
+    c = getattr(config, l[1])
     data_config = getattr(config, 'data_config')
     c['use_cuda'] = False
     char_vocab = Vocab(data_config=data_config, type='char')
