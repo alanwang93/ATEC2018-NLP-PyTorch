@@ -56,6 +56,11 @@
     * 不建议
 12. [2016] A Chinese Question Answering Approach Integrating Count-based and Embedding-based Features
     * 可以看看中文特征提取
+13. [2018] **Character-based Neural Networks for Sentence Pair Modeling**
+14. [2016] **A decomposable attention model for natural language inference**
+    * 重点看，Kaggle比赛多个选手用了这个模型
+15. [2017] **Neural Paraphrase Identification of Questions with Noisy Pretraining**
+    * Google的，值得一看
 
 ### Paper notes
 
@@ -90,6 +95,9 @@ Other options:
 
 ## Notes & Ideas
 1. 在计算score的时候，给pos类的权重越大，threshold（大于这个值认为label是1）也需要越大。
+2. Word-to-Mover Distance
+3. Decomposible attention
+4. 去除duplicates以后用RNN没有什么提升，但可以尝试用来计算其他feature
 
 
 
