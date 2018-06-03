@@ -216,7 +216,7 @@ siamese_plus = {
     'mode': 'char',
     'embed_size': 300,
     'hidden_size': 200,
-    'num_layers': 2,
+    'num_layers': 1,
     'bidirectional':True,
     'dropout': 0.5,
     'dropout2': 0.4,
