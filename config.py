@@ -272,6 +272,36 @@ decatt = {
     'max_grad_norm': 10.,
 }
 
+charword = {
+    # Basic
+    'name': 'charword',
+    'model': 'CharWordSiamese',
+
+    'char_embedding': None, #'sgns.financial.char',
+    'word_embedding': None, #'sgns.financial.char',#None,
+
+    # Model
+    'mode': 'word',
+    'char_embed_size': 300,
+    'word_embed_size': 300,
+    'char_hidden_size': 200,
+    'wordd_hidden_size': 200,
+    'num_layers': 2,
+    'dropout': 0.4,
+    'dropout2': 0.4,
+    'pos_weight': 1.,
+    'representation': 'last', # last, avg, max
+    'l1_size': 100,
+    'loss': 'cl', # ce, cl, cl+ce
+    'ce_alpha': 1.,
+    'cl_margin': 0.1,
+
+    # Training
+    'batch_size': 64,
+    'max_iter': 500000,
+    'patience': 10,
+    'max_grad_norm': 10.,
+}
 
 
 
