@@ -8,3 +8,4 @@ from .siamese import SiameseRNN
 from .match_pyramid import MatchPyramid
 from .ainn import AINN
 from .att_siamese import AttSiameseRNN
+from .decatt import DecAttSiamese
