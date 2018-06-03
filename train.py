@@ -135,7 +135,7 @@ def main(args):
                     'best_threshold': max_threshold}, indent=2))
 
         """ Save a new best model """
-        if max_f1 >= best_f1:
+        if max_f1 > best_f1:
             best_threshold = max_threshold
             best_epoch = epoch
             best_f1 = max_f1

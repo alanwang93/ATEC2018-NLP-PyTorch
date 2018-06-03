@@ -98,20 +98,22 @@ Other options:
 2. Word-to-Mover Distance
 3. Decomposible attention
 4. 去除duplicates以后用RNN没有什么提升，但可以尝试用来计算其他feature
+5. 如何选择threshold是个大问题（用DL model 提取feature然后用sklearn balanced LR训练？)
 
 
 
 
 
 ## Results
-| 日期       | 名字                         | valid成绩 | test成绩 |      |
-| ---------- | ---------------------------- | --------- | -------- | ---- |
-| 2018-05-29 | siamese_char_best            | 0.52?     | 0.6188   |      |
-| 2018-05-30 | att_siamese_default_best     | 0.54?     | 0.5808   |      |
-| 2018-05-30 | att_siamese_small_embed_best | 0.54?     | 0.6142   |      |
-| 2018-05-31 | siamese_large_best           |           | 0.6265   |      |
-|            |                              |           |          |      |
-|            |                              |           |          |      |
-|            |                              |           |          |      |
-|            |                              |           |          |      |
-|            |                              |           |          |      |
+| 日期  | 名字                               | valid成绩 | test成绩 | 备注                                                         |
+| ----- | ---------------------------------- | --------- | -------- | ------------------------------------------------------------ |
+| 05-29 | siamese_char_best                  | 0.52?     | 0.6188   | char embed (接下去的model都是char-based，除非特别说明)       |
+| 05-30 | att_siamese_default_best           | 0.54?     | 0.5808   | attentive siamese;                                           |
+| 05-30 | att_siamese_small_embed_best       | 0.54?     | 0.6142   | use small embed                                              |
+| 05-31 | siamese_large_best                 |           | 0.6265   |                                                              |
+| 06-02 | siamese_plus_1linear_allfeats_best | 0.550     | 0.6171   | 1 score layer; all feats are used                            |
+| 06-02 | siamese_plus_test_best             | 0.553     | 0.621    | Siamese包含一个LSTM和一个FC layer; plus_size=400; l1_size=200 |
+| 06-02 | siamese_plus_clloss_best           | 0.543     | 0.6259   | 用contrastive loss, margin=0.1; plus_size=200, l1_size=100; dense+ |
+|       |                                    |           |          |                                                              |
+|       |                                    |           |          |                                                              |
+|       |                                    |           |          |                                                              |
