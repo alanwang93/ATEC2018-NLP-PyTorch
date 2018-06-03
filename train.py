@@ -28,6 +28,7 @@ def main(args):
     c = getattr(config, args.config)
     data_config = getattr(config, 'data_config')
     c['use_cuda'] = not args.disable_cuda and torch.cuda.is_available()
+    c['name'] = args.config
     c['cuda_num'] = args.cuda_num
     c['suffix'] = args.suffix
 

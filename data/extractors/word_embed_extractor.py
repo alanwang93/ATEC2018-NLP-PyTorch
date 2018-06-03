@@ -58,9 +58,6 @@ class WordEmbedExtractor(Extractor):
         d['s1_wlen'] = ('s', np.asarray(s1_wlen), 1)
         d['s2_wlen'] = ('s', np.asarray(s2_wlen), 1)
 
-        d['s1_uword'] = ('w', np.asarray([np.array(s) for s in s1_word]), 0)
-        d['s2_uword'] = ('w', np.asarray([np.array(s) for s in s2_word]), 0)
-
         d['s1_char'] = ('c', np.asarray([np.array(s) for s in s1_char]), 0)
         d['s2_char'] = ('c', np.asarray([np.array(s) for s in s2_char]), 0)
         d['s1_clen'] = ('s', np.asarray(s1_clen), 1)

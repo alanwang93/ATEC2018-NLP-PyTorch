@@ -11,6 +11,7 @@ class SimilarityExtractor(Extractor):
         Extractor.__init__(self, name="SimilarityExtractor")
 
     def extract(self, data_raw, chars, words):
+        eps = 1e-8
         d = dict()
         jaccard_char_unigram = []
         jaccard_char_bigram = []
@@ -31,7 +32,7 @@ class SimilarityExtractor(Extractor):
             for i in range(s2_len):
                 s2_gram.append(ins['s2'][i])
             inter_len = len(list(set(s1_gram).intersection(s2_gram)))
-            jaccard = float(inter_len) / (s1_len + s2_len - inter_len)
+            jaccard = float(inter_len) / (s1_len + s2_len - inter_len + eps)
             jaccard_char_unigram.append(jaccard)
 
         # jaccard for char bigram
@@ -45,7 +46,7 @@ class SimilarityExtractor(Extractor):
             for i in range(s2_len-1):
                 s2_gram.append(ins['s2'][i]+ins['s2'][i+1])
             inter_len = len(list(set(s1_gram).intersection(s2_gram)))
-            jaccard = float(inter_len) / (s1_len + s2_len - inter_len)
+            jaccard = float(inter_len) / (s1_len + s2_len - inter_len + eps)
             jaccard_char_bigram.append(jaccard)
 
         # jaccard for char trigram
@@ -59,7 +60,7 @@ class SimilarityExtractor(Extractor):
             for i in range(s2_len-2):
                 s2_gram.append(ins['s2'][i]+ins['s2'][i+1]+ins['s2'][i+2])
             inter_len = len(list(set(s1_gram).intersection(s2_gram)))
-            jaccard = float(inter_len) / (s1_len + s2_len - inter_len)
+            jaccard = float(inter_len) / (s1_len + s2_len - inter_len + eps)
             jaccard_char_trigram.append(jaccard)
 
         # jaccard for word unigram
@@ -73,7 +74,7 @@ class SimilarityExtractor(Extractor):
             for i in range(s2_len):
                 s2_gram.append(ins['s2'][i])
             inter_len = len(list(set(s1_gram).intersection(s2_gram)))
-            jaccard = float(inter_len) / (s1_len + s2_len - inter_len)
+            jaccard = float(inter_len) / (s1_len + s2_len - inter_len + eps)
             jaccard_word_unigram.append(jaccard)
 
         # LevenshteinDistance for char
@@ -95,6 +96,7 @@ class SimilarityExtractor(Extractor):
         return d
 
     def LevenshteinDistance(self, s1, s2):
+            eps = 1e-6
             m = len(s1)+1
             n = len(s2)+1
             d = np.zeros((m, n))
@@ -109,4 +111,4 @@ class SimilarityExtractor(Extractor):
                     else:
                         cost = 1.
                     d[i][j] = min(d[i-1][j]+1., d[i][j-1]+1., d[i-1][j-1]+cost)
-            return float(d[m-1][n-1])/(m+n-2)*2.
+            return float(d[m-1][n-1])/(m+n-2 + eps)*2.
