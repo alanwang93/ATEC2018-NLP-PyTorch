@@ -33,23 +33,33 @@ class DecAttSiamese(nn.Module):
                 num_layers=self.num_layers, batch_first=True, dropout=0.)
 
         self.dropout = nn.Dropout(config['dropout'])
-        self.dropout2 = nn.Dropout(0.3)
+        self.dropout2 = nn.Dropout(config['dropout2'])
 
-        self.linear_in_size = self.hidden_size
         self.lstm_size = self.hidden_size
         if self.bidirectional:
-            self.lstm_size *= 2
-            self.linear_in_size *= 2
-        self.linear_in_size = self.linear_in_size + 7 +124 #similarity:5; len:4->2; word_bool:124
-        # Attention
-        self.att = nn.Linear(self.lstm_size, self.lstm_size, bias=False)
+           self.lstm_size *= 2
 
+        # Decomposible Attention
+        # Attend
+        self.F1 = nn.Linear(self.lstm_size, config['F1_out'], bias=True)
+        self.bn_F1 = self.BatchNorm1d(config['F1_out'])
+        self.F2 = nn.Linear(self.lstm_size, config['F2_out'], bias=True)
+        self.bn_F2 = self.BatchNorm1d(config['F2_out'])
+        # Compare
+        self.G1 = nn.Linear(self.lstm_size*2, config['G1_out'], bias=True)
+        self.bn_G1 = self.BatchNorm1d(config['G1_out'])
+        self.G2 = nn.Linear(self.lstm_size*2, config['G2_out'], bias=True)
+        self.bn_G2 = self.BatchNorm1d(config['G2_out'])
+        # Aggregate => sentence pair level representation
+        self.H1 = nn.Linear(config['G2_out'], config['H1_out'], bias=True)
+        self.bn_H1 = self.BatchNorm1d(config['H1_out'])
 
-        self.linear2_in_size = 100
-        # self.linear3_in_size = 100
-        self.linear = nn.Linear(self.linear_in_size, self.linear2_in_size)
-        self.linear2 = nn.Linear(self.linear2_in_size, 1)
-        # self.linear3 = nn.Linear(self.linear3_in_size, 1)
+        self.l1_size = config['l1_size']
+
+        self.linear = nn.Linear(config['H1_out'] + 7 +124, self.l1_size)
+        self.bn_feats = self.BatchNorm1d(config['H1_out'] + 7 +124)
+        self.bn_l1 = self.BatchNorm1d(self.l1_size)
+        self.linear2 = nn.Linear(self.l1_size, 1)
 
         self.sigmoid = nn.Sigmoid()
         self.tanh = nn.Tanh()
@@ -82,20 +92,12 @@ class DecAttSiamese(nn.Module):
 
 
     def forward(self, data):
-        batch_size = data['s1_char'].size()[0]
+        batch_size, seq_len, _ = data['s1_char'].size()
         row_idx = torch.arange(0, batch_size).long()
         s1_embed = self.embed(data['s1_'+self.mode])
         s2_embed = self.embed(data['s2_'+self.mode])
         s1_embed = self.dropout(s1_embed)
         s2_embed = self.dropout(s2_embed)
-
-        # Packed, using `complex_collate_fn`
-        # s1_packed = nn.utils.rnn.pack_padded_sequence(s1_embed, data['s1_ordered_len'], batch_first=True)
-        # s2_packed = nn.utils.rnn.pack_padded_sequence(s2_embed, data['s2_ordered_len'], batch_first=True)
-        # s1_out, s1_hidden = self.rnn(s1_packed)
-        # s2_out, s2_hidden = self.rnn(s2_packed)
-        # s1_out, _ = nn.utils.rnn.pad_packed_sequence(s1_out, batch_first=True)
-        # s2_out, _ = nn.utils.rnn.pad_packed_sequence(s2_out, batch_first=True)
 
         # Non-packed, using `simple_collate_fn`
         s1_out, s1_hidden = self.rnn(s1_embed)
@@ -110,33 +112,46 @@ class DecAttSiamese(nn.Module):
             s2_out_rvs, _ = self.rnn_rvs(s2_embed_rvs)
             s1_out = torch.cat((s1_out, s1_out_rvs), dim=2)
             s2_out = torch.cat((s2_out, s2_out_rvs), dim=2)
-        # Attention
-        att_matrix = self.att(s2_out)
-        att_matrix = self.tanh(torch.bmm(s1_out, att_matrix.transpose(1,2))) # [batch, s1_len, d] x [batch, s2_len, d]
-        s1_importance, _ = torch.max(att_matrix, dim=2) # batch, s1_len
-        s1_weights = F.softmax(s1_importance, dim=1).unsqueeze(1) # batch, 1, s1_len
-        s1_outs = torch.bmm(s1_weights, s1_out).squeeze(1)
-        s2_importance, _ = torch.max(att_matrix, dim=1) # batch, s2_len
-        s2_weights = F.softmax(s2_importance, dim=1).unsqueeze(1)
-        s2_outs = torch.bmm(s2_weights, s2_out).squeeze(1)
 
-        if self.config['sim_fun'] == 'cosine':
-            out = nn.functional.cosine_similarity(s1_outs, s2_outs)
-        elif self.config['sim_fun'] == 'cosine+':
-            pass
-        elif self.config['sim_fun'] == 'exp':
-            out = torch.exp(torch.neg(torch.norm(s1_outs-s2_outs, p=1, dim=1)))
-        elif self.config['sim_fun'] == 'gesd':
-            out = torch.rsqrt(torch.norm(s1_outs-s2_outs, p=2, dim=1))
-            out = out * (1./ (1.+torch.exp(-1*(torch.bmm(s1_outs.unsqueeze(1), s2_outs.unsqueeze(2)).squeeze()+1.))))
-        elif self.config['sim_fun'] == 'dense':
-            sfeats = self.sfeats(data)
-            pair_feats = self.pair_feats(data)
-            feats = torch.cat((s1_outs * s2_outs, sfeats, pair_feats), dim=1)
-            feats = self.dropout2(feats)
-            out1 = self.dropout2(self.prelu(self.linear(feats)))
-            # out2 = self.dropout2(self.prelu(self.linear2(out1)))
-            out = torch.squeeze(self.linear2(out1), 1)
+        s1_out = s1_out.view(batch_size*seq_len, -1)
+        s2_out = s2_out.view(batch_size*seq_len, -1)
+
+        # Attend
+        s1_out = self.F1(self.relu(self.bn_F1(s1_out)))
+        s2_out = self.F1(self.relu(self.bn_F1(s2_out)))
+        s1_out = self.F2(self.relu(self.bn_F2(s1_out)))
+        s2_out = self.F2(self.relu(self.bn_F2(s2_out)))
+
+        s1_out = s1_out.view(batch_size, seq_len, -1)
+        s2_out = s2_out.view(batch_size, seq_len, -1)
+
+        E = torch.bmm(s1_out, s2_out.transpose(1,2)) # batch_size, seq_len(1), seq_len(2)
+        s2_weights = F.softmax(E, dim=2)
+        s1_weights = F.softmax(E, dim=1)
+        # not masked
+        s2_sub = torch.bmm(s2_weights, s2_out) # batch_size, seq_len(1), d
+        s1_sub = torch.bmm(s1_weights, s1_out) # batch_size, seq_len(2), d
+
+        # Compare
+        v1 = torch.cat((s1_out, s2_sub), dim=2)
+        v2 = torch.cat((s2_out, s1_sub), dim=2)
+        v1 = self.G1(self.relu(self.bn_G1(v1)))
+        v2 = self.G1(self.relu(self.bn_G1(v2)))
+        v1 = self.G2(self.relu(self.bn_G2(v1)))
+        v2 = self.G2(self.relu(self.bn_G2(v2)))
+
+        # Aggregate
+        v = torch.cat((torch.sum(v1, dim=1), torch.sum(v2, dim=1)), dim=1)
+        
+        sfeats = self.sfeats(data)
+        pair_feats = self.pair_feats(data)
+        
+        feats = torch.cat((v, sfeats, pair_feats), dim=1)
+        feats = self.bn_feats(feats)
+        feats = self.tanh(feats)
+        out1 = self.bn_l1(self.linear(feats))
+        out1 = self.tanh(out1)
+        out = torch.squeeze(self.linear2(out1), 1)
         return out
 
     def sfeats(self, data):

@@ -237,3 +237,36 @@ siamese_plus = {
 }
 
 
+decatt = {
+    # Basic
+    'name': 'decatt',
+    'model': 'DecAttSiamese',
+
+    'char_embedding': None, #'sgns.financial.char',
+    'word_embedding': None, #'sgns.financial.char',#None,
+
+    # Model
+    'mode': 'char',
+    'embed_size': 300,
+    'hidden_size': 200,
+    'num_layers': 2,
+    'bidirectional':True,
+    'dropout': 0.5,
+    'dropout2': 0.4,
+    'pos_weight': 3.5,
+    'representation': 'last', # last, avg, max
+    'l1_size': 100,
+    'loss': 'cl', # ce, cl, cl+ce
+    'ce_alpha': 1.,
+    'cl_margin': 0.1,
+
+    # Training
+    'batch_size': 128,
+    'max_iter': 500000,
+    'patience': 10,
+}
+
+
+
+
+
