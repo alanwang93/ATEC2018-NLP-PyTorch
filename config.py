@@ -25,17 +25,18 @@ siamese = {
     'word_embedding': None, #'sgns.financial.char',#None,
 
     # Model
-    'embed_size': 300,
+    'embed_size': 200,
     'hidden_size': 200,
     'num_layers': 2,
     'bidirectional':True,
     'dropout': 0.5,
+    'dropout2': 0.5,
     'pos_weight': 3.0,
     'representation': 'max', # last, avg, max
-    'sim_fun': 'dense',# 'dense', # exp, cosine, cosine+, dense
+    'sim_fun': 'dense', # exp, cosine, cosine+, dense
     'loss': 'ce', # ce, cl, cl+ce
-    'cl_margin': 0.3,
     'ce_alpha': 1.,
+    'cl_margin': 0.3,
 
     # Training
     'batch_size': 64,
@@ -43,9 +44,9 @@ siamese = {
     'patience': 10,
 }
 
-gesd_siamese = {
+siamese_gesd = {
     # Basic
-    'name': 'siamese',
+    'name': 'gesd_siamese',
     'model': 'SiameseRNN',
 
     'char_embedding': None, #'sgns.financial.char',
@@ -57,6 +58,7 @@ gesd_siamese = {
     'num_layers': 2,
     'bidirectional':True,
     'dropout': 0.5,
+    'dropout2': 0.5,
     'pos_weight': 2.0,
     'representation': 'last', # last, avg
     'sim_fun': 'gesd',# 'dense', # exp, cosine, cosine+, dense
@@ -75,17 +77,17 @@ att_siamese = {
     'name': 'att_siamese',
     'model': 'AttSiameseRNN',
 
-    'char_embedding': 'sgns.financial.char',
+    'char_embedding': None,#'sgns.financial.char',
     'word_embedding': None,#'sgns.financial.char',#None,
 
     # Model
-    'embed_size': 300,
-    'hidden_size': 150,
+    'embed_size': 200,
+    'hidden_size': 200,
     'num_layers': 2,
     'bidirectional':True,
     'dropout': 0.5,
     'pos_weight': 3.0,
-    # 'representation': 'last', # last, avg
+    'representation': 'last', # last, avg
     'sim_fun': 'dense',# 'dense', # exp, cosine, cosine+, dense
     'loss': 'ce', # ce, cl, cl+ce
     'cl_margin': 0.1,
@@ -93,14 +95,14 @@ att_siamese = {
     'one_att': True,
 
     # Training
-    'batch_size': 16,
+    'batch_size': 64,
     'max_iter': 500000,
     'patience': 10,
     'max_grad_norm': 10.,
 }
 
 
-light_siamese = {
+siamese_light = {
     # Basic
     'name': 'light_siamese',
     'model': 'SiameseRNN',
@@ -114,6 +116,7 @@ light_siamese = {
     'num_layers': 1,
     'bidirectional':True,
     'dropout': 0.5,
+    'dropout2': 0.5,
     'pos_weight': 3.0,
     'representation': 'last', # last, avg
     'sim_fun': 'dense',# 'dense', # exp, cosine, cosine+, dense
@@ -158,9 +161,9 @@ ainn = {
     'word_embedding': None,#'sgns.financial.char',#None,
     # model
     'embed_size': 200,
-    'dropout': 0.0,
+    'dropout': 0.2,
     'channel_size': 200,
-    'len': 20,
+    'len': 10,
 
     # training
     'batch_size': 64,
@@ -168,3 +171,69 @@ ainn = {
     'patience': 5,
     'max_grad_norm': 5.,
 }
+
+siamese_large = {
+    # Basic
+    'name': 'siamese_large',
+    'model': 'SiameseRNN',
+
+    'char_embedding': None, #'sgns.financial.char',
+    'word_embedding': None, #'sgns.financial.char',#None,
+
+    # Model
+    'mode': 'char',
+    'embed_size': 300,
+    'hidden_size': 200,
+    'num_layers': 2,
+    'bidirectional':True,
+    'dropout': 0.4,
+    'dropout2': 0.2,
+    'pos_weight': 3.5,
+    'representation': 'last', # last, avg, max
+    'sim_fun': 'dense', # exp, cosine, cosine+, dense
+    'l1_size': 400,
+    'l2_size': 200,
+    'loss': 'ce', # ce, cl, cl+ce
+    'ce_alpha': 1.,
+    'cl_margin': 0.3,
+    'dense_plus_size': 200,
+
+    # Training
+    'batch_size': 64,
+    'max_iter': 500000,
+    'patience': 10,
+}
+
+siamese_plus = {
+    # Basic
+    'name': 'siamese_plus',
+    'model': 'SiameseRNN',
+
+    'char_embedding': None, #'sgns.financial.char',
+    'word_embedding': None, #'sgns.financial.char',#None,
+
+    # Model
+    'mode': 'char',
+    'embed_size': 300,
+    'hidden_size': 200,
+    'num_layers': 2,
+    'bidirectional':True,
+    'dropout': 0.5,
+    'dropout2': 0.4,
+    'pos_weight': 3.5,
+    'representation': 'max', # last, avg, max
+    'sim_fun': 'dense+', # exp, cosine, cosine+, dense
+    'l1_size': 100,
+    #'l2_size': 200,
+    'loss': 'cl', # ce, cl, cl+ce
+    'ce_alpha': 1.,
+    'cl_margin': 0.1,
+    'plus_size': 200,
+
+    # Training
+    'batch_size': 128,
+    'max_iter': 500000,
+    'patience': 10,
+}
+
+

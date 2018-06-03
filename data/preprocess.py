@@ -49,7 +49,7 @@ def clean_data(raw, data_config, mode='train'):
         'label' is an integer, while 'target' is a float, used to compute loss
     """
     # replace
-    remove_duplicates = True
+    remove_duplicates = False
     raw  = [l.replace('***', '*').replace(' ', '') for l in raw] 
     data_raw = []
     tra2sim = json.load(open('data/raw/tra2sim.txt','r'))

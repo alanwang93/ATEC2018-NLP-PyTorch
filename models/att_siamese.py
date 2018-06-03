@@ -13,7 +13,7 @@ class AttSiameseRNN(nn.Module):
 
     def __init__(self,  config, data_config):
         super(AttSiameseRNN, self).__init__()
-        self.mode = 'char'
+        self.mode = 'word'
         self.l = self.mode[0] + 'len'
         self.vocab_size = data_config[self.mode+'_size']
         self.embed_size = config['embed_size']
