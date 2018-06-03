@@ -44,10 +44,10 @@ class SiameseRNN(nn.Module):
         self.linear_in_size *= 4
         if config['sim_fun'] in ['dense', 'dense+']:
             self.linear_in_size = self.linear_in_size + 7 + 124 #similarity:5; len:4->2; word_bool:124
-            #self.linear2_in_size = config['l1_size']
+            self.linear2_in_size = config['l1_size']
             #self.linear3_in_size = config['l2_size']
-            self.linear = nn.Linear(self.linear_in_size, 1)
-            #self.linear2 = nn.Linear(self.linear2_in_size, 1)
+            self.linear = nn.Linear(self.linear_in_size, self.linear2_in_size)
+            self.linear2 = nn.Linear(self.linear2_in_size, 1)
             #self.linear3 = nn.Linear(self.linear3_in_size, 1)
         if config['sim_fun'] == 'dense+':
             self.dense_plus = nn.Linear(self.lstm_size, config['plus_size'])
@@ -55,6 +55,7 @@ class SiameseRNN(nn.Module):
             self.bn = nn.BatchNorm1d(config['plus_size'])
         else:
             self.bn = nn.BatchNorm1d(self.lstm_size)
+        self.bn2 = nn.BatchNorm1d(self.linear2_in_size)
         self.sigmoid = nn.Sigmoid()
         self.tanh = nn.Tanh()
         self.relu = nn.ReLU()
@@ -163,8 +164,8 @@ class SiameseRNN(nn.Module):
             out = out * (1./ (1.+torch.exp(-1*(torch.bmm(s1_outs.unsqueeze(1), s2_outs.unsqueeze(2)).squeeze()+1.))))
         elif self.config['sim_fun'] in ['dense', 'dense+']:
             if self.config['sim_fun'] == 'dense+':
-                s1_outs = self.dropout2(s1_outs)
-                s2_outs = self.dropout2(s2_outs)
+                #s1_outs = self.dropout2(s1_outs)
+                #s2_outs = self.dropout2(s2_outs)
                 s1_outs = self.dense_plus(s1_outs)
                 s2_outs = self.dense_plus(s2_outs)
             # BN
@@ -177,9 +178,11 @@ class SiameseRNN(nn.Module):
             s2_outs = self.tanh(s2_outs)
             feats = torch.cat((s1_outs, s2_outs, torch.abs(s1_outs-s2_outs), s1_outs * s2_outs, sfeats, pair_feats), dim=1)
             #feats = self.dropout2(feats)
-            #out1 = self.dropout2(self.tanh(self.linear(feats)))
+            out1 = self.linear(feats)
+            out1 = self.bn2(out1)
+            out1 = self.tanh(out1)
             #out2 = self.dropout2(self.prelu(self.linear2(out1)))
-            out = torch.squeeze(self.linear(feats), 1)
+            out = torch.squeeze(self.linear2(out1), 1)
 
         return out
          
