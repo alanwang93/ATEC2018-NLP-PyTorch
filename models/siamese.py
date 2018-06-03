@@ -51,11 +51,13 @@ class SiameseRNN(nn.Module):
             #self.linear3 = nn.Linear(self.linear3_in_size, 1)
         if config['sim_fun'] == 'dense+':
             self.dense_plus = nn.Linear(self.lstm_size, config['plus_size'])
-        if self.config['sim_fun'] == 'dense+':
-            self.bn = nn.BatchNorm1d(config['plus_size'])
-        else:
-            self.bn = nn.BatchNorm1d(self.lstm_size)
+        #if self.config['sim_fun'] == 'dense+':
+        #    self.bn = nn.BatchNorm1d(config['plus_size'])
+        #else:
+        #    self.bn = nn.BatchNorm1d(self.lstm_size)
+        self.bn = nn.BatchNorm1d(self.linear_in_size)
         self.bn2 = nn.BatchNorm1d(self.linear2_in_size)
+
         self.sigmoid = nn.Sigmoid()
         self.tanh = nn.Tanh()
         self.relu = nn.ReLU()
@@ -169,14 +171,16 @@ class SiameseRNN(nn.Module):
                 s1_outs = self.dense_plus(s1_outs)
                 s2_outs = self.dense_plus(s2_outs)
             # BN
-            s1_outs = self.bn(s1_outs)
-            s2_outs = self.bn(s2_outs)
+            #s1_outs = self.bn(s1_outs)
+            #s2_outs = self.bn(s2_outs)
 
             sfeats = self.sfeats(data)
             pair_feats = self.pair_feats(data)
-            s1_outs = self.tanh(s1_outs)
-            s2_outs = self.tanh(s2_outs)
+            #s1_outs = self.tanh(s1_outs)
+            #s2_outs = self.tanh(s2_outs)
             feats = torch.cat((s1_outs, s2_outs, torch.abs(s1_outs-s2_outs), s1_outs * s2_outs, sfeats, pair_feats), dim=1)
+            feats = self.bn(feats)
+            feats = self.tanh(feats)
             #feats = self.dropout2(feats)
             out1 = self.linear(feats)
             out1 = self.bn2(out1)

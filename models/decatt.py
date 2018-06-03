@@ -33,7 +33,7 @@ class DecAttSiamese(nn.Module):
                 num_layers=self.num_layers, batch_first=True, dropout=0.)
 
         self.dropout = nn.Dropout(config['dropout'])
-        self.dropout2 = nn.Dropout(config['dropout2'])
+        #self.dropout2 = nn.Dropout(config['dropout2'])
 
         self.lstm_size = self.hidden_size
         if self.bidirectional:
@@ -42,23 +42,23 @@ class DecAttSiamese(nn.Module):
         # Decomposible Attention
         # Attend
         self.F1 = nn.Linear(self.lstm_size, config['F1_out'], bias=True)
-        self.bn_F1 = self.BatchNorm1d(config['F1_out'])
-        self.F2 = nn.Linear(self.lstm_size, config['F2_out'], bias=True)
-        self.bn_F2 = self.BatchNorm1d(config['F2_out'])
+        self.bn_F1 = nn.BatchNorm1d(self.lstm_size)
+        self.F2 = nn.Linear(config['F1_out'], config['F2_out'], bias=True)
+        self.bn_F2 = nn.BatchNorm1d(config['F1_out'])
         # Compare
         self.G1 = nn.Linear(self.lstm_size*2, config['G1_out'], bias=True)
-        self.bn_G1 = self.BatchNorm1d(config['G1_out'])
-        self.G2 = nn.Linear(self.lstm_size*2, config['G2_out'], bias=True)
-        self.bn_G2 = self.BatchNorm1d(config['G2_out'])
+        self.bn_G1 = nn.BatchNorm1d(self.lstm_size*2)
+        self.G2 = nn.Linear(config['G1_out'], config['G2_out'], bias=True)
+        self.bn_G2 = nn.BatchNorm1d(config['G1_out'])
         # Aggregate => sentence pair level representation
-        self.H1 = nn.Linear(config['G2_out'], config['H1_out'], bias=True)
-        self.bn_H1 = self.BatchNorm1d(config['H1_out'])
+        self.H1 = nn.Linear(config['G2_out']*2, config['H1_out'], bias=True)
+        self.bn_H1 = nn.BatchNorm1d(config['G2_out']*2)
 
         self.l1_size = config['l1_size']
 
         self.linear = nn.Linear(config['H1_out'] + 7 +124, self.l1_size)
-        self.bn_feats = self.BatchNorm1d(config['H1_out'] + 7 +124)
-        self.bn_l1 = self.BatchNorm1d(self.l1_size)
+        self.bn_feats = nn.BatchNorm1d(config['H1_out'] + 7 +124)
+        self.bn_l1 = nn.BatchNorm1d(self.l1_size)
         self.linear2 = nn.Linear(self.l1_size, 1)
 
         self.sigmoid = nn.Sigmoid()
@@ -92,7 +92,7 @@ class DecAttSiamese(nn.Module):
 
 
     def forward(self, data):
-        batch_size, seq_len, _ = data['s1_char'].size()
+        batch_size, seq_len = data['s1_'+self.mode].size()
         row_idx = torch.arange(0, batch_size).long()
         s1_embed = self.embed(data['s1_'+self.mode])
         s2_embed = self.embed(data['s2_'+self.mode])
@@ -113,21 +113,22 @@ class DecAttSiamese(nn.Module):
             s1_out = torch.cat((s1_out, s1_out_rvs), dim=2)
             s2_out = torch.cat((s2_out, s2_out_rvs), dim=2)
 
-        s1_out = s1_out.view(batch_size*seq_len, -1)
-        s2_out = s2_out.view(batch_size*seq_len, -1)
+        s1_vec = s1_out.view(batch_size*seq_len, -1)
+        s2_vec = s2_out.view(batch_size*seq_len, -1)
 
         # Attend
-        s1_out = self.F1(self.relu(self.bn_F1(s1_out)))
-        s2_out = self.F1(self.relu(self.bn_F1(s2_out)))
-        s1_out = self.F2(self.relu(self.bn_F2(s1_out)))
-        s2_out = self.F2(self.relu(self.bn_F2(s2_out)))
+        s1_vec = self.F1(self.tanh(self.bn_F1(s1_vec)))
+        s2_vec = self.F1(self.tanh(self.bn_F1(s2_vec)))
+        s1_vec = self.F2(self.tanh(self.bn_F2(s1_vec)))
+        s2_vec = self.F2(self.tanh(self.bn_F2(s2_vec)))
 
-        s1_out = s1_out.view(batch_size, seq_len, -1)
-        s2_out = s2_out.view(batch_size, seq_len, -1)
+        s1_vec = s1_vec.view(batch_size, seq_len, -1)
+        s2_vec = s2_vec.view(batch_size, seq_len, -1)
 
-        E = torch.bmm(s1_out, s2_out.transpose(1,2)) # batch_size, seq_len(1), seq_len(2)
+        E = torch.bmm(s1_vec, s2_vec.transpose(1,2)) # batch_size, seq_len(1), seq_len(2)
         s2_weights = F.softmax(E, dim=2)
         s1_weights = F.softmax(E, dim=1)
+        print("s1_weights", s1_weights.size())
         # not masked
         s2_sub = torch.bmm(s2_weights, s2_out) # batch_size, seq_len(1), d
         s1_sub = torch.bmm(s1_weights, s1_out) # batch_size, seq_len(2), d
@@ -135,13 +136,16 @@ class DecAttSiamese(nn.Module):
         # Compare
         v1 = torch.cat((s1_out, s2_sub), dim=2)
         v2 = torch.cat((s2_out, s1_sub), dim=2)
-        v1 = self.G1(self.relu(self.bn_G1(v1)))
-        v2 = self.G1(self.relu(self.bn_G1(v2)))
-        v1 = self.G2(self.relu(self.bn_G2(v1)))
-        v2 = self.G2(self.relu(self.bn_G2(v2)))
+        v1 = v1.view(batch_size*seq_len, -1)
+        v2 = v2.view(batch_size*seq_len, -1)
+        v1 = self.G1(self.tanh(self.bn_G1(v1)))
+        v2 = self.G1(self.tanh(self.bn_G1(v2)))
+        v1 = self.G2(self.tanh(self.bn_G2(v1))).view(batch_size, seq_len, -1)
+        v2 = self.G2(self.tanh(self.bn_G2(v2))).view(batch_size, seq_len, -1)
 
         # Aggregate
         v = torch.cat((torch.sum(v1, dim=1), torch.sum(v2, dim=1)), dim=1)
+        v = self.H1(self.bn_H1(v))
         
         sfeats = self.sfeats(data)
         pair_feats = self.pair_feats(data)
@@ -201,12 +205,9 @@ class DecAttSiamese(nn.Module):
 
     def train_step(self, data):
         out = self.forward(data)
-        if self.config['sim_fun'] == 'dense':
-            sim = self.tanh(out)
-            proba = self.sigmoid(out)
-        else:
-            sim = out
-            proba = sim/2.+0.5
+        sim = self.tanh(out)
+        proba = self.sigmoid(out)
+
         # constractive loss
         loss = 0.
         if 'ce' in self.config['loss']:
@@ -224,12 +225,8 @@ class DecAttSiamese(nn.Module):
 
     def evaluate(self, data):
         out = self.forward(data)
-        if self.config['sim_fun'] == 'dense':
-            sim = self.tanh(out)
-            proba = self.sigmoid(out)
-        else:
-            sim = out
-            proba = sim/2.+0.5
+        sim = self.tanh(out)
+        proba = self.sigmoid(out)
         loss = 0.
         if 'ce' in self.config['loss']:
             loss += self.config['ce_alpha'] * self.BCELoss(proba, data['target'], [1., self.pos_weight])
@@ -240,9 +237,7 @@ class DecAttSiamese(nn.Module):
 
     def test(self, data):
         out = self.forward(data)
-        if self.config['sim_fun'] == 'dense':
-            proba = self.sigmoid(out)
-        else:
-            proba = out/2.+0.5
+        proba = self.sigmoid(out)
         pred = proba.item()
+        # TODO: rewrite score function
         return pred, data['sid'].item()
