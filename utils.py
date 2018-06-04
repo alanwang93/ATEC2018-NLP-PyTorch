@@ -48,6 +48,19 @@ def split_data(in_file, out_dir, train_ratio=0.95):
             valid_file.write(s)
         valid_file.close()
 
+def over_sample(in_file, out_dir):
+    with open(in_file, 'r') as f:
+        lines = f.readlines()
+        pos = [l for l in lines if l.strip().split('\t')[3] == '1']
+        neg = [l for l in lines if l.strip().split('\t')[3] == '0']
+        n_gen = len(neg) - len(pos)
+        print("Over sample {0} positive samples".format(n_gen))
+        new_pos = np.random.choice(pos, n_gen, replace=True)
+        out = open(os.path.join(out_dir, 'all.raw'), 'w')
+        for l in (pos+new_pos.tolist()+neg):
+            out.write(l)
+
+
 def score(pred, target, threshold=0.5):
     eps = 1e-6
     pred = [1 if p > threshold else 0 for p in pred]
@@ -78,6 +91,7 @@ def BCELoss(output, target, weights=None):
         loss = target * torch.log(output+eps) + (1 - target) * torch.log(1 - output+eps)
     return torch.neg(torch.mean(loss))
 
+
 def to_cuda(d, c):
     if c['use_cuda']:
         for k, v in d.items():
@@ -86,6 +100,9 @@ def to_cuda(d, c):
 
 
 def main(args):
+    if args.oversample:
+        over_sample(args.raw, args.out_dir)
+        args.raw = os.path.join(args.out_dir, 'all.raw')
     if args.split:
         split_data(args.raw, args.out_dir, args.train_ratio)
 
@@ -94,8 +111,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--raw', type=str, default='data/raw/atec_nlp_sim_train_full.csv')
     parser.add_argument('--out_dir', type=str, default='data/raw/')
-    parser.add_argument('--train_ratio', type=float, default=0.9)
+    parser.add_argument('--train_ratio', type=float, default=0.95)
     parser.add_argument('--split', dest='split', action='store_true')
+    parser.add_argument('--oversample', dest='oversample', action='store_true')
     args = parser.parse_args()
 
 
