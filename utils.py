@@ -56,7 +56,7 @@ def over_sample(in_file, out_dir):
         n_gen = len(neg) - len(pos)
         print("Over sample {0} positive samples".format(n_gen))
         new_pos = np.random.choice(pos, n_gen, replace=True)
-        out = open(os.path.join(out_dir, 'all.raw'), 'w')
+        out = open(os.path.join(out_dir, 'train_oversampled.raw'), 'w')
         for l in (pos+new_pos.tolist()+neg):
             out.write(l)
 
@@ -100,11 +100,10 @@ def to_cuda(d, c):
 
 
 def main(args):
-    if args.oversample:
-        over_sample(args.raw, args.out_dir)
-        args.raw = os.path.join(args.out_dir, 'all.raw')
     if args.split:
         split_data(args.raw, args.out_dir, args.train_ratio)
+    if args.oversample:
+        over_sample(os.path.join(args.out_dir, 'train.raw'), args.out_dir)
 
 
 if __name__ == '__main__':
