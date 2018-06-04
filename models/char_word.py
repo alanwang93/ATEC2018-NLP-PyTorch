@@ -19,7 +19,7 @@ class CharWordSiamese(nn.Module):
         self.char_hidden_size = config['char_hidden_size']
         self.word_hidden_size = config['word_hidden_size']
         self.num_layers = config['num_layers']
-        self.bidirectional = config['bidirectional']
+        self.bidirectional = True
         self.pos_weight = config['pos_weight']
         self.config = config
         self.data_config = data_config
@@ -43,17 +43,17 @@ class CharWordSiamese(nn.Module):
         self.char_lstm_size = self.char_hidden_size * 2
         self.word_lstm_size = self.word_hidden_size * 2
 
-        self.dense_plus = nn.Linear(self.char_lstm_size + self.word_lstm_size, config['plus_size1'])
-        self.bn1 = nn.BatchNorm1d(config['plus_size1'])
-        self.dense_plus2 = nn.Linear(config['plus_size1'], config['plus_size2'])
+        self.cdense_plus1 = nn.Linear(self.char_lstm_size, config['plus_size1'])
+        self.wdense_plus1 = nn.Linear(self.word_lstm_size, config['plus_size1'])
+        self.cbn1 = nn.BatchNorm1d(config['plus_size1'])
+        self.wbn1 = nn.BatchNorm1d(config['plus_size1'])
+        self.cdense_plus2 = nn.Linear(config['plus_size1'], config['plus_size2'])
+        self.wdense_plus2 = nn.Linear(config['plus_size1'], config['plus_size2'])
 
-        self.l1_size = self.dense_plus2 * 4 + 7 + 124
+        self.l1_size = config['plus_size2'] * 8 + 7 + 124
         self.linear1 = nn.Linear(self.l1_size, config['l1_out'])
         self.bn2 = nn.BatchNorm1d(config['l1_out'])
         self.linear2 = nn.Linear(config['l1_out'], 1)
-
-        
-
 
         self.sigmoid = nn.Sigmoid()
         self.tanh = nn.Tanh()
@@ -69,27 +69,39 @@ class CharWordSiamese(nn.Module):
 
     def _init_weights(self):
         pass
-        # nn.init.normal_(self.embed.weight[1:])
-        # nn.init.xavier_normal_(self.linear.weight)
-        # #nn.init.xavier_normal_(self.linear2.weight)
-        # init_fun = nn.init.orthogonal_
-        # for i in range(self.num_layers):
-        #     for j in range(4):
-        #         init_fun(getattr(self.rnn, 'weight_ih_l{0}'.format(i))[j*self.hidden_size:(j+1)*self.hidden_size])
-        #         init_fun(getattr(self.rnn, 'weight_hh_l{0}'.format(i))[j*self.hidden_size:(j+1)*self.hidden_size])
-        #         if self.bidirectional:
-        #             init_fun(getattr(self.rnn_rvs, 'weight_ih_l{0}'.format(i))[j*self.hidden_size:(j+1)*self.hidden_size])
-        #             init_fun(getattr(self.rnn_rvs, 'weight_hh_l{0}'.format(i))[j*self.hidden_size:(j+1)*self.hidden_size])
+        nn.init.normal_(self.cembed.weight[1:])
+        nn.init.normal_(self.wembed.weight[1:])
+        nn.init.xavier_normal_(self.linear1.weight)
+        nn.init.xavier_normal_(self.cdense_plus1.weight)
+        nn.init.xavier_normal_(self.wdense_plus1.weight)
+        nn.init.xavier_normal_(self.linear2.weight)
+        nn.init.xavier_normal_(self.wdense_plus2.weight)
+        nn.init.xavier_normal_(self.cdense_plus2.weight)
+        init_fun = nn.init.orthogonal_
+        for i in range(self.num_layers):
+            for j in range(4):
+                init_fun(getattr(self.crnn, 'weight_ih_l{0}'.format(i))[j*self.char_hidden_size:(j+1)*self.char_hidden_size])
+                init_fun(getattr(self.crnn, 'weight_hh_l{0}'.format(i))[j*self.char_hidden_size:(j+1)*self.char_hidden_size])
+                init_fun(getattr(self.wrnn, 'weight_ih_l{0}'.format(i))[j*self.word_hidden_size:(j+1)*self.word_hidden_size])
+                init_fun(getattr(self.wrnn, 'weight_hh_l{0}'.format(i))[j*self.word_hidden_size:(j+1)*self.word_hidden_size])               
+                
+                if self.bidirectional:
+                    init_fun(getattr(self.crnn_rvs, 'weight_ih_l{0}'.format(i))[j*self.char_hidden_size:(j+1)*self.char_hidden_size])
+                    init_fun(getattr(self.wrnn_rvs, 'weight_ih_l{0}'.format(i))[j*self.word_hidden_size:(j+1)*self.word_hidden_size])
+                    init_fun(getattr(self.crnn_rvs, 'weight_hh_l{0}'.format(i))[j*self.char_hidden_size:(j+1)*self.char_hidden_size])
+                    init_fun(getattr(self.wrnn_rvs, 'weight_hh_l{0}'.format(i))[j*self.word_hidden_size:(j+1)*self.word_hidden_size])
 
-        #     getattr(self.rnn, 'bias_ih_l{0}'.format(i))[self.hidden_size:2*self.hidden_size].data.fill_(1.)
-        #     getattr(self.rnn, 'bias_hh_l{0}'.format(i))[self.hidden_size:2*self.hidden_size].data.fill_(1.)
-        #     if self.bidirectional:
-        #         getattr(self.rnn_rvs, 'bias_ih_l{0}'.format(i))[self.hidden_size:2*self.hidden_size].data.fill_(1.)
-        #         getattr(self.rnn_rvs, 'bias_hh_l{0}'.format(i))[self.hidden_size:2*self.hidden_size].data.fill_(1.)
+            getattr(self.crnn, 'bias_ih_l{0}'.format(i))[self.char_hidden_size:2*self.char_hidden_size].data.fill_(1.)
+            getattr(self.wrnn, 'bias_ih_l{0}'.format(i))[self.word_hidden_size:2*self.word_hidden_size].data.fill_(1.)
+            getattr(self.crnn, 'bias_hh_l{0}'.format(i))[self.char_hidden_size:2*self.char_hidden_size].data.fill_(1.)
+            getattr(self.wrnn, 'bias_hh_l{0}'.format(i))[self.word_hidden_size:2*self.word_hidden_size].data.fill_(1.)
+
+            if self.bidirectional:
+                getattr(self.crnn_rvs, 'bias_ih_l{0}'.format(i))[self.char_hidden_size:2*self.char_hidden_size].data.fill_(1.)
+                getattr(self.wrnn_rvs, 'bias_ih_l{0}'.format(i))[self.word_hidden_size:2*self.word_hidden_size].data.fill_(1.)
+                getattr(self.crnn_rvs, 'bias_hh_l{0}'.format(i))[self.char_hidden_size:2*self.char_hidden_size].data.fill_(1.)
+                getattr(self.wrnn_rvs, 'bias_hh_l{0}'.format(i))[self.word_hidden_size:2*self.word_hidden_size].data.fill_(1.)
         
-        # if self.config['sim_fun'] == 'dense+':
-        #     nn.init.xavier_normal_(self.dense_plus.weight)
-
 
     def forward(self, data):
         batch_size = data['s1_char'].size()[0]
@@ -117,46 +129,57 @@ class CharWordSiamese(nn.Module):
         s1_wout = torch.squeeze(s1_wout[row_idx, data['s1_wlen']-1, :], 1)
         s2_wout = torch.squeeze(s2_wout[row_idx, data['s2_wlen']-1, :], 1)
 
-        s1_outs = torch.cat((s1_wout, s1_cout), dim=1)
-        s2_outs = torch.cat((s2_wout, s2_cout), dim=1)
-
         if self.bidirectional:
             s1_cembed_rvs = self.cembed(data['s1_char_rvs'])
             s2_cembed_rvs = self.cembed(data['s2_char_rvs'])
             s1_cembed_rvs = self.dropout(s1_cembed_rvs)
             s2_cembed_rvs = self.dropout(s2_cembed_rvs)
-            s1_cout_rvs, _ = self.rnn_rvs(s1_cembed_rvs)
-            s2_cout_rvs, _ = self.rnn_rvs(s2_cembed_rvs)
+            s1_cout_rvs, _ = self.crnn_rvs(s1_cembed_rvs)
+            s2_cout_rvs, _ = self.crnn_rvs(s2_cembed_rvs)
+
+            s1_cout_rvs = torch.squeeze(s1_cout_rvs[row_idx, data['s1_clen']-1, :], 1)
+            s2_cout_rvs = torch.squeeze(s2_cout_rvs[row_idx, data['s2_clen']-1, :], 1)
 
             s1_wembed_rvs = self.wembed(data['s1_char_rvs'])
             s2_wembed_rvs = self.wembed(data['s2_char_rvs'])
             s1_wembed_rvs = self.dropout(s1_wembed_rvs)
             s2_wembed_rvs = self.dropout(s2_wembed_rvs)
-            s1_wout_rvs, _ = self.rnn_rvs(s1_wembed_rvs)
-            s2_wout_rvs, _ = self.rnn_rvs(s2_wembed_rvs)
+            s1_wout_rvs, _ = self.wrnn_rvs(s1_wembed_rvs)
+            s2_wout_rvs, _ = self.wrnn_rvs(s2_wembed_rvs)
 
             s1_wout_rvs = torch.squeeze(s1_wout_rvs[row_idx, data['s1_wlen']-1, :], 1)
             s2_wout_rvs = torch.squeeze(s2_wout_rvs[row_idx, data['s2_wlen']-1, :], 1)
 
-            s1_outs = torch.cat((s1_outs, s1_wout_rvs, s1_cout_rvs), dim=1)
-            s2_outs = torch.cat((s2_outs, s2_wout_rvs, s2_cout_rvs), dim=1)
+            s1_couts = torch.cat((s1_cout, s1_cout_rvs), dim=1)
+            s1_wouts = torch.cat((s1_wout, s1_wout_rvs), dim=1)
+            s2_couts = torch.cat((s2_cout, s2_cout_rvs), dim=1)
+            s2_wouts = torch.cat((s2_wout, s2_wout_rvs), dim=1)
 
 
-        s1_outs = self.dense_plus1(s1_outs)
-        s2_outs = self.dense_plus1(s2_outs)
+        s1_couts = self.cdense_plus1(s1_couts)
+        s1_wouts = self.wdense_plus1(s1_wouts)
+        s2_couts = self.cdense_plus1(s2_couts)
+        s2_wouts = self.wdense_plus1(s2_wouts)
         # BN
-        s1_outs = self.bn1(s1_outs)
-        s2_outs = self.bn1(s2_outs)
-        s1_outs = self.tanh(s1_outs)
-        s2_outs = self.tanh(s2_outs)
+        s1_couts = self.cbn1(s1_couts)
+        s2_couts = self.cbn1(s2_couts)
+        s1_couts = self.tanh(s1_couts)
+        s2_couts = self.tanh(s2_couts)
+        s1_wouts = self.wbn1(s1_wouts)
+        s2_wouts = self.wbn1(s2_wouts)
+        s1_wouts = self.tanh(s1_wouts)
+        s2_wouts = self.tanh(s2_wouts)
 
-        s1_outs = self.dense_plus2(s1_outs)
-        s2_outs = self.dense_plus2(s2_outs)
+        s1_couts = self.cdense_plus2(s1_couts)
+        s2_couts = self.cdense_plus2(s2_couts)
+        s1_wouts = self.wdense_plus2(s1_wouts)
+        s2_wouts = self.wdense_plus2(s2_wouts)
+
 
         sfeats = self.sfeats(data)
         pair_feats = self.pair_feats(data)
 
-        feats = torch.cat((s1_outs, s2_outs, torch.abs(s1_outs-s2_outs), s1_outs * s2_outs, sfeats, pair_feats), dim=1)
+        feats = torch.cat((s1_couts, s2_couts, torch.abs(s1_couts-s2_couts), s1_couts * s2_couts, s1_wouts, s2_wouts, torch.abs(s1_wouts-s2_wouts), s1_wouts * s2_wouts, sfeats, pair_feats), dim=1)
 
         feats = self.linear1(feats)
         feats = self.bn2(feats)

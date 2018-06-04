@@ -51,11 +51,11 @@ class SiameseRNN(nn.Module):
             #self.linear3 = nn.Linear(self.linear3_in_size, 1)
         if config['sim_fun'] == 'dense+':
             self.dense_plus = nn.Linear(self.lstm_size, config['plus_size'])
-        #if self.config['sim_fun'] == 'dense+':
-        #    self.bn = nn.BatchNorm1d(config['plus_size'])
-        #else:
-        #    self.bn = nn.BatchNorm1d(self.lstm_size)
-        self.bn = nn.BatchNorm1d(self.linear_in_size)
+        if self.config['sim_fun'] == 'dense+':
+            self.bn = nn.BatchNorm1d(config['plus_size'])
+        else:
+            self.bn = nn.BatchNorm1d(self.lstm_size)
+        #self.bn = nn.BatchNorm1d(self.lstm_size)
         self.bn2 = nn.BatchNorm1d(self.linear2_in_size)
 
         self.sigmoid = nn.Sigmoid()
@@ -101,15 +101,6 @@ class SiameseRNN(nn.Module):
         s1_embed = self.dropout(s1_embed)
         s2_embed = self.dropout(s2_embed)
 
-        # Packed, using `complex_collate_fn`
-        # s1_packed = nn.utils.rnn.pack_padded_sequence(s1_embed, data['s1_ordered_len'], batch_first=True)
-        # s2_packed = nn.utils.rnn.pack_padded_sequence(s2_embed, data['s2_ordered_len'], batch_first=True)
-        # s1_out, s1_hidden = self.rnn(s1_packed)
-        # s2_out, s2_hidden = self.rnn(s2_packed)
-        # s1_out, _ = nn.utils.rnn.pad_packed_sequence(s1_out, batch_first=True)
-        # s2_out, _ = nn.utils.rnn.pad_packed_sequence(s2_out, batch_first=True)
-
-        # Non-packed, using `simple_collate_fn`
         s1_out, s1_hidden = self.rnn(s1_embed)
         s2_out, s2_hidden = self.rnn(s2_embed)
         if self.config['representation'] == 'last': # last hidden state
@@ -171,16 +162,16 @@ class SiameseRNN(nn.Module):
                 s1_outs = self.dense_plus(s1_outs)
                 s2_outs = self.dense_plus(s2_outs)
             # BN
-            #s1_outs = self.bn(s1_outs)
-            #s2_outs = self.bn(s2_outs)
+            s1_outs = self.bn(s1_outs)
+            s2_outs = self.bn(s2_outs)
+            s1_outs = self.tanh(s1_outs)
+            s2_outs = self.tanh(s2_outs)
 
             sfeats = self.sfeats(data)
             pair_feats = self.pair_feats(data)
-            #s1_outs = self.tanh(s1_outs)
-            #s2_outs = self.tanh(s2_outs)
             feats = torch.cat((s1_outs, s2_outs, torch.abs(s1_outs-s2_outs), s1_outs * s2_outs, sfeats, pair_feats), dim=1)
-            feats = self.bn(feats)
-            feats = self.tanh(feats)
+            #feats = self.bn(feats)
+            #feats = self.tanh(feats)
             #feats = self.dropout2(feats)
             out1 = self.linear(feats)
             out1 = self.bn2(out1)

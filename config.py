@@ -216,19 +216,19 @@ siamese_plus = {
     'mode': 'char',
     'embed_size': 300,
     'hidden_size': 200,
-    'num_layers': 1,
+    'num_layers': 2,
     'bidirectional':True,
     'dropout': 0.5,
-    'dropout2': 0.4,
-    'pos_weight': 1.,
+    'dropout2': 0.,
+    'pos_weight': 3.,
     'representation': 'last', # last, avg, max
     'sim_fun': 'dense+', # exp, cosine, cosine+, dense
-    'l1_size': 200,
+    'l1_size': 100,
     #'l2_size': 200,
     'loss': 'cl', # ce, cl, cl+ce
     'ce_alpha': 1.,
     'cl_margin': 0.1,
-    'plus_size': 400,
+    'plus_size': 200,
 
     # Training
     'batch_size': 128,
@@ -250,17 +250,17 @@ decatt = {
     'embed_size': 300,
     'hidden_size': 200,
     'F1_out': 200,
-    'F2_out': 100,
+    'F2_out': 200,
     'G1_out': 200,
-    'G2_out': 100,
-    'H1_out': 100,
+    'G2_out': 200,
+    'H1_out': 200,
     'num_layers': 2,
     'bidirectional':True,
     'dropout': 0.4,
     #'dropout2': 0.4,
     'pos_weight': 1.,
     'representation': 'last', # last, avg, max
-    'l1_size': 100,
+    'l1_size': 200,
     'loss': 'cl', # ce, cl, cl+ce
     'ce_alpha': 1.,
     'cl_margin': 0.1,
@@ -268,7 +268,7 @@ decatt = {
     # Training
     'batch_size': 64,
     'max_iter': 500000,
-    'patience': 10,
+    'patience': 5,
     'max_grad_norm': 10.,
 }
 
@@ -285,13 +285,16 @@ charword = {
     'char_embed_size': 300,
     'word_embed_size': 300,
     'char_hidden_size': 200,
-    'wordd_hidden_size': 200,
+    'word_hidden_size': 200,
     'num_layers': 2,
-    'dropout': 0.4,
+    'dropout': 0.5,
     'dropout2': 0.4,
-    'pos_weight': 1.,
-    'representation': 'last', # last, avg, max
-    'l1_size': 100,
+    'pos_weight': 3.,
+    
+    'plus_size1': 200,
+    'plus_size2': 200,
+    'l1_out': 100,
+
     'loss': 'cl', # ce, cl, cl+ce
     'ce_alpha': 1.,
     'cl_margin': 0.1,
@@ -299,7 +302,7 @@ charword = {
     # Training
     'batch_size': 64,
     'max_iter': 500000,
-    'patience': 10,
+    'patience': 5,
     'max_grad_norm': 10.,
 }
 

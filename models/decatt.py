@@ -117,10 +117,10 @@ class DecAttSiamese(nn.Module):
         s2_vec = s2_out.view(batch_size*seq_len, -1)
 
         # Attend
-        s1_vec = self.F1(self.tanh(self.bn_F1(s1_vec)))
-        s2_vec = self.F1(self.tanh(self.bn_F1(s2_vec)))
-        s1_vec = self.F2(self.tanh(self.bn_F2(s1_vec)))
-        s2_vec = self.F2(self.tanh(self.bn_F2(s2_vec)))
+        s1_vec = self.F1(self.prelu(self.bn_F1(s1_vec)))
+        s2_vec = self.F1(self.prelu(self.bn_F1(s2_vec)))
+        s1_vec = self.F2(self.prelu(self.bn_F2(s1_vec)))
+        s2_vec = self.F2(self.prelu(self.bn_F2(s2_vec)))
 
         s1_vec = s1_vec.view(batch_size, seq_len, -1)
         s2_vec = s2_vec.view(batch_size, seq_len, -1)
@@ -128,20 +128,19 @@ class DecAttSiamese(nn.Module):
         E = torch.bmm(s1_vec, s2_vec.transpose(1,2)) # batch_size, seq_len(1), seq_len(2)
         s2_weights = F.softmax(E, dim=2)
         s1_weights = F.softmax(E, dim=1)
-        print("s1_weights", s1_weights.size())
         # not masked
         s2_sub = torch.bmm(s2_weights, s2_out) # batch_size, seq_len(1), d
-        s1_sub = torch.bmm(s1_weights, s1_out) # batch_size, seq_len(2), d
+        s1_sub = torch.bmm(s1_weights.transpose(1, 2), s1_out) # batch_size, seq_len(2), d
 
         # Compare
         v1 = torch.cat((s1_out, s2_sub), dim=2)
         v2 = torch.cat((s2_out, s1_sub), dim=2)
         v1 = v1.view(batch_size*seq_len, -1)
         v2 = v2.view(batch_size*seq_len, -1)
-        v1 = self.G1(self.tanh(self.bn_G1(v1)))
-        v2 = self.G1(self.tanh(self.bn_G1(v2)))
-        v1 = self.G2(self.tanh(self.bn_G2(v1))).view(batch_size, seq_len, -1)
-        v2 = self.G2(self.tanh(self.bn_G2(v2))).view(batch_size, seq_len, -1)
+        v1 = self.G1(self.prelu(self.bn_G1(v1)))
+        v2 = self.G1(self.prelu(self.bn_G1(v2)))
+        v1 = self.G2(self.prelu(self.bn_G2(v1))).view(batch_size, seq_len, -1)
+        v2 = self.G2(self.prelu(self.bn_G2(v2))).view(batch_size, seq_len, -1)
 
         # Aggregate
         v = torch.cat((torch.sum(v1, dim=1), torch.sum(v2, dim=1)), dim=1)
@@ -152,9 +151,9 @@ class DecAttSiamese(nn.Module):
         
         feats = torch.cat((v, sfeats, pair_feats), dim=1)
         feats = self.bn_feats(feats)
-        feats = self.tanh(feats)
+        feats = self.prelu(feats)
         out1 = self.bn_l1(self.linear(feats))
-        out1 = self.tanh(out1)
+        out1 = self.prelu(out1)
         out = torch.squeeze(self.linear2(out1), 1)
         return out
 
