@@ -247,7 +247,7 @@ class CharWordSiamese(nn.Module):
         if 'ce' in self.config['loss']:
             loss += self.config['ce_alpha'] * self.BCELoss(proba, data['target'], [1., self.pos_weight])
         if 'cl' in self.config['loss']:
-            loss += self.contrastive_loss(sim, data['target'], margin=self.config['cl_margin']) 
+            loss += self.contrastive_loss(proba, data['target'], margin=self.config['cl_margin']) 
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
@@ -260,7 +260,7 @@ class CharWordSiamese(nn.Module):
         if 'ce' in self.config['loss']:
             loss += self.config['ce_alpha'] * self.BCELoss(proba, data['target'], [1., self.pos_weight])
         if 'cl' in self.config['loss']:
-            loss += self.contrastive_loss(sim, data['target'], margin=self.config['cl_margin']) 
+            loss += self.contrastive_loss(proba, data['target'], margin=self.config['cl_margin']) 
         return proba.tolist(),  data['label'].tolist(), loss.item()
 
 

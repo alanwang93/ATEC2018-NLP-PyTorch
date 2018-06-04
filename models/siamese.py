@@ -157,8 +157,8 @@ class SiameseRNN(nn.Module):
             out = out * (1./ (1.+torch.exp(-1*(torch.bmm(s1_outs.unsqueeze(1), s2_outs.unsqueeze(2)).squeeze()+1.))))
         elif self.config['sim_fun'] in ['dense', 'dense+']:
             if self.config['sim_fun'] == 'dense+':
-                #s1_outs = self.dropout2(s1_outs)
-                #s2_outs = self.dropout2(s2_outs)
+                s1_outs = self.dropout2(s1_outs)
+                s2_outs = self.dropout2(s2_outs)
                 s1_outs = self.dense_plus(s1_outs)
                 s2_outs = self.dense_plus(s2_outs)
             # BN
@@ -172,7 +172,7 @@ class SiameseRNN(nn.Module):
             feats = torch.cat((s1_outs, s2_outs, torch.abs(s1_outs-s2_outs), s1_outs * s2_outs, sfeats, pair_feats), dim=1)
             #feats = self.bn(feats)
             #feats = self.tanh(feats)
-            #feats = self.dropout2(feats)
+            feats = self.dropout2(feats)
             out1 = self.linear(feats)
             out1 = self.bn2(out1)
             out1 = self.tanh(out1)
@@ -247,7 +247,7 @@ class SiameseRNN(nn.Module):
         if 'ce' in self.config['loss']:
             loss += self.config['ce_alpha'] * self.BCELoss(proba, data['target'], [1., self.pos_weight])
         if 'cl' in self.config['loss']:
-            loss += self.contrastive_loss(sim, data['target'], margin=self.config['cl_margin']) 
+            loss += self.contrastive_loss(proba, data['target'], margin=self.config['cl_margin']) 
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
@@ -260,7 +260,7 @@ class SiameseRNN(nn.Module):
         if 'ce' in self.config['loss']:
             loss += self.config['ce_alpha'] * self.BCELoss(proba, data['target'], [1., self.pos_weight])
         if 'cl' in self.config['loss']:
-            loss += self.contrastive_loss(sim, data['target'], margin=self.config['cl_margin']) 
+            loss += self.contrastive_loss(proba, data['target'], margin=self.config['cl_margin']) 
         return proba.tolist(),  data['label'].tolist(), loss.item()
 
 

@@ -43,16 +43,16 @@ class DecAttSiamese(nn.Module):
         # Attend
         self.F1 = nn.Linear(self.lstm_size, config['F1_out'], bias=True)
         self.bn_F1 = nn.BatchNorm1d(self.lstm_size)
-        self.F2 = nn.Linear(config['F1_out'], config['F2_out'], bias=True)
-        self.bn_F2 = nn.BatchNorm1d(config['F1_out'])
+        #self.F2 = nn.Linear(config['F1_out'], config['F2_out'], bias=True)
+        #self.bn_F2 = nn.BatchNorm1d(config['F1_out'])
         # Compare
         self.G1 = nn.Linear(self.lstm_size*2, config['G1_out'], bias=True)
         self.bn_G1 = nn.BatchNorm1d(self.lstm_size*2)
-        self.G2 = nn.Linear(config['G1_out'], config['G2_out'], bias=True)
-        self.bn_G2 = nn.BatchNorm1d(config['G1_out'])
+        #self.G2 = nn.Linear(config['G1_out'], config['G2_out'], bias=True)
+        #self.bn_G2 = nn.BatchNorm1d(config['G1_out'])
         # Aggregate => sentence pair level representation
-        self.H1 = nn.Linear(config['G2_out']*2, config['H1_out'], bias=True)
-        self.bn_H1 = nn.BatchNorm1d(config['G2_out']*2)
+        self.H1 = nn.Linear(config['G1_out']*2, config['H1_out'], bias=True)
+        self.bn_H1 = nn.BatchNorm1d(config['G1_out']*2)
 
         self.l1_size = config['l1_size']
 
@@ -119,8 +119,8 @@ class DecAttSiamese(nn.Module):
         # Attend
         s1_vec = self.F1(self.prelu(self.bn_F1(s1_vec)))
         s2_vec = self.F1(self.prelu(self.bn_F1(s2_vec)))
-        s1_vec = self.F2(self.prelu(self.bn_F2(s1_vec)))
-        s2_vec = self.F2(self.prelu(self.bn_F2(s2_vec)))
+        #s1_vec = self.F2(self.prelu(self.bn_F2(s1_vec)))
+        #s2_vec = self.F2(self.prelu(self.bn_F2(s2_vec)))
 
         s1_vec = s1_vec.view(batch_size, seq_len, -1)
         s2_vec = s2_vec.view(batch_size, seq_len, -1)
@@ -137,10 +137,10 @@ class DecAttSiamese(nn.Module):
         v2 = torch.cat((s2_out, s1_sub), dim=2)
         v1 = v1.view(batch_size*seq_len, -1)
         v2 = v2.view(batch_size*seq_len, -1)
-        v1 = self.G1(self.prelu(self.bn_G1(v1)))
-        v2 = self.G1(self.prelu(self.bn_G1(v2)))
-        v1 = self.G2(self.prelu(self.bn_G2(v1))).view(batch_size, seq_len, -1)
-        v2 = self.G2(self.prelu(self.bn_G2(v2))).view(batch_size, seq_len, -1)
+        v1 = self.G1(self.prelu(self.bn_G1(v1))).view(batch_size, seq_len, -1)
+        v2 = self.G1(self.prelu(self.bn_G1(v2))).view(batch_size, seq_len, -1)
+        #v1 = self.G2(self.prelu(self.bn_G2(v1))).view(batch_size, seq_len, -1)
+        #v2 = self.G2(self.prelu(self.bn_G2(v2))).view(batch_size, seq_len, -1)
 
         # Aggregate
         v = torch.cat((torch.sum(v1, dim=1), torch.sum(v2, dim=1)), dim=1)
@@ -212,7 +212,7 @@ class DecAttSiamese(nn.Module):
         if 'ce' in self.config['loss']:
             loss += self.config['ce_alpha'] * self.BCELoss(proba, data['target'], [1., self.pos_weight])
         if 'cl' in self.config['loss']:
-            loss += self.contrastive_loss(sim, data['target'], margin=self.config['cl_margin']) 
+            loss += self.contrastive_loss(proba, data['target'], margin=self.config['cl_margin']) 
         self.optimizer.zero_grad()
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.parameters(), self.config['max_grad_norm'])
@@ -230,7 +230,7 @@ class DecAttSiamese(nn.Module):
         if 'ce' in self.config['loss']:
             loss += self.config['ce_alpha'] * self.BCELoss(proba, data['target'], [1., self.pos_weight])
         if 'cl' in self.config['loss']:
-            loss += self.contrastive_loss(sim, data['target'], margin=self.config['cl_margin']) 
+            loss += self.contrastive_loss(proba, data['target'], margin=self.config['cl_margin']) 
         return proba.tolist(),  data['label'].tolist(), loss.item()
 
 

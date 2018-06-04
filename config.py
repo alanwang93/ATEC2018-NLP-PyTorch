@@ -220,14 +220,14 @@ siamese_plus = {
     'bidirectional':True,
     'dropout': 0.5,
     'dropout2': 0.,
-    'pos_weight': 3.,
+    'pos_weight': 1.,
     'representation': 'last', # last, avg, max
     'sim_fun': 'dense+', # exp, cosine, cosine+, dense
     'l1_size': 100,
     #'l2_size': 200,
     'loss': 'cl', # ce, cl, cl+ce
     'ce_alpha': 1.,
-    'cl_margin': 0.1,
+    'cl_margin': 0.3,
     'plus_size': 200,
 
     # Training

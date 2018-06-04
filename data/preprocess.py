@@ -131,7 +131,7 @@ def main(args):
     if args.mode == 'train':
         if not os.path.exists(data_config['data_root']):
             os.makedirs(data_config['data_root'])
-        with open('data/raw/train.raw', 'r') as f, codecs.open( \
+        with open('data/raw/train_oversampled.raw', 'r') as f, codecs.open( \
                 os.path.join(data_config['data_root'], 'train.pkl'), 'w', encoding='utf-8') as fout:
             if args.clean:
                 data_raw = f.readlines()
