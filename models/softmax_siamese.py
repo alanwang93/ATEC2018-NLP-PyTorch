@@ -8,7 +8,7 @@ UNK_IDX = 0
 EOS_IDX = 2
 
 
-class SoftmaxiameseRNN(nn.Module):
+class SoftmaxSiameseRNN(nn.Module):
 
     def __init__(self,  config, data_config):
         super(SoftmaxSiameseRNN, self).__init__()
@@ -51,18 +51,17 @@ class SoftmaxiameseRNN(nn.Module):
             #self.linear3 = nn.Linear(self.linear3_in_size, 1)
         if config['sim_fun'] == 'dense+':
             self.dense_plus = nn.Linear(self.lstm_size, config['plus_size'])
-        #if self.config['sim_fun'] == 'dense+':
-        #    self.bn = nn.BatchNorm1d(config['plus_size'])
-        #else:
-        #    self.bn = nn.BatchNorm1d(self.lstm_size)
-        self.bn = nn.BatchNorm1d(self.linear_in_size)
+        if self.config['sim_fun'] == 'dense+':
+            self.bn = nn.BatchNorm1d(config['plus_size'])
+        else:
+            self.bn = nn.BatchNorm1d(self.lstm_size)
         self.bn2 = nn.BatchNorm1d(self.linear2_in_size)
 
         self.softmax = nn.Softmax(dim=1)
         self.tanh = nn.Tanh()
         self.relu = nn.ReLU()
         self.prelu = nn.PReLU()
-        self.loss = nn.CrossEntropyLoss(weight=None)
+        self.loss = nn.CrossEntropyLoss(weight=None)#torch.tensor([1., config['pos_weight']]))
 
         self.optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, self.parameters()), lr=0.001)
 
@@ -171,16 +170,15 @@ class SoftmaxiameseRNN(nn.Module):
                 s1_outs = self.dense_plus(s1_outs)
                 s2_outs = self.dense_plus(s2_outs)
             # BN
-            #s1_outs = self.bn(s1_outs)
-            #s2_outs = self.bn(s2_outs)
-
+            s1_outs = self.bn(s1_outs)
+            s2_outs = self.bn(s2_outs)
+            s1_outs = self.tanh(s1_outs)
+            s2_outs = self.tanh(s2_outs)
+            
             sfeats = self.sfeats(data)
             pair_feats = self.pair_feats(data)
-            #s1_outs = self.tanh(s1_outs)
-            #s2_outs = self.tanh(s2_outs)
+            
             feats = torch.cat((s1_outs, s2_outs, torch.abs(s1_outs-s2_outs), s1_outs * s2_outs, sfeats, pair_feats), dim=1)
-            feats = self.bn(feats)
-            feats = self.tanh(feats)
             #feats = self.dropout2(feats)
             out1 = self.linear(feats)
             out1 = self.bn2(out1)
@@ -216,7 +214,7 @@ class SoftmaxiameseRNN(nn.Module):
     def train_step(self, data):
         out = self.forward(data)
         proba = self.softmax(out) # (N,C)
-        loss = self.loss(proba, data['target'])
+        loss = self.loss(proba, data['label'])
         self.optimizer.zero_grad()
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.parameters(), self.config['max_grad_norm'])
@@ -226,7 +224,7 @@ class SoftmaxiameseRNN(nn.Module):
     def evaluate(self, data):
         out = self.forward(data)
         proba = self.softmax(out)
-        loss = self.loss(proba, data['target'])
+        loss = self.loss(proba, data['label'])
         v, pred = torch.max(proba, dim=1)
         return pred.tolist(),  data['label'].tolist(), loss.item()
 
