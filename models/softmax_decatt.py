@@ -9,11 +9,11 @@ UNK_IDX = 0
 EOS_IDX = 2
 
 
-class DecAttSiamese(nn.Module):
+class SoftmaxDecAttSiamese(nn.Module):
     """ Decomposible attention """
 
     def __init__(self,  config, data_config):
-        super(DecAttSiamese, self).__init__()
+        super(SoftmaxDecAttSiamese, self).__init__()
         self.mode = config['mode']
         self.l = self.mode[0] + 'len'
         self.vocab_size = data_config[self.mode+'_size']
@@ -28,9 +28,9 @@ class DecAttSiamese(nn.Module):
         self.embed = nn.Embedding(self.vocab_size, self.embed_size, padding_idx=EOS_IDX)
 
         self.rnn = nn.LSTM(input_size=self.embed_size, hidden_size=self.hidden_size, \
-                num_layers=self.num_layers, batch_first=True, dropout=0.)
+                num_layers=self.num_layers, batch_first=True, dropout=0.1)
         self.rnn_rvs = nn.LSTM(input_size=self.embed_size, hidden_size=self.hidden_size, \
-                num_layers=self.num_layers, batch_first=True, dropout=0.)
+                num_layers=self.num_layers, batch_first=True, dropout=0.1)
 
         self.dropout = nn.Dropout(config['dropout'])
         #self.dropout2 = nn.Dropout(config['dropout2'])
@@ -43,15 +43,15 @@ class DecAttSiamese(nn.Module):
         # Attend
         self.F1 = nn.Linear(self.lstm_size, config['F1_out'], bias=True)
         self.bn_F1 = nn.BatchNorm1d(self.lstm_size)
-        self.F2 = nn.Linear(config['F1_out'], config['F2_out'], bias=True)
-        self.bn_F2 = nn.BatchNorm1d(config['F1_out'])
+        #self.F2 = nn.Linear(config['F1_out'], config['F2_out'], bias=True)
+        #self.bn_F2 = nn.BatchNorm1d(config['F1_out'])
         # Compare
         self.G1 = nn.Linear(self.lstm_size*2, config['G1_out'], bias=True)
         self.bn_G1 = nn.BatchNorm1d(self.lstm_size*2)
-        self.G2 = nn.Linear(config['G1_out'], config['G2_out'], bias=True)
-        self.bn_G2 = nn.BatchNorm1d(config['G1_out'])
+        #self.G2 = nn.Linear(config['G1_out'], config['G2_out'], bias=True)
+        #self.bn_G2 = nn.BatchNorm1d(config['G1_out'])
         # Aggregate => sentence pair level representation
-        self.H1 = nn.Linear(config['G2_out']*2, config['H1_out'], bias=True)
+        self.H1 = nn.Linear(config['G1_out']*2, config['H1_out'], bias=True)
         self.bn_H1 = nn.BatchNorm1d(config['G1_out']*2)
 
         self.l1_size = config['l1_size']
@@ -59,14 +59,14 @@ class DecAttSiamese(nn.Module):
         self.linear = nn.Linear(config['H1_out'] + 7 +124, self.l1_size)
         self.bn_feats = nn.BatchNorm1d(config['H1_out'] + 7 +124)
         self.bn_l1 = nn.BatchNorm1d(self.l1_size)
-        self.linear2 = nn.Linear(self.l1_size, 2)
+        self.linear2 = nn.Linear(self.l1_size, 1)
 
-        self.softmax = nn.Softmax(dim=1)
+        self.sigmoid = nn.Sigmoid()
         self.tanh = nn.Tanh()
         self.relu = nn.ReLU()
         self.prelu = nn.PReLU()
-        self.BCELoss = BCELoss
-
+        
+        self.loss = nn.CrossEntropyLoss(weight=None)#torch.tensor([1., config['pos_weight']]))
         self.optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, self.parameters()), lr=0.001)
 
         self._init_weights()
@@ -173,27 +173,6 @@ class DecAttSiamese(nn.Module):
         return feats
 
 
-    def contrastive_loss(self, sims, labels, margin=0.3):
-        """
-        Args:
-            sims: similarity between two sentences
-            labels: 1D tensor of 0 or 1
-            margin: max(sim-margin, 0)
-        """
-        batch_size = labels.size()[0]
-        if len(sims.size()) == 0:
-            sims = torch.unsqueeze(sims, dim=0)
-        loss = torch.tensor(0.)
-        if self.config['use_cuda']:
-            loss = loss.cuda(self.config['cuda_num'])
-        for i, l in enumerate(labels):
-            loss += l*(1-sims[i])*(1-sims[i])*self.config['pos_weight']
-            if sims[i] > margin:
-                loss += (1-l)*sims[i] * sims[i]
-        loss = loss/batch_size
-        return loss
-
-
     def load_vectors(self, char=None, word=None):
         print("Use pretrained embedding")
         if char is not None:
@@ -201,42 +180,26 @@ class DecAttSiamese(nn.Module):
         if word is not None:
             self.embed.weight = nn.Parameter(torch.FloatTensor(word))
 
-
     def train_step(self, data):
         out = self.forward(data)
-        sim = self.tanh(out)
-        proba = self.sigmoid(out)
-
-        # constractive loss
-        loss = 0.
-        if 'ce' in self.config['loss']:
-            loss += self.config['ce_alpha'] * self.BCELoss(proba, data['target'], [1., self.pos_weight])
-        if 'cl' in self.config['loss']:
-            loss += self.contrastive_loss(proba, data['target'], margin=self.config['cl_margin']) 
+        proba = self.softmax(out) # (N,C)
+        loss = self.loss(proba, data['label'])
         self.optimizer.zero_grad()
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.parameters(), self.config['max_grad_norm'])
         self.optimizer.step()
-        # f1, acc, prec, recall = score(proba.tolist(), data['label'].tolist())
-        # print({'loss':loss.item(), 'f1':f1, 'acc':acc, 'prec':prec, 'recall':recall})
         return loss.item()
-
 
     def evaluate(self, data):
         out = self.forward(data)
-        sim = self.tanh(out)
-        proba = self.sigmoid(out)
-        loss = 0.
-        if 'ce' in self.config['loss']:
-            loss += self.config['ce_alpha'] * self.BCELoss(proba, data['target'], [1., self.pos_weight])
-        if 'cl' in self.config['loss']:
-            loss += self.contrastive_loss(proba, data['target'], margin=self.config['cl_margin']) 
-        return proba.tolist(),  data['label'].tolist(), loss.item()
+        proba = self.softmax(out)
+        loss = self.loss(proba, data['label'])
+        v, pred = torch.max(proba, dim=1)
+        return pred.tolist(),  data['label'].tolist(), loss.item()
 
 
     def test(self, data):
         out = self.forward(data)
-        proba = self.sigmoid(out)
-        pred = proba.item()
-        # TODO: rewrite score function
-        return pred, data['sid'].item()
+        proba = self.softmax(out)
+        v, pred = torch.max(proba, dim=1)
+        return pred.tolist(), data['sid'].item()

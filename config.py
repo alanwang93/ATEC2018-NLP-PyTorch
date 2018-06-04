@@ -257,9 +257,6 @@ softmax_siamese = {
     'sim_fun': 'dense+', # exp, cosine, cosine+, dense
     'l1_size': 100,
     #'l2_size': 200,
-    'loss': 'cl', # ce, cl, cl+ce
-    'ce_alpha': 1.,
-    'cl_margin': 0.3,
     'plus_size': 200,
 
     # Training
@@ -303,6 +300,40 @@ decatt = {
     'patience': 5,
     'max_grad_norm': 10.,
 }
+
+
+softmax_decatt = {
+    # Basic
+    'name': 'softmax_decatt',
+    'model': 'SoftmaxDecAttSiamese',
+
+    'char_embedding': None, #'sgns.financial.char',
+    'word_embedding': None, #'sgns.financial.char',#None,
+
+    # Model
+    'mode': 'word',
+    'embed_size': 300,
+    'hidden_size': 200,
+    'F1_out': 200,
+    'F2_out': 200,
+    'G1_out': 200,
+    'G2_out': 200,
+    'H1_out': 200,
+    'num_layers': 2,
+    'bidirectional':True,
+    'dropout': 0.4,
+    #'dropout2': 0.4,
+    'pos_weight': 1.,
+    'representation': 'last', # last, avg, max
+    'l1_size': 200,
+
+    # Training
+    'batch_size': 64,
+    'max_iter': 500000,
+    'patience': 5,
+    'max_grad_norm': 10.,
+}
+
 
 charword = {
     # Basic
