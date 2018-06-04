@@ -5,6 +5,7 @@
 # Distributed under terms of the MIT license.
 
 from .siamese import SiameseRNN
+from .softmax_siamese import SoftmaxSiameseRNN
 from .match_pyramid import MatchPyramid
 from .ainn import AINN
 from .att_siamese import AttSiameseRNN
