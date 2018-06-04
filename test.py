@@ -60,6 +60,8 @@ def main(inpath, outpath):
     for _, test_batch in enumerate(test):
         pred, sid = model.eval().test(to_cuda(test_batch, c))
         print(sid, pred)
+        if hasattr(pred, '__len__'):
+            pred = pred[0]
         if pred > threshold:
             preds.append(1)
         else:
