@@ -158,8 +158,8 @@ class SoftmaxSiameseRNN(nn.Module):
             out = out * (1./ (1.+torch.exp(-1*(torch.bmm(s1_outs.unsqueeze(1), s2_outs.unsqueeze(2)).squeeze()+1.))))
         elif self.config['sim_fun'] in ['dense', 'dense+']:
             if self.config['sim_fun'] == 'dense+':
-                #s1_outs = self.dropout2(s1_outs)
-                #s2_outs = self.dropout2(s2_outs)
+                s1_outs = self.dropout2(s1_outs)
+                s2_outs = self.dropout2(s2_outs)
                 s1_outs = self.dense_plus(s1_outs)
                 s2_outs = self.dense_plus(s2_outs)
             # BN

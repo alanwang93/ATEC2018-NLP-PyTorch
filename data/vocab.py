@@ -12,7 +12,7 @@ import jieba
 import os, itertools
 import numpy as np
 import cPickle as pickle
-from gensim.models.word2vec.Word2Vec
+from gensim.models.word2vec import Word2Vec
 
 UNK_IDX = 0
 EOS_IDX = 2
@@ -39,7 +39,7 @@ class Vocab:
         self.sos_token = 'SOS'
         self.eos_token = 'EOS'
         self.tokens = self.freqs = self.itos = self.stoi = self.vectors = None
-        self.keys = ['tokens','freqs','itos','stoi','root','unk_token','sos_token','eos_token','vectors', 'embedding', 'config', 'type']
+        self.keys = ['tokens','freqs','itos','stoi','root','unk_token','sos_token','eos_token','vectors', 'embedding', 'data_config', 'type']
 
     def build(self, tokenized=None, rebuild=True):
         if not rebuild and os.path.exists(os.path.join(self.root, 'vocab_{0}.pkl'.format(self.type))):
