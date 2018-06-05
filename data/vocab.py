@@ -12,6 +12,7 @@ import jieba
 import os, itertools
 import numpy as np
 import cPickle as pickle
+from gensim.models.word2vec.Word2Vec
 
 UNK_IDX = 0
 EOS_IDX = 2
@@ -30,10 +31,10 @@ class Vocab:
         Args:
             data: list of samples (s1 s2 label)
         """
-        self.config = data_config
+        self.data_config = data_config
         self.type = type
         self.embedding = embedding
-        self.root = self.config['data_root']
+        self.root = self.data_config['data_root']
         self.unk_token = 'UNK'
         self.sos_token = 'SOS'
         self.eos_token = 'EOS'
@@ -45,7 +46,7 @@ class Vocab:
             print("Loading {0} vocab".format(self.type))
             self._load()
         elif tokenized is not None:
-            self.config['max_vocab'] = self.config['max_char'] if self.type == 'char' else self.config['max_word']
+            self.data_config['max_vocab'] = self.data_config['max_char'] if self.type == 'char' else self.data_config['max_word']
 
             # Build vocab
             self.tokens = {"s1":[], "s2":[]}
@@ -56,10 +57,10 @@ class Vocab:
             self.freqs = Counter(allwords)
 
             # Reference: torchtext
-            min_freq = max(self.config['min_freq'], 1)
+            min_freq = max(self.data_config['min_freq'], 1)
             specials = [self.unk_token, self.sos_token, self.eos_token]
             self.itos = list(specials)
-            max_vocab = None if self.config['max_vocab'] is None else self.config['max_vocab'] + len(self.itos)
+            max_vocab = None if self.data_config['max_vocab'] is None else self.data_config['max_vocab'] + len(self.itos)
             words_and_frequencies = list(self.freqs.items())
             words_and_frequencies.sort(key=lambda tup: tup[1], reverse=True) # sort by order
 
@@ -106,20 +107,30 @@ class Vocab:
     def load_vectors(self, filename):
         print("Load vectors from pretrained embeddings {0}".format(filename))
         num_vocab = embed_size = 0
-        with open(os.path.join('data/embeddings', filename), 'r') as f, \
-                open(os.path.join(self.root, 'embed.txt'), 'w') as fout:
-            line0 = list(map(int, f.readline().strip().split(' ')))
-            num_vocab, embed_size = line0[0], line0[1]
+        if filename not in ['char_word2vec', 'word_word2vec']:
+            with open(os.path.join('data/embeddings', filename), 'r') as f:
+                line0 = list(map(int, f.readline().strip().split(' ')))
+                num_vocab, embed_size = line0[0], line0[1]
+                self.vectors = np.random.randn(len(self.itos), embed_size)
+                self.vectors[EOS_IDX, :] = 0.
+                for i in range(num_vocab):
+                    line = f.readline()
+                    s = line.strip().split(' ')
+                    word = s[0]
+                    vec = np.asarray(list(map(float, s[1:])))
+                    if word in self.stoi:
+                        self.vectors[self.stoi[word]] = vec
+                        # fout.write(line)
+        else:
+            # customized embedding
+            w2v = Word2Vec.load(os.path.join('data/processed', filename))
+            embed_size = self.data_config['embed_size']
             self.vectors = np.random.randn(len(self.itos), embed_size)
             self.vectors[EOS_IDX, :] = 0.
-            for i in range(num_vocab):
-                line = f.readline()
-                s = line.strip().split(' ')
-                word = s[0]
-                vec = np.asarray(list(map(float, s[1:])))
-                if word in self.stoi:
-                    self.vectors[self.stoi[word]] = vec
-                    fout.write(line)
+            for word in self.stoi.keys():
+                if word in w2v.wv:
+                    self.vectors[self.stoi[word]] = w2v.wv[word]
+
 
 
     def select_embeddings(filename, save_to, num_freq=10000):

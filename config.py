@@ -8,11 +8,12 @@ data_config = {
     'data_root': 'data/processed/',
     'train': 'data/processed/train.pkl',
     'valid': 'data/processed/valid.pkl',
-    'char_embedding': None,#'sgns.financial.char',
-    'word_embedding': None,#'sgns.financial.char',#None,
+    'char_embedding': 'char_word2vec',
+    'word_embedding': None,
     'max_char': 1500,
     'max_word': 6000,
-    'min_freq': 2
+    'min_freq': 2,
+    'embed_size': 100 # custimized embedding size
 }
 
 
