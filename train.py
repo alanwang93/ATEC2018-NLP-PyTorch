@@ -146,8 +146,6 @@ def main(args):
             best_epoch = epoch
             best_f1 = max_f1
             logger.info("New best f1 at epoch {0}, best threshold {1}, best F1:{2:.3f}".format(best_epoch, best_threshold, best_f1))
-            if not os.path.exists(model_path):
-                os.makedirs(model_path)
             torch.save(checkpoint, "{0}_best.pkl".format(model_path, epoch))
         elif epoch - best_epoch > c['patience']:
             fscore = open( "{0}_best.txt".format(model_path), 'w')
