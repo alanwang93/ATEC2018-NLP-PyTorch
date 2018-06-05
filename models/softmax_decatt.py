@@ -28,9 +28,9 @@ class SoftmaxDecAttSiamese(nn.Module):
         self.embed = nn.Embedding(self.vocab_size, self.embed_size, padding_idx=EOS_IDX)
 
         self.rnn = nn.LSTM(input_size=self.embed_size, hidden_size=self.hidden_size, \
-                num_layers=self.num_layers, batch_first=True, dropout=0.1)
+                num_layers=self.num_layers, batch_first=True, dropout=0.)
         self.rnn_rvs = nn.LSTM(input_size=self.embed_size, hidden_size=self.hidden_size, \
-                num_layers=self.num_layers, batch_first=True, dropout=0.1)
+                num_layers=self.num_layers, batch_first=True, dropout=0.)
 
         self.dropout = nn.Dropout(config['dropout'])
         #self.dropout2 = nn.Dropout(config['dropout2'])
@@ -43,15 +43,15 @@ class SoftmaxDecAttSiamese(nn.Module):
         # Attend
         self.F1 = nn.Linear(self.lstm_size, config['F1_out'], bias=True)
         self.bn_F1 = nn.BatchNorm1d(self.lstm_size)
-        #self.F2 = nn.Linear(config['F1_out'], config['F2_out'], bias=True)
-        #self.bn_F2 = nn.BatchNorm1d(config['F1_out'])
+        self.F2 = nn.Linear(config['F1_out'], config['F2_out'], bias=True)
+        self.bn_F2 = nn.BatchNorm1d(config['F1_out'])
         # Compare
         self.G1 = nn.Linear(self.lstm_size*2, config['G1_out'], bias=True)
         self.bn_G1 = nn.BatchNorm1d(self.lstm_size*2)
-        #self.G2 = nn.Linear(config['G1_out'], config['G2_out'], bias=True)
-        #self.bn_G2 = nn.BatchNorm1d(config['G1_out'])
+        self.G2 = nn.Linear(config['G1_out'], config['G2_out'], bias=True)
+        self.bn_G2 = nn.BatchNorm1d(config['G1_out'])
         # Aggregate => sentence pair level representation
-        self.H1 = nn.Linear(config['G1_out']*2, config['H1_out'], bias=True)
+        self.H1 = nn.Linear(config['G2_out']*2, config['H1_out'], bias=True)
         self.bn_H1 = nn.BatchNorm1d(config['G1_out']*2)
 
         self.l1_size = config['l1_size']
@@ -59,9 +59,9 @@ class SoftmaxDecAttSiamese(nn.Module):
         self.linear = nn.Linear(config['H1_out'] + 7 +124, self.l1_size)
         self.bn_feats = nn.BatchNorm1d(config['H1_out'] + 7 +124)
         self.bn_l1 = nn.BatchNorm1d(self.l1_size)
-        self.linear2 = nn.Linear(self.l1_size, 1)
+        self.linear2 = nn.Linear(self.l1_size, 2)
 
-        self.sigmoid = nn.Sigmoid()
+        self.softmax = nn.Softmax(dim=1)
         self.tanh = nn.Tanh()
         self.relu = nn.ReLU()
         self.prelu = nn.PReLU()

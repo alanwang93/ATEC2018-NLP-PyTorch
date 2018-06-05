@@ -8,8 +8,8 @@ data_config = {
     'data_root': 'data/processed/',
     'train': 'data/processed/train.pkl',
     'valid': 'data/processed/valid.pkl',
-    'char_embedding': None,#'sgns.financial.char',
-    'word_embedding': None,#'sgns.financial.char',#None,
+    'char_embedding': 'sgns.zhihu.word',
+    'word_embedding': 'sgns.zhihu.word',#None,
     'max_char': 1500,
     'max_word': 6000,
     'min_freq': 2
@@ -241,28 +241,28 @@ softmax_siamese = {
     'name': 'softmax_siamese',
     'model': 'SoftmaxSiameseRNN',
 
-    'char_embedding': None, #'sgns.financial.char',
-    'word_embedding': None, #'sgns.financial.char',#None,
+    'char_embedding': 'sgns.zhihu.word',
+    'word_embedding': 'sgns.zhihu.word',#None,
 
     # Model
-    'mode': 'char',
+    'mode': 'word',
     'embed_size': 300,
     'hidden_size': 200,
     'num_layers': 2,
     'bidirectional':True,
     'dropout': 0.5,
-    'dropout2': 0.,
+    'dropout2': 0.0,
     'pos_weight': 1.,
     'representation': 'last', # last, avg, max
     'sim_fun': 'dense+', # exp, cosine, cosine+, dense
-    'l1_size': 100,
+    'l1_size': 200,
     #'l2_size': 200,
-    'plus_size': 200,
+    'plus_size': 300,
 
     # Training
-    'batch_size': 128,
+    'batch_size': 64,
     'max_iter': 500000,
-    'patience': 5,    
+    'patience': 10,    
     'max_grad_norm': 10.,
 }
 
@@ -311,7 +311,7 @@ softmax_decatt = {
     'word_embedding': None, #'sgns.financial.char',#None,
 
     # Model
-    'mode': 'word',
+    'mode': 'char',
     'embed_size': 300,
     'hidden_size': 200,
     'F1_out': 200,
@@ -321,7 +321,7 @@ softmax_decatt = {
     'H1_out': 200,
     'num_layers': 2,
     'bidirectional':True,
-    'dropout': 0.4,
+    'dropout': 0.1,
     #'dropout2': 0.4,
     'pos_weight': 1.,
     'representation': 'last', # last, avg, max

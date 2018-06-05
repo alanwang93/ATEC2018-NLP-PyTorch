@@ -61,7 +61,7 @@ class SoftmaxSiameseRNN(nn.Module):
         self.tanh = nn.Tanh()
         self.relu = nn.ReLU()
         self.prelu = nn.PReLU()
-        self.loss = nn.CrossEntropyLoss(weight=None)#torch.tensor([1., config['pos_weight']]))
+        self.loss = nn.CrossEntropyLoss(weight=torch.tensor([1., config['pos_weight']]))
 
         self.optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, self.parameters()), lr=0.001)
 
@@ -72,7 +72,9 @@ class SoftmaxSiameseRNN(nn.Module):
     def _init_weights(self):
         nn.init.normal_(self.embed.weight[1:])
         nn.init.xavier_normal_(self.linear.weight)
-        #nn.init.xavier_normal_(self.linear2.weight)
+        nn.init.xavier_normal_(self.linear2.weight)
+        nn.init.xavier_normal_(self.dense_plus.weight)
+        
         init_fun = nn.init.orthogonal_
         for i in range(self.num_layers):
             for j in range(4):
@@ -100,15 +102,6 @@ class SoftmaxSiameseRNN(nn.Module):
         s1_embed = self.dropout(s1_embed)
         s2_embed = self.dropout(s2_embed)
 
-        # Packed, using `complex_collate_fn`
-        # s1_packed = nn.utils.rnn.pack_padded_sequence(s1_embed, data['s1_ordered_len'], batch_first=True)
-        # s2_packed = nn.utils.rnn.pack_padded_sequence(s2_embed, data['s2_ordered_len'], batch_first=True)
-        # s1_out, s1_hidden = self.rnn(s1_packed)
-        # s2_out, s2_hidden = self.rnn(s2_packed)
-        # s1_out, _ = nn.utils.rnn.pad_packed_sequence(s1_out, batch_first=True)
-        # s2_out, _ = nn.utils.rnn.pad_packed_sequence(s2_out, batch_first=True)
-
-        # Non-packed, using `simple_collate_fn`
         s1_out, s1_hidden = self.rnn(s1_embed)
         s2_out, s2_hidden = self.rnn(s2_embed)
         if self.config['representation'] == 'last': # last hidden state
