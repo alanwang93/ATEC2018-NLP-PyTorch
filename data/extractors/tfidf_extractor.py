@@ -27,7 +27,17 @@ class TFIDFExtractor(Extractor):
         n = len(s1)
         corpus = s1 + s2
         word_vectorizer = TfidfVectorizer(analyzer='word', lowercase=False, sublinear_tf=True)
-        char_vectorizer = TfidfVectorizer(analyzer='char', lowercase=False, sublinear_tf=True)
+        char_vectorizer = TfidfVectorizer(analyzer='char', lowercase=False, sublinear_tf=True, ngram_range=(1, 4))
+        word_vectorizer.fit(corpus)
+        char_vectorizer.fit(corpus)
+        d['s1_char_tfidf'] = ('c', char_vectorizer.transform(s1), 0)
+        d['s1_word_tfidf'] = ('w', word_vectorizer.transform(s1), 0)
+        d['s2_char_tfidf'] = ('c', char_vectorizer.transform(s2), 0)
+        d['s2_word_tfidf'] = ('w', word_vectorizer.transform(s2), 0)
+        return d
+
+
+
 
 
 
