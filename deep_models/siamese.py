@@ -41,7 +41,7 @@ class SiameseRNN(nn.Module):
         if config['sim_fun'] == 'dense+':
             self.linear_in_size = config['plus_size']
 
-        self.linear_in_size *= 4
+        self.linear_in_size *= 2
         if config['sim_fun'] in ['dense', 'dense+']:
             self.linear_in_size = self.linear_in_size + 7 + 124 #similarity:5; len:4->2; word_bool:124
             self.linear2_in_size = config['l1_size']
@@ -169,7 +169,7 @@ class SiameseRNN(nn.Module):
 
             sfeats = self.sfeats(data)
             pair_feats = self.pair_feats(data)
-            feats = torch.cat((s1_outs, s2_outs, torch.abs(s1_outs-s2_outs), s1_outs * s2_outs, sfeats, pair_feats), dim=1)
+            feats = torch.cat(((s1_outs-s2_outs)*(s1_outs-s2_outs), s1_outs * s2_outs, sfeats, pair_feats), dim=1)
             #feats = self.bn(feats)
             #feats = self.tanh(feats)
             feats = self.dropout2(feats)

@@ -57,7 +57,7 @@ def main(inpath, outpath):
     test_size = len(test_data)
     test = data.DataLoader(test_data, batch_size=32, collate_fn=simple_collate_fn)
 
-    model = getattr(models, c['model'])(c, data_config)
+    model = getattr(deep_models, c['model'])(c, data_config)
 
     if data_config['char_embedding'] is not None:
         model.load_vectors(char_vocab.vectors)

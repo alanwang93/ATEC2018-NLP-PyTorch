@@ -23,12 +23,12 @@ class SoftmaxSiameseRNN(nn.Module):
         self.config = config
         self.data_config = data_config
 
-        self.embed = nn.Embedding(self.vocab_size, self.embed_size, padding_idx=EOS_IDX)
+        self.embed = nn.Embedding(self.vocab_size, self.embed_size, padding_idx=EOS_IDX, max_norm=2.)
 
         self.rnn = nn.LSTM(input_size=self.embed_size, hidden_size=self.hidden_size, \
-                num_layers=self.num_layers, batch_first=True, dropout=0.2)
+                num_layers=self.num_layers, batch_first=True, dropout=0.)
         self.rnn_rvs = nn.LSTM(input_size=self.embed_size, hidden_size=self.hidden_size, \
-                num_layers=self.num_layers, batch_first=True, dropout=0.2)
+                num_layers=self.num_layers, batch_first=True, dropout=0.)
 
         self.dropout = nn.Dropout(config['dropout'])
         self.dropout2 = nn.Dropout(config['dropout2'])
@@ -158,8 +158,8 @@ class SoftmaxSiameseRNN(nn.Module):
             out = out * (1./ (1.+torch.exp(-1*(torch.bmm(s1_outs.unsqueeze(1), s2_outs.unsqueeze(2)).squeeze()+1.))))
         elif self.config['sim_fun'] in ['dense', 'dense+']:
             if self.config['sim_fun'] == 'dense+':
-                s1_outs = self.dropout2(s1_outs)
-                s2_outs = self.dropout2(s2_outs)
+                #s1_outs = self.dropout2(s1_outs)
+                #s2_outs = self.dropout2(s2_outs)
                 s1_outs = self.dense_plus(s1_outs)
                 s2_outs = self.dense_plus(s2_outs)
             # BN
@@ -171,6 +171,7 @@ class SoftmaxSiameseRNN(nn.Module):
             sfeats = self.sfeats(data)
             pair_feats = self.pair_feats(data)
             
+            #feats = torch.cat(((s1_outs-s2_outs)*(s1_outs-s2_outs), s1_outs * s2_outs, sfeats, pair_feats), dim=1)
             feats = torch.cat((s1_outs, s2_outs, torch.abs(s1_outs-s2_outs), s1_outs * s2_outs, sfeats, pair_feats), dim=1)
             #feats = self.dropout2(feats)
             out1 = self.linear(feats)

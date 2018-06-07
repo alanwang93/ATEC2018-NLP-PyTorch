@@ -209,8 +209,8 @@ siamese_plus = {
     'name': 'siamese_plus',
     'model': 'SiameseRNN',
 
-    'char_embedding': None, #'sgns.financial.char',
-    'word_embedding': None, #'sgns.financial.char',#None,
+    'char_embedding': 'char_word2vec',
+    'word_embedding': None,#'word_word2vec',
 
     # Model
     'mode': 'char',
@@ -220,14 +220,14 @@ siamese_plus = {
     'bidirectional':True,
     'dropout': 0.5,
     'dropout2': 0.,
-    'pos_weight': 1.,
+    'pos_weight': 3.5,
     'representation': 'last', # last, avg, max
     'sim_fun': 'dense+', # exp, cosine, cosine+, dense
     'l1_size': 100,
     #'l2_size': 200,
-    'loss': 'cl', # ce, cl, cl+ce
+    'loss': 'cl+ce', # ce, cl, cl+ce
     'ce_alpha': 1.,
-    'cl_margin': 0.3,
+    'cl_margin': 0.1,
     'plus_size': 200,
 
     # Training
@@ -250,7 +250,7 @@ softmax_siamese = {
     'hidden_size': 200,
     'num_layers': 2,
     'bidirectional':True,
-    'dropout': 0.5,
+    'dropout': 0.0,
     'dropout2': 0.0,
     'pos_weight': 3.5,
     'representation': 'last', # last, avg, max
@@ -311,7 +311,7 @@ softmax_decatt = {
     'word_embedding': None, #'sgns.financial.char',#None,
 
     # Model
-    'mode': 'char',
+    'mode': 'word',
     'embed_size': 300,
     'hidden_size': 200,
     'F1_out': 200,

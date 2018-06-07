@@ -41,8 +41,8 @@ class SoftmaxDecAttSiamese(nn.Module):
 
         # Decomposible Attention
         # Attend
-        self.F1 = nn.Linear(self.lstm_size, config['F1_out'], bias=True)
-        self.bn_F1 = nn.BatchNorm1d(self.lstm_size)
+        self.F1 = nn.Linear(self.embed_size, config['F1_out'], bias=True)
+        self.bn_F1 = nn.BatchNorm1d(self.embed_size)
         self.F2 = nn.Linear(config['F1_out'], config['F2_out'], bias=True)
         self.bn_F2 = nn.BatchNorm1d(config['F1_out'])
         # Compare
@@ -113,8 +113,8 @@ class SoftmaxDecAttSiamese(nn.Module):
             s1_out = torch.cat((s1_out, s1_out_rvs), dim=2)
             s2_out = torch.cat((s2_out, s2_out_rvs), dim=2)
 
-        s1_vec = s1_out.view(batch_size*seq_len, -1)
-        s2_vec = s2_out.view(batch_size*seq_len, -1)
+        s1_vec = s1_embed.view(batch_size*seq_len, -1)
+        s2_vec = s2_embed.view(batch_size*seq_len, -1)
 
         # Attend
         s1_vec = self.F1(self.prelu(self.bn_F1(s1_vec)))
