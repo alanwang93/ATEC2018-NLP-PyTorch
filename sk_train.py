@@ -12,14 +12,14 @@ from sklearn.model_selection import train_test_split
 
 logger = init_log('log/sk_model.log')
 
-rebuild = True#False
+rebuild = False
 train_data_path = 'data/processed/train.pkl'
 sk_train_path = 'data/processed/sk_train.pkl'
 
 # Pair level or sentence level features
 features = ['s1_wlen', 's1_clen', 'jaccard_char_unigram', 'jaccard_char_bigram',\
  			'jaccard_char_trigram', 'jaccard_word_unigram',# 'LevenshteinDistance_char',\
- 			'LevenshteinDistance_word', 'word_bool', 's1_word_tfidf']
+ 			'LevenshteinDistance_word', 'word_bool', 's1_word_lsa']
 
 logger.info("Loading training data")
 if rebuild or not os.path.exists(sk_train_path):
@@ -28,10 +28,7 @@ if rebuild or not os.path.exists(sk_train_path):
     X_features = []
     for feat in features:
         if data[feat][0] == 's':
-            if feat == 's1_word_tfidf':
-                X_features.append(abs(data[feat][1] - data[feat.replace('1', '2')][1]).toarray().reshape(-1,data[feat][2]))
-            else:
-                X_features.append(abs(data[feat][1] - data[feat.replace('1', '2')][1]).reshape(-1,data[feat][2]))
+            X_features.append(abs(data[feat][1] - data[feat.replace('1', '2')][1]).reshape(-1,data[feat][2]))
         elif data[feat][0] == 'p':
             if feat == 'word_bool':
                 X_features.append(np.squeeze(data[feat][1]))
@@ -40,9 +37,6 @@ if rebuild or not os.path.exists(sk_train_path):
             else:
                 X_features.append(np.squeeze(data[feat][1]))
 
-    # word, char level features
-    print("s1_word_tfidf shape",  data['s1_word_tfidf'][1].shape)
-    print("s1_char_tfidf shape",  data['s1_char_tfidf'][1].shape)
     for f in X_features:
         print(f.shape)
     X = np.concatenate(X_features, axis=1)
@@ -55,8 +49,9 @@ else:
     y = data['y']
     del data
 
-print("Number of features", train_X.shape[1])
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=666)
+
+print("Number of features", X_train.shape[1])
 
 configs = [
     {
@@ -64,23 +59,7 @@ configs = [
         'clf': 'LogisticRegression',
         'kwargs': {
             'class_weight': 'balanced', 
-            'C':100.
-        }
-    },
-    {
-        'module': 'ensemble',
-        'clf': 'AdaBoostClassifier',
-        'kwargs': {
-            'n_estimators': 100
-        }
-    },
-    {
-        'module': 'ensemble',
-        'clf': 'RandomForestClassifier',
-        'kwargs': {
-            'n_estimators': 100, 
-            'class_weight': 'balanced', 
-            'max_features': 1.0
+            'C':1.
         }
     }
 ]
