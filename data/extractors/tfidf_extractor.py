@@ -72,17 +72,29 @@ class TFIDFExtractor(Extractor):
             word_vectorizer.set_params(f['word_params'])
             char_vectorizer.set_params(f['char_params'])
             # TF-IDF are sparse matrice
-            s1_char_tfidf = char_vectorizer.transform(s1)
-            s1_word_tfidf = word_vectorizer.transform(s1)
-            s2_char_tfidf = char_vectorizer.transform(s2)
-            s2_word_tfidf = word_vectorizer.transform(s2)
-            d['s1_char_tfidf'] = ('s', s1_char_tfidf, s1_char_tfidf.shape[1])
-            d['s1_word_tfidf'] = ('s', s1_word_tfidf, s1_word_tfidf.shape[1])
-            d['s2_char_tfidf'] = ('s', s2_char_tfidf, s2_char_tfidf.shape[1])
-            d['s2_word_tfidf'] = ('s', s2_word_tfidf, s2_word_tfidf.shape[1])
+            corpus = s1 + s2
+            char_tfidf = char_vectorizer.transform(corpus)
+            word_tfidf = word_vectorizer.transform(corpus)
+
+            char_svd = TruncatedSVD(lsa_components)
+            char_svd.set_params(f['char_svd'])
+            normalizer = Normalizer(copy=False)
+            lsa_char = make_pipeline(char_svd, normalizer)
+            char_lsa = lsa_char.transform(char_tfidf)
+
+            word_svd = TruncatedSVD(lsa_components)
+            word_svd.set_params(f['word_svd'])
+            normalizer = Normalizer(copy=False)
+            lsa_word = make_pipeline(word_svd, normalizer)
+            word_lsa = lsa_word.transform(word_tfidf)
+
+            d['s1_char_lsa'] = ('s', char_lsa[:n], lsa_components)
+            d['s1_word_lsa'] = ('s', word_lsa[:n], lsa_components)
+            d['s2_char_lsa'] = ('s', char_lsa[n:], lsa_components)
+            d['s2_word_lsa'] = ('s', word_lsa[n:], lsa_components)
 
             with open('data/processed/test_tfidf.pkl', 'w') as f:
-                pickle.dump(d, f)
+                pickle.dump(d, f)            
 
         return d
 

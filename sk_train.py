@@ -99,7 +99,7 @@ configs = [
         'kwargs': {
             'n_estimators': 100, 
             'class_weight': 'balanced', 
-            'max_features': 1.0
+            'max_features': 1.0,
         }
     }
 ]
