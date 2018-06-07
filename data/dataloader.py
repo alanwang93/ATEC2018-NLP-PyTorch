@@ -14,7 +14,6 @@ UNK_IDX = 0
 EOS_IDX = 2
 
 
-
 class Dataset(torch.utils.data.Dataset):
     """
     A simple dataset wrapper
