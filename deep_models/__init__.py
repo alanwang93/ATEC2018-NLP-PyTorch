@@ -4,11 +4,11 @@
 #
 # Distributed under terms of the MIT license.
 
+from .sigmoid_siamese import SigmoidSiameseRNN
 from .siamese import SiameseRNN
-from .softmax_siamese import SoftmaxSiameseRNN
 from .match_pyramid import MatchPyramid
 from .ainn import AINN
 from .att_siamese import AttSiameseRNN
+from .sigmoid_decatt import SigmoidDecAttSiamese
 from .decatt import DecAttSiamese
-from .softmax_decatt import SoftmaxDecAttSiamese
-from .char_word import CharWordSiamese
+from .sigmoid_char_word import SigmoidCharWordSiamese

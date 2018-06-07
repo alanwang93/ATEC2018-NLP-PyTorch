@@ -16,10 +16,10 @@ data_config = {
 }
 
 
-siamese = {
+sigmoid_siamese = {
     # Basic
-    'name': 'siamese',
-    'model': 'SiameseRNN',
+    'name': 'sigmoid_siamese',
+    'model': 'SigmoidSiameseRNN',
 
     'char_embedding': None, #'sgns.financial.char',
     'word_embedding': None, #'sgns.financial.char',#None,
@@ -41,34 +41,6 @@ siamese = {
     # Training
     'batch_size': 64,
     'max_iter': 500000,
-    'patience': 10,
-}
-
-siamese_gesd = {
-    # Basic
-    'name': 'gesd_siamese',
-    'model': 'SiameseRNN',
-
-    'char_embedding': None, #'sgns.financial.char',
-    'word_embedding': None, #'sgns.financial.char',#None,
-
-    # Model
-    'embed_size': 300,
-    'hidden_size': 150,
-    'num_layers': 2,
-    'bidirectional':True,
-    'dropout': 0.5,
-    'dropout2': 0.5,
-    'pos_weight': 2.0,
-    'representation': 'last', # last, avg
-    'sim_fun': 'gesd',# 'dense', # exp, cosine, cosine+, dense
-    'loss': 'ce', # ce, cl, cl+ce
-    'cl_margin': 0.3,
-    'ce_alpha': 1.,
-
-    # Training
-    'batch_size': 64,
-    'max_iter': 50000,
     'patience': 10,
 }
 
@@ -99,35 +71,6 @@ att_siamese = {
     'max_iter': 500000,
     'patience': 10,
     'max_grad_norm': 10.,
-}
-
-
-siamese_light = {
-    # Basic
-    'name': 'light_siamese',
-    'model': 'SiameseRNN',
-
-    'char_embedding': None,#'sgns.financial.char',
-    'word_embedding': None,#'sgns.financial.char',#None,
-
-    # Model
-    'embed_size': 150,
-    'hidden_size': 100,
-    'num_layers': 1,
-    'bidirectional':True,
-    'dropout': 0.5,
-    'dropout2': 0.5,
-    'pos_weight': 3.0,
-    'representation': 'last', # last, avg
-    'sim_fun': 'dense',# 'dense', # exp, cosine, cosine+, dense
-    'loss': 'ce', # ce, cl, mixed
-    'cl_margin': 0.4,
-    'ce_alpha': 1.,
-
-    # Training
-    'batch_size': 32,
-    'max_iter': 50000,
-    'patience': 5,
 }
 
 
@@ -172,42 +115,10 @@ ainn = {
     'max_grad_norm': 5.,
 }
 
-siamese_large = {
+sigmoid_siamese_plus = {
     # Basic
-    'name': 'siamese_large',
-    'model': 'SiameseRNN',
-
-    'char_embedding': None, #'sgns.financial.char',
-    'word_embedding': None, #'sgns.financial.char',#None,
-
-    # Model
-    'mode': 'char',
-    'embed_size': 300,
-    'hidden_size': 200,
-    'num_layers': 2,
-    'bidirectional':True,
-    'dropout': 0.4,
-    'dropout2': 0.2,
-    'pos_weight': 3.5,
-    'representation': 'last', # last, avg, max
-    'sim_fun': 'dense', # exp, cosine, cosine+, dense
-    'l1_size': 400,
-    'l2_size': 200,
-    'loss': 'ce', # ce, cl, cl+ce
-    'ce_alpha': 1.,
-    'cl_margin': 0.3,
-    'dense_plus_size': 200,
-
-    # Training
-    'batch_size': 64,
-    'max_iter': 500000,
-    'patience': 10,
-}
-
-siamese_plus = {
-    # Basic
-    'name': 'siamese_plus',
-    'model': 'SiameseRNN',
+    'name': 'sigmoid_siamese_plus',
+    'model': 'SigmoidSiameseRNN',
 
     'char_embedding': 'char_word2vec',
     'word_embedding': None,#'word_word2vec',
@@ -236,10 +147,10 @@ siamese_plus = {
     'patience': 5,
 }
 
-softmax_siamese = {
+siamese = {
     # Basic
-    'name': 'softmax_siamese',
-    'model': 'SoftmaxSiameseRNN',
+    'name': 'siamese',
+    'model': 'SiameseRNN',
 
     'char_embedding': 'char_word2vec',
     'word_embedding': None,#'word_word2vec',
@@ -266,10 +177,10 @@ softmax_siamese = {
     'max_grad_norm': 10.,
 }
 
-decatt = {
+sigmoid_decatt = {
     # Basic
-    'name': 'decatt',
-    'model': 'DecAttSiamese',
+    'name': 'sigmoid_decatt',
+    'model': 'SigmoidDecAttSiamese',
 
     'char_embedding': None, #'sgns.financial.char',
     'word_embedding': None, #'sgns.financial.char',#None,
@@ -302,10 +213,10 @@ decatt = {
 }
 
 
-softmax_decatt = {
+decatt = {
     # Basic
-    'name': 'softmax_decatt',
-    'model': 'SoftmaxDecAttSiamese',
+    'name': 'decatt',
+    'model': 'DecAttSiamese',
 
     'char_embedding': None, #'sgns.financial.char',
     'word_embedding': None, #'sgns.financial.char',#None,

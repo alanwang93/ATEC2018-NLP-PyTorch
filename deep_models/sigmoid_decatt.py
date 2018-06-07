@@ -9,11 +9,11 @@ UNK_IDX = 0
 EOS_IDX = 2
 
 
-class SoftmaxDecAttSiamese(nn.Module):
+class SigmoidDecAttSiamese(nn.Module):
     """ Decomposible attention """
 
     def __init__(self,  config, data_config):
-        super(SoftmaxDecAttSiamese, self).__init__()
+        super(SigmoidDecAttSiamese, self).__init__()
         self.mode = config['mode']
         self.l = self.mode[0] + 'len'
         self.vocab_size = data_config[self.mode+'_size']
@@ -41,8 +41,8 @@ class SoftmaxDecAttSiamese(nn.Module):
 
         # Decomposible Attention
         # Attend
-        self.F1 = nn.Linear(self.embed_size, config['F1_out'], bias=True)
-        self.bn_F1 = nn.BatchNorm1d(self.embed_size)
+        self.F1 = nn.Linear(self.lstm_size, config['F1_out'], bias=True)
+        self.bn_F1 = nn.BatchNorm1d(self.lstm_size)
         self.F2 = nn.Linear(config['F1_out'], config['F2_out'], bias=True)
         self.bn_F2 = nn.BatchNorm1d(config['F1_out'])
         # Compare
@@ -65,8 +65,8 @@ class SoftmaxDecAttSiamese(nn.Module):
         self.tanh = nn.Tanh()
         self.relu = nn.ReLU()
         self.prelu = nn.PReLU()
-        
-        self.loss = nn.CrossEntropyLoss(weight=None)#torch.tensor([1., config['pos_weight']]))
+        self.BCELoss = BCELoss
+
         self.optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, self.parameters()), lr=0.001)
 
         self._init_weights()
@@ -113,8 +113,8 @@ class SoftmaxDecAttSiamese(nn.Module):
             s1_out = torch.cat((s1_out, s1_out_rvs), dim=2)
             s2_out = torch.cat((s2_out, s2_out_rvs), dim=2)
 
-        s1_vec = s1_embed.view(batch_size*seq_len, -1)
-        s2_vec = s2_embed.view(batch_size*seq_len, -1)
+        s1_vec = s1_out.view(batch_size*seq_len, -1)
+        s2_vec = s2_out.view(batch_size*seq_len, -1)
 
         # Attend
         s1_vec = self.F1(self.prelu(self.bn_F1(s1_vec)))
@@ -173,6 +173,27 @@ class SoftmaxDecAttSiamese(nn.Module):
         return feats
 
 
+    def contrastive_loss(self, sims, labels, margin=0.3):
+        """
+        Args:
+            sims: similarity between two sentences
+            labels: 1D tensor of 0 or 1
+            margin: max(sim-margin, 0)
+        """
+        batch_size = labels.size()[0]
+        if len(sims.size()) == 0:
+            sims = torch.unsqueeze(sims, dim=0)
+        loss = torch.tensor(0.)
+        if self.config['use_cuda']:
+            loss = loss.cuda(self.config['cuda_num'])
+        for i, l in enumerate(labels):
+            loss += l*(1-sims[i])*(1-sims[i])*self.config['pos_weight']
+            if sims[i] > margin:
+                loss += (1-l)*sims[i] * sims[i]
+        loss = loss/batch_size
+        return loss
+
+
     def load_vectors(self, char=None, word=None):
         print("Use pretrained embedding")
         if char is not None:
@@ -180,26 +201,42 @@ class SoftmaxDecAttSiamese(nn.Module):
         if word is not None:
             self.embed.weight = nn.Parameter(torch.FloatTensor(word))
 
+
     def train_step(self, data):
         out = self.forward(data)
-        proba = self.softmax(out) # (N,C)
-        loss = self.loss(proba, data['label'])
+        sim = self.tanh(out)
+        proba = self.sigmoid(out)
+
+        # constractive loss
+        loss = 0.
+        if 'ce' in self.config['loss']:
+            loss += self.config['ce_alpha'] * self.BCELoss(proba, data['target'], [1., self.pos_weight])
+        if 'cl' in self.config['loss']:
+            loss += self.contrastive_loss(proba, data['target'], margin=self.config['cl_margin']) 
         self.optimizer.zero_grad()
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.parameters(), self.config['max_grad_norm'])
         self.optimizer.step()
+        # f1, acc, prec, recall = score(proba.tolist(), data['label'].tolist())
+        # print({'loss':loss.item(), 'f1':f1, 'acc':acc, 'prec':prec, 'recall':recall})
         return loss.item()
+
 
     def evaluate(self, data):
         out = self.forward(data)
-        proba = self.softmax(out)
-        loss = self.loss(proba, data['label'])
-        v, pred = torch.max(proba, dim=1)
-        return pred.tolist(),  data['label'].tolist(), loss.item()
+        sim = self.tanh(out)
+        proba = self.sigmoid(out)
+        loss = 0.
+        if 'ce' in self.config['loss']:
+            loss += self.config['ce_alpha'] * self.BCELoss(proba, data['target'], [1., self.pos_weight])
+        if 'cl' in self.config['loss']:
+            loss += self.contrastive_loss(proba, data['target'], margin=self.config['cl_margin']) 
+        return proba.tolist(),  data['label'].tolist(), loss.item()
 
 
     def test(self, data):
         out = self.forward(data)
-        proba = self.softmax(out)
-        v, pred = torch.max(proba, dim=1)
-        return pred.tolist(), data['sid'].item()
+        proba = self.sigmoid(out)
+        pred = proba.item()
+        # TODO: rewrite score function
+        return pred, data['sid'].item()
