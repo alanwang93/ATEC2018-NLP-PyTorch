@@ -120,7 +120,6 @@ class Vocab:
                     vec = np.asarray(list(map(float, s[1:])))
                     if word in self.stoi:
                         self.vectors[self.stoi[word]] = vec
-                        # fout.write(line)
         else:
             # customized embedding
             w2v = Word2Vec.load(os.path.join('data/processed', filename))
