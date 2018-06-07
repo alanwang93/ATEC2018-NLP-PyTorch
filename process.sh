@@ -6,5 +6,5 @@
 #
 
 # python2 -m utils --split
-python2 -m data.preprocess --tokenize --embed --extract
+python2 -m data.process --tokenize --embed --extract
 

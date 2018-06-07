@@ -127,7 +127,7 @@ def main(args):
         if not os.path.exists(data_config['data_root']):
             os.makedirs(data_config['data_root'])
 
-        with open('data/raw/atec_nlp_sim_train_full.raw', 'r') as f:
+        with open('data/raw/atec_nlp_sim_train_full.csv', 'r') as f:
             if args.tokenize:
                 print("Start cleaning and tokenization")
                 data_raw = f.readlines()
@@ -162,8 +162,7 @@ def main(args):
         if args.extract:
 
             base_exts = { 'WordEmbedExtractor': {},
-                          'WordBoolExtractor': {},
-                          'SentenceEmbedExtractor': {} }
+                          'WordBoolExtractor': {}}
 
             adv_exts = { 'SimilarityExtractor':{} }
 
@@ -181,8 +180,8 @@ def main(args):
                     # Extract basic features
                     base_exts['WordEmbedExtractor']['char_vocab'] = char_vocab
                     base_exts['WordEmbedExtractor']['word_vocab'] = word_vocab
-                    base_exts['SentenceEmbedExtractor']['char_vocab'] = char_vocab
-                    base_exts['SentenceEmbedExtractor']['word_vocab'] = word_vocab
+                    #base_exts['SentenceEmbedExtractor']['char_vocab'] = char_vocab
+                    #base_exts['SentenceEmbedExtractor']['word_vocab'] = word_vocab
                     train = extract_features(data_raw, char_tokenized, word_tokenized, base_exts)
 
                     # Extract advanced features
@@ -205,16 +204,15 @@ def main(args):
             word_tokenized = word_tokenizer.tokenize_all(data_raw, 'test.word', stop_words=stop_words_file, mode=args.mode)
 
             base_exts = { 'WordEmbedExtractor': {},
-                          'WordBoolExtractor': {},
-                          'SentenceEmbedExtractor': {} }
+                          'WordBoolExtractor': {} }
 
             adv_exts = { 'SimilarityExtractor':{} }
 
             base_exts['WordEmbedExtractor']['char_vocab'] = char_vocab
             base_exts['WordEmbedExtractor']['word_vocab'] = word_vocab
             base_exts['WordEmbedExtractor']['mode'] = 'test'
-            base_exts['SentenceEmbedExtractor']['char_vocab'] = char_vocab
-            base_exts['SentenceEmbedExtractor']['word_vocab'] = word_vocab
+            #base_exts['SentenceEmbedExtractor']['char_vocab'] = char_vocab
+            #base_exts['SentenceEmbedExtractor']['word_vocab'] = word_vocab
             test = extract_features(data_raw, char_tokenized, word_tokenized, base_exts)
             test.update(extract_features(data_raw, char_tokenized, word_tokenized, adv_exts))
             pickle.dump(test, open('data/processed/test.pkl', 'w'))

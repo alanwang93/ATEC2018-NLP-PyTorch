@@ -44,10 +44,9 @@ def main(args):
     data_config['char_size'] = char_size
     data_config['word_size'] = word_size
 
-    model = getattr(models, c['model'])(c, data_config)
+    model = getattr(deep_models, c['model'])(c, data_config)
 
     # Get data loader
-    valid_size = len(valid_data)
     train, valid = get_dataloader(config=c, valid_ratio=data_config['valid_ratio'])
 
     logger.info(json.dumps(data_config, indent=2))
@@ -92,13 +91,14 @@ def main(args):
         targets = []
         f1s = []
         valid_losses = []
+        valid_size = 0
         for _, valid_batch in enumerate(valid):
             batch_size = valid_batch['s1_clen'].size()[0]
+            valid_size += batch_size
             batch_pred, batch_target, batch_valid_loss = model.eval().evaluate(to_cuda(valid_batch,c))
             preds.extend(batch_pred)
             targets.extend(batch_target)
             valid_losses.append(batch_valid_loss*batch_size)
-            #logger.info("valid batch loss {0}, batch size {1}".format(batch_valid_loss, batch_size))
         valid_loss = np.sum(valid_losses) / valid_size
         if 'softmax' in args.config:
             f1, acc, prec, recall = score(preds, targets)
