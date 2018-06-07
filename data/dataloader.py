@@ -130,7 +130,7 @@ def get_dataloader(config, valid_ratio=0.1, shuffle=True):
 
     train_loader = torch.utils.data.DataLoader(data, batch_size=config['batch_size'], sampler=train_sampler,\
             collate_fn=simple_collate_fn, num_workers=5)
-    valid_loader = torch.utils.data.DataLoader(data, batch_size=config['batch_size'], sampler=train_sampler,\
+    valid_loader = torch.utils.data.DataLoader(data, batch_size=config['batch_size'], sampler=valid_sampler,\
             collate_fn=simple_collate_fn, num_workers=5)
 
     return (train_loader, valid_loader)

@@ -55,11 +55,13 @@ class SoftmaxSiameseRNN(nn.Module):
             self.bn = nn.BatchNorm1d(config['plus_size'])
         else:
             self.bn = nn.BatchNorm1d(self.lstm_size)
-        self.bn2 = nn.BatchNorm1d(self.linear2_in_size)
 
+        self.bn_feats = nn.BatchNorm1d(self.linear_in_size)
+        self.bn2 = nn.BatchNorm1d(self.linear2_in_size)
         self.softmax = nn.Softmax(dim=1)
         self.tanh = nn.Tanh()
         self.relu = nn.ReLU()
+        self.selu = nn.SELU()
         self.prelu = nn.PReLU()
         self.loss = nn.CrossEntropyLoss(weight=torch.tensor([1., config['pos_weight']]))
 
@@ -163,20 +165,21 @@ class SoftmaxSiameseRNN(nn.Module):
                 s1_outs = self.dense_plus(s1_outs)
                 s2_outs = self.dense_plus(s2_outs)
             # BN
-            s1_outs = self.bn(s1_outs)
-            s2_outs = self.bn(s2_outs)
+            #s1_outs = self.bn(s1_outs)
+            #s2_outs = self.bn(s2_outs)
             s1_outs = self.tanh(s1_outs)
             s2_outs = self.tanh(s2_outs)
-            
             sfeats = self.sfeats(data)
             pair_feats = self.pair_feats(data)
             
             #feats = torch.cat(((s1_outs-s2_outs)*(s1_outs-s2_outs), s1_outs * s2_outs, sfeats, pair_feats), dim=1)
-            feats = torch.cat((s1_outs, s2_outs, torch.abs(s1_outs-s2_outs), s1_outs * s2_outs, sfeats, pair_feats), dim=1)
+            feats = torch.cat((s1_outs, s2_outs, (s1_outs-s2_outs)*(s1_outs-s2_outs), s1_outs * s2_outs, sfeats, pair_feats), dim=1)
+            feats = self.bn_feats(feats)
             #feats = self.dropout2(feats)
             out1 = self.linear(feats)
+            out1 = self.selu(out1)
             out1 = self.bn2(out1)
-            out1 = self.tanh(out1)
+            out1 = self.dropout2(out1)
             #out2 = self.dropout2(self.prelu(self.linear2(out1)))
             out = torch.squeeze(self.linear2(out1), 1)
 
