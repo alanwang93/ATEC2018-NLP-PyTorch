@@ -11,71 +11,48 @@ from sk_models.sk_model import SKModel
 
 logger = init_log('log/sk_model.log')
 
-rebuild = False
+rebuild = True#False
 train_data_path = 'data/processed/train.pkl'
 valid_data_path = 'data/processed/valid.pkl'
 sk_train_path = 'data/processed/sk_train.pkl'
 sk_valid_path = 'data/processed/sk_valid.pkl'
 
-# features = ['s1_wlen', 's1_clen', 'jaccard_char_unigram', 'jaccard_char_bigram',\
-#  			'jaccard_char_trigram', 'jaccard_word_unigram', 'LevenshteinDistance_char',\
-#  			'LevenshteinDistance_word', 'word_bool']
+# Pair level or sentence level features
 features = ['s1_wlen', 's1_clen', 'jaccard_char_unigram', 'jaccard_char_bigram',\
  			'jaccard_char_trigram', 'jaccard_word_unigram',# 'LevenshteinDistance_char',\
  			'LevenshteinDistance_word', 'word_bool']
 
 logger.info("Loading training data")
 if rebuild or not os.path.exists(sk_train_path):
-    train_data = pickle.load(open(train_data_path, 'r'))
-    # print(train_data['word_bool'][1].shape)
+    data = pickle.load(open(train_data_path, 'r'))
     logger.info("Processing training data")
-    train_X_features = []
+    X_features = []
     for feat in features:
-        if train_data[feat][0] == 's':
-            train_X_features.append(abs(train_data[feat][1] - train_data[feat.replace('1', '2')][1]).reshape(-1,1))
-        elif train_data[feat][0] == 'p':
+        if data[feat][0] == 's':
+            X_features.append(abs(data[feat][1] - data[feat.replace('1', '2')][1]).reshape(-1,1))
+        elif data[feat][0] == 'p':
             if feat == 'word_bool':
-                train_X_features.append(np.squeeze(train_data[feat][1]))
-            elif len(train_data[feat][1].shape) == 1:
-                train_X_features.append(train_data[feat][1].reshape(-1,1))
+                X_features.append(np.squeeze(data[feat][1]))
+            elif len(data[feat][1].shape) == 1:
+                X_features.append(data[feat][1].reshape(-1,1))
             else:
-                train_X_features.append(np.squeeze(train_data[feat][1]))
-    train_X = np.concatenate(train_X_features, axis=1)
-    train_y = train_data['label'][1]
-    del train_data
-    pickle.dump({"X":train_X, "y":train_y}, open(sk_train_path, 'w'))
+                X_features.append(np.squeeze(data[feat][1]))
+
+    # word, char level features
+    print("s1_word_tfidf shape",  data['s1_word_tfidf'][1].shape)
+    print("s1_char_tfidf shape",  data['s1_char_tfidf'][1].shape)
+    X = np.concatenate(X_features, axis=1)
+    y = data['label'][1]
+    del data
+    pickle.dump({"X":X, "y":train_y}, open(sk_train_path, 'w'))
 else:
-    train = pickle.load(open(sk_train_path, 'r'))
-    train_X = train['X']
-    train_y = train['y']
-    del train
+    data = pickle.load(open(sk_train_path, 'r'))
+    X = data['X']
+    y = data['y']
+    del data
 
 print("Number of features", train_X.shape[1])
 
-logger.info("Loading valid data")
-if rebuild or not os.path.exists(sk_valid_path):
-    valid_data = pickle.load(open(valid_data_path, 'r'))
-    logger.info("Processing valid data")
-    valid_X_features = []
-    for feat in features:
-        if valid_data[feat][0] == 's':
-            valid_X_features.append(abs(valid_data[feat][1] - valid_data[feat.replace('1', '2')][1]).reshape(-1,1))
-        elif valid_data[feat][0] == 'p':
-            if feat == 'word_bool':
-                valid_X_features.append(np.squeeze(valid_data[feat][1]))
-            elif len(valid_data[feat][1].shape) == 1:
-                valid_X_features.append(valid_data[feat][1].reshape(-1,1))
-            else:
-                valid_X_features.append(np.squeeze(valid_data[feat][1]))
-    valid_X = np.concatenate(valid_X_features, axis=1)
-    valid_y = valid_data['label'][1]
-    del valid_data
-    pickle.dump({"X":valid_X, "y":valid_y}, open(sk_valid_path, 'w'))
-else:
-    valid = pickle.load(open(sk_valid_path, 'r'))
-    valid_X = valid['X']
-    valid_y = valid['y']
-    del valid
 
 configs = [
     {
@@ -106,7 +83,7 @@ configs = [
 preds = []
 for c in configs:
     clf = SKModel(c)
-# print(clf.clf)
+    # print(clf.clf)
     clf.fit(train_X, train_y)
     # score = clf.score(valid_X, valid_y)
     print(valid_X.shape)

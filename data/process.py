@@ -162,7 +162,8 @@ def main(args):
         if args.extract:
 
             base_exts = { 'WordEmbedExtractor': {},
-                          'WordBoolExtractor': {}}
+                          'WordBoolExtractor': {},
+                          'TFIDFExtractor':{}}
 
             adv_exts = { 'SimilarityExtractor':{} }
 
@@ -180,6 +181,8 @@ def main(args):
                     # Extract basic features
                     base_exts['WordEmbedExtractor']['char_vocab'] = char_vocab
                     base_exts['WordEmbedExtractor']['word_vocab'] = word_vocab
+                    base_exts['TFIDFExtractor']['char_vocab'] = char_vocab
+                    base_exts['TFIDFExtractor']['word_vocab'] = word_vocab
                     #base_exts['SentenceEmbedExtractor']['char_vocab'] = char_vocab
                     #base_exts['SentenceEmbedExtractor']['word_vocab'] = word_vocab
                     train = extract_features(data_raw, char_tokenized, word_tokenized, base_exts)

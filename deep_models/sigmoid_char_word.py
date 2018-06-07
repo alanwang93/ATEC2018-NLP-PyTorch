@@ -8,10 +8,10 @@ UNK_IDX = 0
 EOS_IDX = 2
 
 
-class CharWordSiamese(nn.Module):
+class SigmoidCharWordSiamese(nn.Module):
 
     def __init__(self,  config, data_config):
-        super(CharWordSiamese, self).__init__()
+        super(SigmoidCharWordSiamese, self).__init__()
         self.char_size = data_config['char_size']
         self.word_size = data_config['word_size']
         self.char_embed_size = config['char_embed_size']
