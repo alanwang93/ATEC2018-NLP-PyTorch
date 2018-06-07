@@ -1,7 +1,9 @@
-import torch
-from torch.utils import data
-import extractors
-from vocab import Vocab
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
+# vim:fenc=utf-8
+#
+# Distributed under terms of the MIT license.
+
 import argparse, os, pickle, json, codecs, itertools
 import cPickle as pickle
 import numpy as np
@@ -9,7 +11,9 @@ import numpy as np
 UNK_IDX = 0
 EOS_IDX = 2
 
-class Dataset(data.Dataset):
+
+
+class Dataset(torch.utils.data.Dataset):
     """
     A simple dataset wrapper
 
@@ -48,7 +52,7 @@ def simple_collate_fn(batch):
     for k in ['s1_clen', 's2_clen', 's1_wlen', 's2_wlen']:
         d[k] = [b[k][1] for b in batch]
     max_wlen = np.max(d['s1_wlen'] + d['s2_wlen'])
-    max_clen = np.max(d['s1_clen'] + d['s2_clen'])    
+    max_clen = np.max(d['s1_clen'] + d['s2_clen'])
     added_sfeats = []
     s1_feats = {}
     s2_feats = {}
@@ -108,45 +112,3 @@ def simple_collate_fn(batch):
         else:
             d[k] = torch.tensor(d[k])
     return d
-
-
-
-def complex_collate_fn(batch):
-    keys = batch[0].keys()
-    d = {}
-    for k in keys:
-        d[k] = []
-    for b in batch:
-        for k,v in b.items():
-            d[k].append(v)
-    d['s1_len'] = torch.tensor(d['s1_len'])
-    d['s2_len'] = torch.tensor(d['s2_len'])
-    d['s1_ordered_len'], d['s1_indices'] = torch.sort(d['s1_len'], descending=True)
-    d['s2_ordered_len'], d['s2_indices'] = torch.sort(d['s2_len'], descending=True)
-    d['s1_rvs'] = torch.zeros_like(d['s1_indices'])
-    d['s2_rvs'] = torch.zeros_like(d['s2_indices'])
-    for i, v in enumerate(d['s1_indices']):
-        d['s1_rvs'][v] = i
-    for i, v in enumerate(d['s2_indices']):
-        d['s2_rvs'][v] = i
-
-    for k in keys:
-        if 'len' in k:
-            continue
-        if len(d[k][0].size()) > 0:
-            if 's1' in k:
-                d[k] = torch.nn.utils.rnn.pad_sequence([torch.tensor(d[k][i]) for i in d['s1_indices'].tolist()],\
-                        batch_first=True, padding_value=EOS_IDX)
-            if 's2' in k:
-                d[k] = torch.nn.utils.rnn.pad_sequence([torch.tensor(d[k][i]) for i in d['s2_indices'].tolist()],\
-                        batch_first=True, padding_value=EOS_IDX)
-        elif k == 'label':
-            d[k] = torch.tensor(d[k])
-        else:
-            if 's1' in k:
-                d[k] = torch.tensor(d[k])[d['s1_indices']]
-            if 's2' in k:
-                d[k] = torch.tensor(d[k])[d['s2_indices']]
-
-    return d
-

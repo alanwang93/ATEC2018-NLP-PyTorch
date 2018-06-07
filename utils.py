@@ -48,6 +48,17 @@ def split_data(in_file, out_dir, train_ratio=0.95):
             valid_file.write(s)
         valid_file.close()
 
+
+def shuffle(in_file, out_dir):
+    with open(in_file, 'r') as f:
+        lines = f.readlines()
+        n = len(lines)
+        indices = np.random.permutation(n)
+        train_file = open(os.path.join(out_dir, 'train.raw'), 'w')
+        for i in indices:
+            train_file.write(lines[i])
+
+
 def over_sample(in_file, out_dir):
     with open(in_file, 'r') as f:
         lines = f.readlines()
@@ -104,6 +115,7 @@ def main(args):
         split_data(args.raw, args.out_dir, args.train_ratio)
     if args.oversample:
         over_sample(os.path.join(args.out_dir, 'train.raw'), args.out_dir)
+        
 
 
 if __name__ == '__main__':
@@ -112,6 +124,7 @@ if __name__ == '__main__':
     parser.add_argument('--out_dir', type=str, default='data/raw/')
     parser.add_argument('--train_ratio', type=float, default=0.95)
     parser.add_argument('--split', dest='split', action='store_true')
+    parser.add_argument('--shuffle', dest='shuffle', action='store_true')
     parser.add_argument('--oversample', dest='oversample', action='store_true')
     args = parser.parse_args()
 

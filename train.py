@@ -5,8 +5,8 @@
 # Distributed under terms of the MIT license.
 
 import torch
-from data.dataset import Dataset, simple_collate_fn
-import models
+from data.dataloader import get_dataloader
+import deep_models
 from data.vocab import Vocab
 from torch.utils import data
 import config
@@ -46,12 +46,9 @@ def main(args):
 
     model = getattr(models, c['model'])(c, data_config)
 
-    # Build datasets
-    train_data = Dataset(data_config['train'])
-    valid_data = Dataset(data_config['valid'])
+    # Get data loader
     valid_size = len(valid_data)
-    train = data.DataLoader(train_data, batch_size=c['batch_size'], shuffle=True, collate_fn=simple_collate_fn, num_workers=5)
-    valid = data.DataLoader(valid_data, batch_size=128, collate_fn=simple_collate_fn)
+    train, valid = get_dataloader(config=c, valid_ratio=data_config['valid_ratio'])
 
     logger.info(json.dumps(data_config, indent=2))
     logger.info(json.dumps(c, indent=2))
@@ -123,16 +120,18 @@ def main(args):
             if f1 > max_f1:
                 max_f1 = f1
                 max_threshold = th
+
         checkpoint = {
                     'name': c['name'],
                     'model': c['model'],
-                    'data_config': json.dumps(data_config, indent=2),
-                    'config': json.dumps(c, indent=2),
+                    'data_config': data_config,
+                    'config': c,
                     'best_f1': max_f1,
                     'best_epoch': epoch,
                     'best_threshold': max_threshold,
                     'state_dict': model.state_dict()
         }
+
         if args.save_all:
             torch.save(checkpoint, "{0}_{1}.pkl".format(model_path, epoch))
             fscore = open( "{0}_epoch_{1}.txt".format(model_path, epoch), 'w')

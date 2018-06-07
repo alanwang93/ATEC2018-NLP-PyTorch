@@ -1,9 +1,5 @@
 # ATEC2018-NLP
 
-[TOC]
-
-
-
 ## 资料
 
 ### Blogs & Other sources
@@ -93,27 +89,31 @@ Other options:
 
 
 
-## Notes & Ideas
+## Notes & Ideas & TODO
 1. 在计算score的时候，给pos类的权重越大，threshold（大于这个值认为label是1）也需要越大。
-2. Word-to-Mover Distance
-3. Decomposible attention
+2. TODO: Word-to-Mover Distance 等基于embedding的similarity
+3. [X] Decomposible attention (不管用)
 4. 去除duplicates以后用RNN没有什么提升，但可以尝试用来计算其他feature
-5. 如何选择threshold是个大问题（用DL model 提取feature然后用sklearn balanced LR训练？)
-
+5. 如何选择threshold是个大问题（用DL model 提取feature然后用sklearn balanced LR训练？), 用softmax训练?
+6. TODO: 重写preprocessing, 同时产生所有训练数据，在训练的时候再split
+7. TODO: 尝试用NN预训练，提取feature，然后用XGBoost、LR等模型进行训练
+8. TODO: 开始进行ensemble
 
 
 
 
 ## Results
-| 日期  | 名字                               | valid成绩 | test成绩 | 备注                                                         |
-| ----- | ---------------------------------- | --------- | -------- | ------------------------------------------------------------ |
-| 05-29 | siamese_char_best                  | 0.52?     | 0.6188   | char embed (接下去的model都是char-based，除非特别说明)       |
-| 05-30 | att_siamese_default_best           | 0.54?     | 0.5808   | attentive siamese;                                           |
-| 05-30 | att_siamese_small_embed_best       | 0.54?     | 0.6142   | use small embed                                              |
-| 05-31 | siamese_large_best                 |           | 0.6265   |                                                              |
-| 06-02 | siamese_plus_1linear_allfeats_best | 0.550     | 0.6171   | 1 score layer; all feats are used                            |
-| 06-02 | siamese_plus_test_best             | 0.553     | 0.621    | Siamese包含一个LSTM和一个FC layer; plus_size=400; l1_size=200 |
-| 06-02 | siamese_plus_clloss_best           | 0.543     | 0.6259   | 用contrastive loss, margin=0.1; plus_size=200, l1_size=100; dense+ |
-|       |                                    |           |          |                                                              |
-|       |                                    |           |          |                                                              |
-|       |                                    |           |          |                                                              |
+| 日期  | 名字                                  | valid成绩 | test成绩 | 备注                                                         |
+| ----- | ------------------------------------- | --------- | -------- | ------------------------------------------------------------ |
+| 05-29 | siamese_char_best                     | 0.52?     | 0.6188   | char embed (接下去的model都是char-based，除非特别说明)       |
+| 05-30 | att_siamese_default_best              | 0.54?     | 0.5808   | attentive siamese;                                           |
+| 05-30 | att_siamese_small_embed_best          | 0.54?     | 0.6142   | use small embed                                              |
+| 05-31 | siamese_large_best                    |           | 0.6265   |                                                              |
+| 06-02 | siamese_plus_1linear_allfeats_best    | 0.550     | 0.6171   | 1 score layer; all feats are used                            |
+| 06-02 | siamese_plus_test_best                | 0.553     | 0.621    | Siamese包含一个LSTM和一个FC layer; plus_size=400; l1_size=200 |
+| 06-02 | siamese_plus_clloss_best              | 0.543     | 0.6259   | 用contrastive loss, margin=0.1; plus_size=200, l1_size=100; dense+ |
+| 06-03 | siamese_plus_cllosstestmargin0.3_best | 0.563     | 0.6147   | 用contrastive loss, margin=0.3;                              |
+| 06-04 | siamese_plus_cllosstest_pos0.3_best   | 0.563     | 0.6045   | Threshold 0.67=>0.69, worse                                  |
+| 06-05 | softmax_siamese_char_embed300_best    | 0.547     | 0.6239   | softmax; use char embedding trained on training data         |
+|       |                                       |           |          |                                                              |
+|       |                                       |           |          |                                                              |
