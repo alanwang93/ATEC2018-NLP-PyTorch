@@ -8,10 +8,10 @@ UNK_IDX = 0
 EOS_IDX = 2
 
 
-class SoftmaxSiameseRNN(nn.Module):
+class SigmoidSiameseRNN(nn.Module):
 
     def __init__(self,  config, data_config):
-        super(SoftmaxSiameseRNN, self).__init__()
+        super(SigmoidSiameseRNN, self).__init__()
         self.mode = config['mode']
         self.l = self.mode[0] + 'len'
         self.vocab_size = data_config[self.mode+'_size']
@@ -23,12 +23,12 @@ class SoftmaxSiameseRNN(nn.Module):
         self.config = config
         self.data_config = data_config
 
-        self.embed = nn.Embedding(self.vocab_size, self.embed_size, padding_idx=EOS_IDX, max_norm=2.)
+        self.embed = nn.Embedding(self.vocab_size, self.embed_size, padding_idx=EOS_IDX)
 
         self.rnn = nn.LSTM(input_size=self.embed_size, hidden_size=self.hidden_size, \
-                num_layers=self.num_layers, batch_first=True, dropout=0.)
+                num_layers=self.num_layers, batch_first=True, dropout=0.2)
         self.rnn_rvs = nn.LSTM(input_size=self.embed_size, hidden_size=self.hidden_size, \
-                num_layers=self.num_layers, batch_first=True, dropout=0.)
+                num_layers=self.num_layers, batch_first=True, dropout=0.2)
 
         self.dropout = nn.Dropout(config['dropout'])
         self.dropout2 = nn.Dropout(config['dropout2'])
@@ -41,13 +41,13 @@ class SoftmaxSiameseRNN(nn.Module):
         if config['sim_fun'] == 'dense+':
             self.linear_in_size = config['plus_size']
 
-        self.linear_in_size *= 4
+        self.linear_in_size *= 2
         if config['sim_fun'] in ['dense', 'dense+']:
             self.linear_in_size = self.linear_in_size + 7 + 124 #similarity:5; len:4->2; word_bool:124
             self.linear2_in_size = config['l1_size']
             #self.linear3_in_size = config['l2_size']
             self.linear = nn.Linear(self.linear_in_size, self.linear2_in_size)
-            self.linear2 = nn.Linear(self.linear2_in_size, 2)
+            self.linear2 = nn.Linear(self.linear2_in_size, 1)
             #self.linear3 = nn.Linear(self.linear3_in_size, 1)
         if config['sim_fun'] == 'dense+':
             self.dense_plus = nn.Linear(self.lstm_size, config['plus_size'])
@@ -63,7 +63,7 @@ class SoftmaxSiameseRNN(nn.Module):
         self.relu = nn.ReLU()
         self.selu = nn.SELU()
         self.prelu = nn.PReLU()
-        self.loss = nn.CrossEntropyLoss(weight=torch.tensor([1., config['pos_weight']]))
+        self.BCELoss = BCELoss
 
         self.optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, self.parameters()), lr=0.001)
 
@@ -74,9 +74,7 @@ class SoftmaxSiameseRNN(nn.Module):
     def _init_weights(self):
         nn.init.normal_(self.embed.weight[1:])
         nn.init.xavier_normal_(self.linear.weight)
-        nn.init.xavier_normal_(self.linear2.weight)
-        nn.init.xavier_normal_(self.dense_plus.weight)
-        
+        #nn.init.xavier_normal_(self.linear2.weight)
         init_fun = nn.init.orthogonal_
         for i in range(self.num_layers):
             for j in range(4):
@@ -160,8 +158,8 @@ class SoftmaxSiameseRNN(nn.Module):
             out = out * (1./ (1.+torch.exp(-1*(torch.bmm(s1_outs.unsqueeze(1), s2_outs.unsqueeze(2)).squeeze()+1.))))
         elif self.config['sim_fun'] in ['dense', 'dense+']:
             if self.config['sim_fun'] == 'dense+':
-                #s1_outs = self.dropout2(s1_outs)
-                #s2_outs = self.dropout2(s2_outs)
+                s1_outs = self.dropout2(s1_outs)
+                s2_outs = self.dropout2(s2_outs)
                 s1_outs = self.dense_plus(s1_outs)
                 s2_outs = self.dense_plus(s2_outs)
             # BN
@@ -201,6 +199,27 @@ class SoftmaxSiameseRNN(nn.Module):
         return feats
 
 
+    def contrastive_loss(self, sims, labels, margin=0.3):
+        """
+        Args:
+            sims: similarity between two sentences
+            labels: 1D tensor of 0 or 1
+            margin: max(sim-margin, 0)
+        """
+        batch_size = labels.size()[0]
+        if len(sims.size()) == 0:
+            sims = torch.unsqueeze(sims, dim=0)
+        loss = torch.tensor(0.)
+        if self.config['use_cuda']:
+            loss = loss.cuda(self.config['cuda_num'])
+        for i, l in enumerate(labels):
+            loss += l*(1-sims[i])*(1-sims[i])*self.config['pos_weight']
+            if sims[i] > margin:
+                loss += (1-l)*sims[i] * sims[i]
+        loss = loss/batch_size
+        return loss
+
+
     def load_vectors(self, char=None, word=None):
         print("Use pretrained embedding")
         if char is not None:
@@ -208,26 +227,47 @@ class SoftmaxSiameseRNN(nn.Module):
         if word is not None:
             self.embed.weight = nn.Parameter(torch.FloatTensor(word))
 
+    def get_proba(self, out):
+        if self.config['sim_fun'] in ['dense', 'dense+']:
+            sim = self.tanh(out)
+            proba = self.sigmoid(out)
+        elif self.config['sim_fun'] == 'gesd':
+            sim = out
+            proba = out
+        else:
+            sim = out
+            proba = sim/2.+0.5
+        return sim, proba
+
+
     def train_step(self, data):
         out = self.forward(data)
-        proba = self.softmax(out) # (N,C)
-        loss = self.loss(proba, data['label'])
+        sim, proba = self.get_proba(out)
+        # constractive loss
+        loss = 0.
+
+        if 'ce' in self.config['loss']:
+            loss += self.config['ce_alpha'] * self.BCELoss(proba, data['target'], [1., self.pos_weight])
+        if 'cl' in self.config['loss']:
+            loss += self.contrastive_loss(proba, data['target'], margin=self.config['cl_margin']) 
         self.optimizer.zero_grad()
         loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.parameters(), self.config['max_grad_norm'])
         self.optimizer.step()
         return loss.item()
 
     def evaluate(self, data):
         out = self.forward(data)
-        proba = self.softmax(out)
-        loss = self.loss(proba, data['label'])
-        v, pred = torch.max(proba, dim=1)
-        return pred.tolist(),  data['label'].tolist(), loss.item()
+        sim, proba = self.get_proba(out)
+        loss = 0.
+        if 'ce' in self.config['loss']:
+            loss += self.config['ce_alpha'] * self.BCELoss(proba, data['target'], [1., self.pos_weight])
+        if 'cl' in self.config['loss']:
+            loss += self.contrastive_loss(proba, data['target'], margin=self.config['cl_margin']) 
+        return proba.tolist(),  data['label'].tolist(), loss.item()
 
 
     def test(self, data):
         out = self.forward(data)
-        proba = self.softmax(out)
-        v, pred = torch.max(proba, dim=1)
-        return pred.tolist(), data['sid'].item()
+        sim, proba = self.get_proba(out)
+        pred = proba.item()
+        return pred, data['sid'].item()
