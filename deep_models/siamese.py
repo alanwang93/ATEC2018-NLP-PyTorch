@@ -45,21 +45,22 @@ class SiameseRNN(nn.Module):
         if config['sim_fun'] in ['dense', 'dense+']:
             self.linear_in_size = self.linear_in_size + 7 + 124 #similarity:5; len:4->2; word_bool:124
             self.linear2_in_size = config['l1_size']
-            #self.linear3_in_size = config['l2_size']
+            self.linear3_in_size = config['l2_size']
             self.linear = nn.Linear(self.linear_in_size, self.linear2_in_size)
-            self.linear2 = nn.Linear(self.linear2_in_size, 2)
-            #self.linear3 = nn.Linear(self.linear3_in_size, 1)
+            self.linear2 = nn.Linear(self.linear2_in_size, self.linear3_in_size)
+            self.linear3 = nn.Linear(self.linear3_in_size, 2)
         if config['sim_fun'] == 'dense+':
             self.dense_plus = nn.Linear(self.lstm_size, config['plus_size'])
-        if self.config['sim_fun'] == 'dense+':
-            self.bn = nn.BatchNorm1d(config['plus_size'])
-        else:
-            self.bn = nn.BatchNorm1d(self.lstm_size)
-        self.bn2 = nn.BatchNorm1d(self.linear2_in_size)
+
+
+        self.bn_feats = nn.BatchNorm1d(self.linear_in_size)
+        self.bn = nn.BatchNorm1d(self.linear2_in_size)
+        self.bn2 = nn.BatchNorm1d(self.linear3_in_size)
 
         self.softmax = nn.Softmax(dim=1)
         self.tanh = nn.Tanh()
         self.relu = nn.ReLU()
+        self.selu = nn.SELU()
         self.prelu = nn.PReLU()
         self.loss = nn.CrossEntropyLoss(weight=torch.tensor([1., config['pos_weight']]))
 
@@ -163,8 +164,6 @@ class SiameseRNN(nn.Module):
                 s1_outs = self.dense_plus(s1_outs)
                 s2_outs = self.dense_plus(s2_outs)
             # BN
-            s1_outs = self.bn(s1_outs)
-            s2_outs = self.bn(s2_outs)
             s1_outs = self.tanh(s1_outs)
             s2_outs = self.tanh(s2_outs)
             
@@ -173,12 +172,19 @@ class SiameseRNN(nn.Module):
             
             #feats = torch.cat(((s1_outs-s2_outs)*(s1_outs-s2_outs), s1_outs * s2_outs, sfeats, pair_feats), dim=1)
             feats = torch.cat((s1_outs, s2_outs, torch.abs(s1_outs-s2_outs), s1_outs * s2_outs, sfeats, pair_feats), dim=1)
+            feats = self.bn_feats(feats)
             #feats = self.dropout2(feats)
             out1 = self.linear(feats)
-            out1 = self.bn2(out1)
-            out1 = self.tanh(out1)
+            out1 = self.bn(out1)
+            out1 = self.selu(out1)
+            #out1 = self.dropout2(out1)
+            #out1 = self.tanh(out1)
             #out2 = self.dropout2(self.prelu(self.linear2(out1)))
-            out = torch.squeeze(self.linear2(out1), 1)
+            out2 = self.linear2(out1)
+            out2 = self.bn2(out2)
+            out2 = self.selu(out2)
+            #out2 = self.dropout2(out2)
+            out = torch.squeeze(self.linear3(out2), 1)
 
         return out
          

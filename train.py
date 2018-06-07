@@ -100,7 +100,7 @@ def main(args):
             targets.extend(batch_target)
             valid_losses.append(batch_valid_loss*batch_size)
         valid_loss = np.sum(valid_losses) / valid_size
-        if 'softmax' in args.config:
+        if 'sigmoid' not in args.config:
             f1, acc, prec, recall = score(preds, targets)
             logger.info("Valid at epoch {0}, F1:{1:.3f}, Acc:{2:.3f}, P:{3:.3f}, R:{4:.3f}, Loss:{5:.3f}"\
                     .format(epoch, f1, acc, prec, recall, valid_loss))

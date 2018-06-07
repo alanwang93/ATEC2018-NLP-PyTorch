@@ -31,6 +31,7 @@ class TFIDFExtractor(Extractor):
         	s1.append(" ".join(ins['s1']))
         	s2.append(" ".join(ins['s2']))
         n = len(s1)
+
         if mode == 'train':
             corpus = s1 + s2
             word_vectorizer = TfidfVectorizer(analyzer='word', lowercase=False, sublinear_tf=True)
