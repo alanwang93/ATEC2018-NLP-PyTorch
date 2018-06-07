@@ -12,7 +12,7 @@ from sklearn.model_selection import train_test_split
 
 logger = init_log('log/sk_model.log')
 
-rebuild = False
+rebuild = True
 train_data_path = 'data/processed/train.pkl'
 sk_train_path = 'data/processed/sk_train.pkl'
 
@@ -20,6 +20,7 @@ sk_train_path = 'data/processed/sk_train.pkl'
 features = ['s1_wlen', 's1_clen', 'jaccard_char_unigram', 'jaccard_char_bigram',\
  			'jaccard_char_trigram', 'jaccard_word_unigram',# 'LevenshteinDistance_char',\
  			'LevenshteinDistance_word', 'word_bool', 's1_word_lsa']
+features = ['s1_word_lsa']
 
 logger.info("Loading training data")
 if rebuild or not os.path.exists(sk_train_path):
@@ -27,8 +28,10 @@ if rebuild or not os.path.exists(sk_train_path):
     logger.info("Processing training data")
     X_features = []
     for feat in features:
+        #if 'lsa' in feat:
+        #    X_features.append(data[feat][1])
         if data[feat][0] == 's':
-            X_features.append(abs(data[feat][1] - data[feat.replace('1', '2')][1]).reshape(-1,data[feat][2]))
+            X_features.append(np.power(data[feat][1] - data[feat.replace('1', '2')][1], 2).reshape(-1, data[feat][2]))
         elif data[feat][0] == 'p':
             if feat == 'word_bool':
                 X_features.append(np.squeeze(data[feat][1]))
@@ -73,8 +76,4 @@ for c in configs:
     preds.append(pred)
     print(c['clf'])
     print("score", clf.score(X_test, y_test))
-
     print()
-print(preds)
-proba = np.mean(preds, axis=0)
-print("score", score(proba, y_valid))
