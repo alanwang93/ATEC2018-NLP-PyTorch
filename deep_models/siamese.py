@@ -48,7 +48,7 @@ class SiameseRNN(nn.Module):
             self.linear3_in_size = config['l2_size']
             self.linear = nn.Linear(self.linear_in_size, self.linear2_in_size)
             self.linear2 = nn.Linear(self.linear2_in_size, self.linear3_in_size)
-            self.linear3 = nn.Linear(self.linear3_in_size + 5+124+2*(200+2), 2)
+            self.linear3 = nn.Linear(self.linear3_in_size, 2)
         if config['sim_fun'] == 'dense+':
             self.dense_plus = nn.Linear(self.lstm_size, config['plus_size'])
 
@@ -164,8 +164,6 @@ class SiameseRNN(nn.Module):
                 s1_outs = self.dense_plus(s1_outs)
                 s2_outs = self.dense_plus(s2_outs)
             # BN
-            #s1_outs = self.tanh(s1_outs)
-            #s2_outs = self.tanh(s2_outs)
             
             sfeats = self.sfeats(data)
             pair_feats = self.pair_feats(data)
@@ -183,11 +181,15 @@ class SiameseRNN(nn.Module):
             #out2 = self.dropout2(self.prelu(self.linear2(out1)))
             out2 = self.linear2(out1)
             out2 = self.bn2(out2)
-            out2 = self.tanh(out2)
+            out = self.tanh(out2)
             #out2 = self.dropout2(out2)
-            out = torch.squeeze(self.linear3(torch.cat((out2, sfeats, pair_feats), dim=1)), 1)
-
+            # out = torch.squeeze(self.linear3(torch.cat((out2), dim=1)), 1)
         return out
+    
+    def score_layer(self, out):
+        out = torch.squeeze(self.linear3(out), 1)
+        return out
+
          
     def sfeats(self, data):
         """ Sentence level features """
@@ -215,6 +217,7 @@ class SiameseRNN(nn.Module):
 
     def train_step(self, data):
         out = self.forward(data)
+        out = self.score_layer(out)
         proba = self.softmax(out) # (N,C)
         loss = self.loss(proba, data['label'])
         self.optimizer.zero_grad()
@@ -225,6 +228,7 @@ class SiameseRNN(nn.Module):
 
     def evaluate(self, data):
         out = self.forward(data)
+        out = self.score_layer(out)
         proba = self.softmax(out)
         loss = self.loss(proba, data['label'])
         v, pred = torch.max(proba, dim=1)
@@ -233,6 +237,7 @@ class SiameseRNN(nn.Module):
 
     def test(self, data):
         out = self.forward(data)
+        out = self.score_layer(out)
         proba = self.softmax(out)
         v, pred = torch.max(proba, dim=1)
         return pred.tolist(), data['sid'].item()

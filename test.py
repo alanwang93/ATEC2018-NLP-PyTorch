@@ -59,10 +59,10 @@ def main(inpath, outpath):
 
     model = getattr(deep_models, c['model'])(c, data_config)
 
-    if data_config['char_embedding'] is not None:
-        model.load_vectors(char_vocab.vectors)
-    if data_config['word_embedding'] is not None:
-        model.load_vectors(word_vocab.vectors)
+    # if data_config['char_embedding'] is not None:
+    #     model.load_vectors(char_vocab.vectors)
+    # if data_config['word_embedding'] is not None:
+    #     model.load_vectors(word_vocab.vectors)
 
     
     model.load_state_dict(cp['state_dict'])

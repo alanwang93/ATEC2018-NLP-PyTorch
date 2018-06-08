@@ -98,6 +98,7 @@ Other options:
 6. TODO: 重写preprocessing, 同时产生所有训练数据，在训练的时候再split
 7. TODO: 尝试用NN预训练，提取feature，然后用XGBoost、LR等模型进行训练
 8. TODO: 开始进行ensemble
+9. TODO: Replace cPickle with h5py
 
 
 
