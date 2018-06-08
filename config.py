@@ -166,14 +166,14 @@ siamese = {
     'dropout2': 0.0,
     'representation': 'last', # last, avg, max
     'sim_fun': 'dense+', # exp, cosine, cosine+, dense
-    'plus_size': 400,
-    'l1_size': 200,
-    'l2_size': 100,
+    'sl1_size': 400,
+    'sl2_size': 200,
+    'l1_size': 100,
 
     # Training
-    'batch_size': 128,
+    'batch_size': 64,
     'max_iter': 500000,
-    'patience': 10,    
+    'patience': 5,    
     'max_grad_norm': 10.,
 }
 

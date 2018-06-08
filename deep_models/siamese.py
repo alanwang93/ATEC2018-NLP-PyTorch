@@ -33,29 +33,28 @@ class SiameseRNN(nn.Module):
         self.dropout = nn.Dropout(config['dropout'])
         self.dropout2 = nn.Dropout(config['dropout2'])
 
-        self.linear_in_size = self.hidden_size
+        self.linear1_in_size = self.hidden_size
         self.lstm_size = self.hidden_size
         if self.bidirectional:
             self.lstm_size *= 2
-            self.linear_in_size *= 2
-        if config['sim_fun'] == 'dense+':
-            self.linear_in_size = config['plus_size']
+            self.linear1_in_size *= 2
 
-        self.linear_in_size *= 4
+        if config['sim_fun'] == 'dense+':
+            self.linear1_in_size = config['sl2_size']
+
+        self.linear1_in_size *= 2
         if config['sim_fun'] in ['dense', 'dense+']:
-            self.linear_in_size = self.linear_in_size# + 5 + 124 + 2*(200 + 2)# similarity:5; len:4->2; word_bool:124; lsa: 400 => 200
+            self.linear1_in_size = self.linear1_in_size# + 5 + 124 + 2*(200 + 2)# similarity:5; len:4->2; word_bool:124; lsa: 400 => 200
             self.linear2_in_size = config['l1_size']
-            self.linear3_in_size = config['l2_size']
-            self.linear = nn.Linear(self.linear_in_size, self.linear2_in_size)
-            self.linear2 = nn.Linear(self.linear2_in_size, self.linear3_in_size)
-            self.linear3 = nn.Linear(self.linear3_in_size, 2)
+            self.linear1 = nn.Linear(self.linear1_in_size, self.linear2_in_size)
+            self.linear2 = nn.Linear(self.linear2_in_size, 2)
         if config['sim_fun'] == 'dense+':
-            self.dense_plus = nn.Linear(self.lstm_size, config['plus_size'])
+            self.slinear1 = nn.Linear(self.lstm_size, config['sl1_size'])
+            self.slinear2 = nn.Linear(config['sl1_size'], config['sl2_size'])
 
 
-        self.bn_feats = nn.BatchNorm1d(self.linear_in_size)
-        self.bn = nn.BatchNorm1d(self.linear2_in_size)
-        self.bn2 = nn.BatchNorm1d(self.linear3_in_size)
+        self.bn_feats = nn.BatchNorm1d(self.linear1_in_size)
+        self.bn1 = nn.BatchNorm1d(self.linear2_in_size)
 
         self.softmax = nn.Softmax(dim=1)
         self.tanh = nn.Tanh()
@@ -71,10 +70,9 @@ class SiameseRNN(nn.Module):
 
 
     def _init_weights(self):
-        nn.init.normal_(self.embed.weight[1:])
-        nn.init.xavier_normal_(self.linear.weight)
-        nn.init.xavier_normal_(self.linear2.weight)
-        nn.init.xavier_normal_(self.dense_plus.weight)
+        nn.init.kaiming_uniform_(self.embed.weight[1:])
+        nn.init.kaiming_uniform_(self.linear1.weight)
+        nn.init.kaiming_uniform_(self.linear2.weight)
         
         init_fun = nn.init.orthogonal_
         for i in range(self.num_layers):
@@ -92,7 +90,8 @@ class SiameseRNN(nn.Module):
                 getattr(self.rnn_rvs, 'bias_hh_l{0}'.format(i))[self.hidden_size:2*self.hidden_size].data.fill_(1.)
         
         if self.config['sim_fun'] == 'dense+':
-            nn.init.xavier_normal_(self.dense_plus.weight)
+            nn.init.kaiming_uniform_(self.slinear1.weight)
+            nn.init.kaiming_uniform_(self.slinear2.weight)
 
 
     def forward(self, data):
@@ -159,32 +158,25 @@ class SiameseRNN(nn.Module):
             if self.config['sim_fun'] == 'dense+':
                 #s1_outs = self.dropout2(s1_outs)
                 #s2_outs = self.dropout2(s2_outs)
-                s1_outs = self.dense_plus(s1_outs)
-                s2_outs = self.dense_plus(s2_outs)
-            # BN
-            #sfeats = self.sfeats(data)
-            #pair_feats = self.pair_feats(data)
-            
-            #feats = torch.cat(((s1_outs-s2_outs)*(s1_outs-s2_outs), s1_outs * s2_outs, sfeats, pair_feats), dim=1)
-            feats = torch.cat((s1_outs, s2_outs, torch.abs(s1_outs-s2_outs), s1_outs * s2_outs), dim=1)#, sfeats, pair_feats), dim=1)
+                s1_outs = self.slinear1(s1_outs)
+                s2_outs = self.slinear1(s2_outs)
+                s1_outs = self.relu(s1_outs)
+                s2_outs = self.relu(s2_outs)
+                s1_outs = self.slinear2(s1_outs)
+                s2_outs = self.slinear2(s2_outs)
+                s1_outs = self.relu(s1_outs)
+                s2_outs = self.relu(s2_outs)
+
+            feats = torch.cat((torch.abs(s1_outs-s2_outs), s1_outs * s2_outs), dim=1)
             feats = self.bn_feats(feats)
-            feats = self.tanh(feats)
-            #feats = self.dropout2(feats)
-            out1 = self.linear(feats)
-            out1 = self.bn(out1)
-            out1 = self.tanh(out1)
-            #out1 = self.dropout2(out1)
-            #out1 = self.tanh(out1)
-            #out2 = self.dropout2(self.prelu(self.linear2(out1)))
-            out2 = self.linear2(out1)
-            out2 = self.bn2(out2)
-            out = self.tanh(out2)
-            #out2 = self.dropout2(out2)
-            #out = torch.squeeze(self.linear3(torch.cat((out2), dim=1)), 1)
+            feats = self.relu(feats)
+            feats = self.linear1(feats)
+            feats = self.bn1(feats)
+            out = self.relu(feats)
         return out
     
     def score_layer(self, out):
-        out = torch.squeeze(self.linear3(out), 1)
+        out = torch.squeeze(self.linear2(out), 1)
         return out
 
          
