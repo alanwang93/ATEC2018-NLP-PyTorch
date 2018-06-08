@@ -96,8 +96,8 @@ def simple_collate_fn(batch):
                     d[k] = []
                 d[k].append(data)              
     for k in s1_feats.keys():
-        d['s1_feats'].append(s1_feats[k])  
-        d['s2_feats'].append(s2_feats['s2_'+k[3:]]) 
+        d['s1_feats'].append(np.asarray(s1_feats[k]).reshape(batch_size, -1))
+        d['s2_feats'].append(np.asarray(s2_feats['s2_'+k[3:]]).reshape(batch_size, -1)) 
     for k in pair_feats.keys():
         d['pair_feats'].append(pair_feats[k])
 
@@ -108,7 +108,7 @@ def simple_collate_fn(batch):
         elif '_word' in k or '_char' in k: # embed
             d[k] = torch.LongTensor(d[k])
         elif k in ['s1_feats', 's2_feats' ]:
-            d[k] = np.stack(d[k], axis=1)
+            d[k] = np.hstack(d[k])
             d[k] = torch.tensor(d[k])
         else:
             d[k] = torch.tensor(d[k])

@@ -43,12 +43,12 @@ class SiameseRNN(nn.Module):
 
         self.linear_in_size *= 4
         if config['sim_fun'] in ['dense', 'dense+']:
-            self.linear_in_size = self.linear_in_size + 7 + 124 #similarity:5; len:4->2; word_bool:124
+            self.linear_in_size = self.linear_in_size# + 5 + 124 + 2*(200 + 2)# similarity:5; len:4->2; word_bool:124; lsa: 400 => 200
             self.linear2_in_size = config['l1_size']
             self.linear3_in_size = config['l2_size']
             self.linear = nn.Linear(self.linear_in_size, self.linear2_in_size)
             self.linear2 = nn.Linear(self.linear2_in_size, self.linear3_in_size)
-            self.linear3 = nn.Linear(self.linear3_in_size, 2)
+            self.linear3 = nn.Linear(self.linear3_in_size + 5+124+2*(200+2), 2)
         if config['sim_fun'] == 'dense+':
             self.dense_plus = nn.Linear(self.lstm_size, config['plus_size'])
 
@@ -164,27 +164,28 @@ class SiameseRNN(nn.Module):
                 s1_outs = self.dense_plus(s1_outs)
                 s2_outs = self.dense_plus(s2_outs)
             # BN
-            s1_outs = self.tanh(s1_outs)
-            s2_outs = self.tanh(s2_outs)
+            #s1_outs = self.tanh(s1_outs)
+            #s2_outs = self.tanh(s2_outs)
             
             sfeats = self.sfeats(data)
             pair_feats = self.pair_feats(data)
             
             #feats = torch.cat(((s1_outs-s2_outs)*(s1_outs-s2_outs), s1_outs * s2_outs, sfeats, pair_feats), dim=1)
-            feats = torch.cat((s1_outs, s2_outs, torch.abs(s1_outs-s2_outs), s1_outs * s2_outs, sfeats, pair_feats), dim=1)
+            feats = torch.cat((s1_outs, s2_outs, torch.abs(s1_outs-s2_outs), s1_outs * s2_outs), dim=1)#, sfeats, pair_feats), dim=1)
             feats = self.bn_feats(feats)
+
             #feats = self.dropout2(feats)
             out1 = self.linear(feats)
             out1 = self.bn(out1)
-            out1 = self.selu(out1)
+            out1 = self.tanh(out1)
             #out1 = self.dropout2(out1)
             #out1 = self.tanh(out1)
             #out2 = self.dropout2(self.prelu(self.linear2(out1)))
             out2 = self.linear2(out1)
             out2 = self.bn2(out2)
-            out2 = self.selu(out2)
+            out2 = self.tanh(out2)
             #out2 = self.dropout2(out2)
-            out = torch.squeeze(self.linear3(out2), 1)
+            out = torch.squeeze(self.linear3(torch.cat((out2, sfeats, pair_feats), dim=1)), 1)
 
         return out
          
@@ -193,6 +194,7 @@ class SiameseRNN(nn.Module):
         s1_feats = data['s1_feats'].type(torch.FloatTensor)
         s2_feats = data['s2_feats'].type(torch.FloatTensor)
         feats = torch.abs(s1_feats-s2_feats).float()
+        feats = torch.cat((feats, s1_feats*s2_feats), dim=1)
         if self.config['use_cuda']:
             feats = feats.cuda(self.config['cuda_num'])
         return feats

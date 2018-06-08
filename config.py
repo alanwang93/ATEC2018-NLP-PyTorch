@@ -157,13 +157,13 @@ siamese = {
 
     # Model
     'mode': 'char',
-    'pos_weight': 3.5,
+    'pos_weight': 3.,
     'embed_size': 300,
     'hidden_size': 200,
     'num_layers': 2,
     'bidirectional':True,
     'dropout': 0.5,
-    'dropout2': 0.2,
+    'dropout2': 0.0,
     'representation': 'last', # last, avg, max
     'sim_fun': 'dense+', # exp, cosine, cosine+, dense
     'plus_size': 400,
@@ -171,7 +171,7 @@ siamese = {
     'l2_size': 100,
 
     # Training
-    'batch_size': 64,
+    'batch_size': 128,
     'max_iter': 500000,
     'patience': 10,    
     'max_grad_norm': 10.,
