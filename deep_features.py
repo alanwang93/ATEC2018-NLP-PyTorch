@@ -38,7 +38,7 @@ def main(args):
         # Build data
         data = Dataset("data/processed/train.pkl")
         train_size = len(data)
-        train = torch.utils.data.DataLoader(data, batch_size=32, collate_fn=simple_collate_fn)
+        train = torch.utils.data.DataLoader(data, batch_size=256, collate_fn=simple_collate_fn)
         for name in cp_names:
             print("Extracting features from {0}".format(name))
             cp = torch.load("checkpoints/{0}.pkl".format(name), map_location=lambda storage, loc: storage)
@@ -56,7 +56,7 @@ def main(args):
                 model = model.cpu()
             features = []
             for i, batch in enumerate(train):
-                out = model.eval()(to_cuda(test_batch, c))
+                out = model.eval()(to_cuda(batch, c))
                 features.append(out)
             features = np.concatenate(features)
             print(features.shape)
