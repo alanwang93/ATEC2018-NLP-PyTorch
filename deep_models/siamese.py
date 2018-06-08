@@ -146,8 +146,6 @@ class SiameseRNN(nn.Module):
                 s1_outs = torch.cat((s1_out, s1_out_rvs), dim=1)
                 s2_outs = torch.cat((s2_out, s2_out_rvs), dim=1)
 
-        
-
         if self.config['sim_fun'] == 'cosine':
             out = nn.functional.cosine_similarity(s1_outs, s2_outs)
         elif self.config['sim_fun'] == 'cosine+':
@@ -164,14 +162,13 @@ class SiameseRNN(nn.Module):
                 s1_outs = self.dense_plus(s1_outs)
                 s2_outs = self.dense_plus(s2_outs)
             # BN
-            
-            sfeats = self.sfeats(data)
-            pair_feats = self.pair_feats(data)
+            #sfeats = self.sfeats(data)
+            #pair_feats = self.pair_feats(data)
             
             #feats = torch.cat(((s1_outs-s2_outs)*(s1_outs-s2_outs), s1_outs * s2_outs, sfeats, pair_feats), dim=1)
             feats = torch.cat((s1_outs, s2_outs, torch.abs(s1_outs-s2_outs), s1_outs * s2_outs), dim=1)#, sfeats, pair_feats), dim=1)
             feats = self.bn_feats(feats)
-
+            feats = self.tanh(feats)
             #feats = self.dropout2(feats)
             out1 = self.linear(feats)
             out1 = self.bn(out1)
@@ -183,7 +180,7 @@ class SiameseRNN(nn.Module):
             out2 = self.bn2(out2)
             out = self.tanh(out2)
             #out2 = self.dropout2(out2)
-            # out = torch.squeeze(self.linear3(torch.cat((out2), dim=1)), 1)
+            #out = torch.squeeze(self.linear3(torch.cat((out2), dim=1)), 1)
         return out
     
     def score_layer(self, out):
