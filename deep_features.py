@@ -26,6 +26,7 @@ def main(args):
     if args.mode == 'train':
         cp = torch.load("checkpoints/{0}.pkl".format(cp_names[0]), map_location=lambda storage, loc: storage)
         data_config = cp['data_config']
+        del cp
         char_vocab = Vocab(data_config=data_config, type='char')
         word_vocab = Vocab(data_config=data_config, type='word')
 
@@ -38,31 +39,38 @@ def main(args):
         # Build data
         data = Dataset("data/processed/train.pkl")
         train_size = len(data)
-        train = torch.utils.data.DataLoader(data, batch_size=256, collate_fn=simple_collate_fn)
+        train = torch.utils.data.DataLoader(data, batch_size=128, collate_fn=simple_collate_fn)
         for name in cp_names:
             print("Extracting features from {0}".format(name))
-            cp = torch.load("checkpoints/{0}.pkl".format(name), map_location=lambda storage, loc: storage)
-            c = cp['config']
-            if not torch.cuda.is_available():
-                c['use_cuda'] = False
+            cp = torch.load("checkpoints/{0}.pkl".format(name))#, map_location=lambda storage, loc: storage)
 
+            c = cp['config']
+            print("config", c)
+            c['use_cuda'] = False
             model = getattr(deep_models, c['model'])(c, data_config)
             model.load_state_dict(cp['state_dict'])
             threshold = cp['best_threshold']
+            del cp
 
             if c['use_cuda']:
                 model = model.cuda(c['cuda_num'])
             else:
                 model = model.cpu()
+
             features = []
+            torch.set_grad_enabled(False)
+            model = model.eval()
             for i, batch in enumerate(train):
-                out = model.eval()(to_cuda(batch, c))
+                if i % 10 == 0:
+                    print(i)
+                data = to_cuda(batch, c)
+                out = model(data)
                 features.append(out)
             features = np.concatenate(features)
             print(features.shape)
 
-            with open("data/processed/{0}.features".format(name), 'w') as fout:
-                pickle.dump(features)
+            with open("data/processed/features_{0}.npy".format(name), 'w') as fout:
+                np.save(fout, features)
 
     elif args.mode == 'test':
         for name in cp_names:
