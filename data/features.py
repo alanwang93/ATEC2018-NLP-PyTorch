@@ -9,10 +9,15 @@
 
 class Features:
     """
-    Class used to manage features
+    Class used to extract and manage features
     """
 
     def __init__(self):
         self.extractors = []
+        self.kwargs = []
 
-    def 
+    def add_extractors(self, extractor_list):
+        for e in extractor_list:
+            self.extractors.append(e['name'])
+            self.kwargs.append(e['kwargs'])
+            
