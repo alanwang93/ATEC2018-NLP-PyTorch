@@ -95,7 +95,7 @@ class TFIDFExtractor(Extractor):
             d['s2_word_lsa'] = ('s', word_lsa[n:], lsa_components)
 
             with open('data/processed/test_tfidf.pkl', 'w') as f:
-                pickle.dump(d, f)            
+                pickle.dump(d, f)
 
         return d
 

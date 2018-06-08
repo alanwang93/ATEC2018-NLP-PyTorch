@@ -38,15 +38,15 @@ def split_data(in_file, out_dir, train_ratio=0.95):
         n = len(lines)
         indices = np.random.permutation(n)
         train = [lines[i] for i in indices[:int(n*train_ratio)]]
-        valid = [lines[i] for i in indices[int(n*train_ratio):]]
+        test = [lines[i] for i in indices[int(n*train_ratio):]]
         train_file = open(os.path.join(out_dir, 'train.raw'), 'w')
-        valid_file = open(os.path.join(out_dir, 'valid.raw'), 'w')
+        test_file = open(os.path.join(out_dir, 'test.raw'), 'w')
         for s in train:
             train_file.write(s)
         train_file.close()
-        for s in valid:
-            valid_file.write(s)
-        valid_file.close()
+        for s in test:
+            test_file.write(s)
+        test_file.close()
 
 
 def shuffle(in_file, out_dir):

@@ -127,7 +127,7 @@ def main(args):
         if not os.path.exists(data_config['data_root']):
             os.makedirs(data_config['data_root'])
 
-        with open('data/raw/atec_nlp_sim_train_full.csv', 'r') as f:
+        with open('data/raw/train.raw', 'r') as f:
             if args.tokenize:
                 print("Start cleaning and tokenization")
                 data_raw = f.readlines()
