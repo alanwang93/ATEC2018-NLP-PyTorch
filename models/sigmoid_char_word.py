@@ -10,7 +10,7 @@ EOS_IDX = 2
 
 class SigmoidCharWordSiamese(nn.Module):
 
-    def __init__(self,  config, data_config):
+    def __init__(self, config, data_config):
         super(SigmoidCharWordSiamese, self).__init__()
         self.char_size = data_config['char_size']
         self.word_size = data_config['word_size']

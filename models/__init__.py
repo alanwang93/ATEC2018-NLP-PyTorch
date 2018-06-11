@@ -12,3 +12,4 @@ from .att_siamese import AttSiameseRNN
 from .sigmoid_decatt import SigmoidDecAttSiamese
 from .decatt import DecAttSiamese
 from .sigmoid_char_word import SigmoidCharWordSiamese
+from .sk_model import SKModel

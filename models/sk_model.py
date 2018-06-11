@@ -8,8 +8,9 @@ import numpy as np
 from utils import score
 
 class SKModel:
-    def __init__(self, config):
+    def __init__(self, config, data_config=None):
         self.config = config
+        self.data_config = data_config
         m = getattr(sklearn, config['module'])
         self.clf = getattr(m, config['clf'])(**config['kwargs'])
 
@@ -28,5 +29,8 @@ class SKModel:
     def score(self, X, y, threshold=0.5):
         proba = self.predict_proba(X)
         return score(proba, y, threshold=threshold)
+
+    def _load(self, cp_name):
+        pass
 
 
