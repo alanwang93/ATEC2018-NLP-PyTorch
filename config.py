@@ -162,7 +162,7 @@ siamese = {
     'hidden_size': 200,
     'num_layers': 2,
     'bidirectional':True,
-    'dropout': 0.5,
+    'dropout': 0.4,
     'dropout2': 0.0,
     'representation': 'last', # last, avg, max
     'sim_fun': 'dense+', # exp, cosine, cosine+, dense
@@ -174,7 +174,7 @@ siamese = {
     'batch_size': 64,
     'max_iter': 500000,
     'patience': 5,    
-    'max_grad_norm': 10.,
+    'max_grad_norm': 100.,
 }
 
 sigmoid_decatt = {
@@ -209,7 +209,7 @@ sigmoid_decatt = {
     'batch_size': 64,
     'max_iter': 500000,
     'patience': 5,
-    'max_grad_norm': 10.,
+    'max_grad_norm': 100.,
 }
 
 
@@ -219,17 +219,17 @@ decatt = {
     'model': 'DecAttSiamese',
 
     'char_embedding': None, #'sgns.financial.char',
-    'word_embedding': None, #'sgns.financial.char',#None,
+    'word_embedding': 'word_word2vec', #None, #'sgns.financial.char',#None,
 
     # Model
     'mode': 'word',
     'embed_size': 300,
     'hidden_size': 200,
-    'F1_out': 200,
+    'F1_out': 300,
     'F2_out': 200,
-    'G1_out': 200,
+    'G1_out': 300,
     'G2_out': 200,
-    'H1_out': 200,
+    'H1_out': 300,
     'num_layers': 2,
     'bidirectional':True,
     'dropout': 0.1,
@@ -242,7 +242,7 @@ decatt = {
     'batch_size': 64,
     'max_iter': 500000,
     'patience': 5,
-    'max_grad_norm': 10.,
+    'max_grad_norm': 1000.,
 }
 
 

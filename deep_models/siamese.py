@@ -23,12 +23,13 @@ class SiameseRNN(nn.Module):
         self.config = config
         self.data_config = data_config
 
-        self.embed = nn.Embedding(self.vocab_size, self.embed_size, padding_idx=EOS_IDX, max_norm=2.)
+        self.embed = nn.Embedding(self.vocab_size, self.embed_size, padding_idx=EOS_IDX)
+        self.imp = nn.Embedding(self.vocab_size, 1, padding_idx=EOS_IDX)
 
         self.rnn = nn.LSTM(input_size=self.embed_size, hidden_size=self.hidden_size, \
-                num_layers=self.num_layers, batch_first=True, dropout=0.)
+                num_layers=self.num_layers, batch_first=True, dropout=0.1)
         self.rnn_rvs = nn.LSTM(input_size=self.embed_size, hidden_size=self.hidden_size, \
-                num_layers=self.num_layers, batch_first=True, dropout=0.)
+                num_layers=self.num_layers, batch_first=True, dropout=0.1)
 
         self.dropout = nn.Dropout(config['dropout'])
         self.dropout2 = nn.Dropout(config['dropout2'])
@@ -44,10 +45,11 @@ class SiameseRNN(nn.Module):
 
         self.linear1_in_size *= 2
         if config['sim_fun'] in ['dense', 'dense+']:
-            self.linear1_in_size = self.linear1_in_size# + 5 + 124 + 2*(200 + 2)# similarity:5; len:4->2; word_bool:124; lsa: 400 => 200
+            self.linear1_in_size = self.linear1_in_size + 5 + 124 + 2*(200 + 2)# similarity:5; len:4->2; word_bool:124; lsa: 400 => 200
             self.linear2_in_size = config['l1_size']
             self.linear1 = nn.Linear(self.linear1_in_size, self.linear2_in_size)
             self.linear2 = nn.Linear(self.linear2_in_size, 2)
+
         if config['sim_fun'] == 'dense+':
             self.slinear1 = nn.Linear(self.lstm_size, config['sl1_size'])
             self.slinear2 = nn.Linear(config['sl1_size'], config['sl2_size'])
@@ -57,6 +59,7 @@ class SiameseRNN(nn.Module):
         self.bn1 = nn.BatchNorm1d(self.linear2_in_size)
 
         self.softmax = nn.Softmax(dim=1)
+        self.sigmoid = nn.Sigmoid()
         self.tanh = nn.Tanh()
         self.relu = nn.ReLU()
         self.selu = nn.SELU()
@@ -71,6 +74,7 @@ class SiameseRNN(nn.Module):
 
     def _init_weights(self):
         nn.init.kaiming_uniform_(self.embed.weight[1:])
+        nn.init.constant_(self.imp.weight, 0.)
         nn.init.kaiming_uniform_(self.linear1.weight)
         nn.init.kaiming_uniform_(self.linear2.weight)
         
@@ -98,9 +102,11 @@ class SiameseRNN(nn.Module):
         batch_size = data['s1_char'].size()[0]
         row_idx = torch.arange(0, batch_size).long()
         s1_embed = self.embed(data['s1_'+self.mode])
+        s1_imp = self.imp(data['s1_'+self.mode])
         s2_embed = self.embed(data['s2_'+self.mode])
-        s1_embed = self.dropout(s1_embed)
-        s2_embed = self.dropout(s2_embed)
+        s2_imp = self.imp(data['s2_'+self.mode])
+        s1_embed = self.dropout(s1_embed * s1_imp)
+        s2_embed = self.dropout(s2_embed * s2_imp)
 
         s1_out, s1_hidden = self.rnn(s1_embed)
         s2_out, s2_hidden = self.rnn(s2_embed)
@@ -122,8 +128,10 @@ class SiameseRNN(nn.Module):
         if self.bidirectional:
             s1_embed_rvs = self.embed(data['s1_'+self.mode+'_rvs'])
             s2_embed_rvs = self.embed(data['s2_'+self.mode+'_rvs'])
-            s1_embed_rvs = self.dropout(s1_embed_rvs)
-            s2_embed_rvs = self.dropout(s2_embed_rvs)
+            s1_imp_rvs = self.imp(data['s1_'+self.mode+'_rvs'])
+            s2_imp_rvs = self.imp(data['s2_'+self.mode+'_rvs'])
+            s1_embed_rvs = self.dropout(s1_embed_rvs * s1_imp_rvs)
+            s2_embed_rvs = self.dropout(s2_embed_rvs * s2_imp_rvs)
             s1_out_rvs, _ = self.rnn_rvs(s1_embed_rvs)
             s2_out_rvs, _ = self.rnn_rvs(s2_embed_rvs)
             if self.config['representation'] == 'last': # last hidden state
@@ -160,19 +168,22 @@ class SiameseRNN(nn.Module):
                 #s2_outs = self.dropout2(s2_outs)
                 s1_outs = self.slinear1(s1_outs)
                 s2_outs = self.slinear1(s2_outs)
-                s1_outs = self.relu(s1_outs)
-                s2_outs = self.relu(s2_outs)
+                s1_outs = self.prelu(s1_outs)
+                s2_outs = self.prelu(s2_outs)
                 s1_outs = self.slinear2(s1_outs)
                 s2_outs = self.slinear2(s2_outs)
-                s1_outs = self.relu(s1_outs)
-                s2_outs = self.relu(s2_outs)
+                s1_outs = self.prelu(s1_outs)
+                s2_outs = self.prelu(s2_outs)
 
-            feats = torch.cat((torch.abs(s1_outs-s2_outs), s1_outs * s2_outs), dim=1)
+            sfeats = self.sfeats(data)
+            pfeats = self.pair_feats(data)
+
+            feats = torch.cat((torch.abs(s1_outs-s2_outs), s1_outs * s2_outs, sfeats, pfeats), dim=1)
             feats = self.bn_feats(feats)
-            feats = self.relu(feats)
+            feats = self.prelu(feats)
             feats = self.linear1(feats)
             feats = self.bn1(feats)
-            out = self.relu(feats)
+            out = self.prelu(feats)
         return out
     
     def score_layer(self, out):

@@ -14,10 +14,9 @@ import itertools, argparse, os, json
 from utils import init_log, score, to_cuda
 import numpy as np
 
+def sigmoid(x):                                        
+    return 1 / (1 + np.exp(-x))
 
-"""
-
-"""
 EVAL_STEPS = 1000 # evaluate on valid set
 LOG_STEPS = 200 # average train losses over LOG_STEPS steps
 UNK_IDX = 0
@@ -69,6 +68,8 @@ def main(args):
     best_f1 = 0.
     best_epoch = 0
     best_threshold = 0.
+    #for i in range(3, 20):
+    #    logger.info("Imp embed {0}:{1}".format(word_vocab.itos[i].encode('utf8'), sigmoid(model.imp.weight[i].item())))
 
     """ Training """
     for epoch in range(200):
@@ -92,6 +93,8 @@ def main(args):
         f1s = []
         valid_losses = []
         valid_size = 0
+        #for i in range(3, 20):
+        #    logger.info("Imp embed {0}:{1}".format(word_vocab.itos[i].encode('utf8'), sigmoid(model.imp.weight[i].item())))
         for _, valid_batch in enumerate(valid):
             batch_size = valid_batch['s1_clen'].size()[0]
             valid_size += batch_size

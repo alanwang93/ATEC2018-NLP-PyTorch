@@ -56,8 +56,8 @@ class DecAttSiamese(nn.Module):
 
         self.l1_size = config['l1_size']
 
-        self.linear = nn.Linear(config['H1_out'] + 7 +124, self.l1_size)
-        self.bn_feats = nn.BatchNorm1d(config['H1_out'] + 7 +124)
+        self.linear = nn.Linear(config['H1_out'] + 7 +124 + 200, self.l1_size)
+        self.bn_feats = nn.BatchNorm1d(config['H1_out'] + 7 +124 + 200)
         self.bn_l1 = nn.BatchNorm1d(self.l1_size)
         self.linear2 = nn.Linear(self.l1_size, 2)
 
@@ -117,10 +117,15 @@ class DecAttSiamese(nn.Module):
         s2_vec = s2_embed.view(batch_size*seq_len, -1)
 
         # Attend
-        s1_vec = self.F1(self.prelu(self.bn_F1(s1_vec)))
-        s2_vec = self.F1(self.prelu(self.bn_F1(s2_vec)))
-        s1_vec = self.F2(self.prelu(self.bn_F2(s1_vec)))
-        s2_vec = self.F2(self.prelu(self.bn_F2(s2_vec)))
+        #s1_vec = self.F1(self.relu(self.bn_F1(s1_vec)))
+        #s2_vec = self.F1(self.relu(self.bn_F1(s2_vec)))
+        #s1_vec = self.F2(self.relu(self.bn_F2(s1_vec)))
+        #s2_vec = self.F2(self.relu(self.bn_F2(s2_vec)))
+
+        s1_vec = self.F1(self.relu(s1_vec))
+        s2_vec = self.F1(self.relu(s2_vec))
+        s1_vec = self.F2(self.relu(s1_vec))
+        s2_vec = self.F2(self.relu(s2_vec))
 
         s1_vec = s1_vec.view(batch_size, seq_len, -1)
         s2_vec = s2_vec.view(batch_size, seq_len, -1)
@@ -137,23 +142,27 @@ class DecAttSiamese(nn.Module):
         v2 = torch.cat((s2_out, s1_sub), dim=2)
         v1 = v1.view(batch_size*seq_len, -1)
         v2 = v2.view(batch_size*seq_len, -1)
-        v1 = self.G1(self.prelu(self.bn_G1(v1)))
-        v2 = self.G1(self.prelu(self.bn_G1(v2)))
-        v1 = self.G2(self.prelu(self.bn_G2(v1))).view(batch_size, seq_len, -1)
-        v2 = self.G2(self.prelu(self.bn_G2(v2))).view(batch_size, seq_len, -1)
-
+        #v1 = self.G1(self.relu(self.bn_G1(v1)))
+        #v2 = self.G1(self.relu(self.bn_G1(v2)))
+        #v1 = self.G2(self.relu(self.bn_G2(v1))).view(batch_size, seq_len, -1)
+        #v2 = self.G2(self.relu(self.bn_G2(v2))).view(batch_size, seq_len, -1)
+        v1 = self.G1(self.relu(v1))
+        v2 = self.G1(self.relu(v2))
+        v1 = self.G2(self.relu(v1)).view(batch_size, seq_len, -1)
+        v2 = self.G2(self.relu(v2)).view(batch_size, seq_len, -1)
         # Aggregate
         v = torch.cat((torch.sum(v1, dim=1), torch.sum(v2, dim=1)), dim=1)
-        v = self.H1(self.bn_H1(v))
+        #v = self.H1(self.bn_H1(v))
+        v = self.H1(v)
         
         sfeats = self.sfeats(data)
         pair_feats = self.pair_feats(data)
         
         feats = torch.cat((v, sfeats, pair_feats), dim=1)
         feats = self.bn_feats(feats)
-        feats = self.prelu(feats)
+        feats = self.relu(feats)
         out1 = self.bn_l1(self.linear(feats))
-        out1 = self.prelu(out1)
+        out1 = self.relu(out1)
         out = torch.squeeze(self.linear2(out1), 1)
         return out
 

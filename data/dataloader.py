@@ -124,8 +124,8 @@ def get_dataloader(config, valid_ratio=0.1, shuffle=True):
         np.random.seed(233)
         np.random.shuffle(indices)
     train_idx, valid_idx = indices[split:], indices[:split]
-    np.save(open('data/processed/train_idx.npy'), train_idx)
-    np.save(open('data/processed/valid_idx.npy'), valid_idx)
+    np.save(open('data/processed/train_idx.npy', 'w'), train_idx)
+    np.save(open('data/processed/valid_idx.npy', 'w'), valid_idx)
     
     train_sampler = SubsetRandomSampler(train_idx)
     valid_sampler = SubsetRandomSampler(valid_idx)
