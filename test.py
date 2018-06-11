@@ -7,7 +7,7 @@
 import sys
 import torch
 from data.dataset import Dataset, simple_collate_fn
-import deep_models
+import models
 from data.vocab import Vocab
 from torch.utils import data
 import config

@@ -6,7 +6,7 @@
 
 import torch
 from data.dataloader import get_dataloader
-import deep_models
+import models
 from data.vocab import Vocab
 from torch.utils import data
 import config
