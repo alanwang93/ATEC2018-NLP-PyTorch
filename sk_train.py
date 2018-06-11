@@ -2,12 +2,7 @@ import os
 import cPickle as pickle
 import numpy as np
 from utils import init_log, score
-from sk_models.logistic_regressor import LogisticRegressor
-from sk_models.random_forest_classifier import RandomForest
-from sk_models.bagging_classifier import Bagging
-from sk_models.adaboost_classifier import AdaBoost
-from sk_models.mlp_classifier import MLP
-from sk_models.sk_model import SKModel
+from models import SKModel
 from sklearn.model_selection import train_test_split
 
 logger = init_log('log/sk_model.log')
