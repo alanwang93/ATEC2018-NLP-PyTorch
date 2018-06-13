@@ -18,6 +18,9 @@ import cPickle as pickle
 from gensim.models.word2vec import Word2Vec
 
 def extract_features(data_raw, chars, words, exts):
+    """ 
+    Return a dictionary of features
+    """
     d = dict()
     for s, kwargs in list(exts.items()):
         E = getattr(extractors, s)
@@ -33,6 +36,7 @@ def remove_all(l, word):
         for w in word:
             l = [x for x in l if x != w]
         return l
+
 def replace_all(sent, target, candidates):
     for c in candidates:
         sent = sent.replace(c, target)
@@ -111,98 +115,84 @@ def clean_data(raw, data_config, mode='train'):
             cleaned_data_raw.append({'sid': d['sid'], 's1':"".join(s1), 's2':"".join(s2)})
     return cleaned_data_raw
 
+
 def main(args):
 
     data_config =  getattr(config, 'data_config')
     word_tokenizer = Tokenizer(tokenizer='word+dict', data_config=data_config)
     char_tokenizer = Tokenizer(tokenizer='char', data_config=data_config)
 
-    exts_train = {'WordEmbedExtractor':{},
-                  'SimilarityExtractor':{},
-                  'WordBoolExtractor':{}}
-    exts_valid = {'WordEmbedExtractor':{},
-                  'SimilarityExtractor':{},
-                  'WordBoolExtractor':{}}
-    exts_test = {'WordEmbedExtractor':{},
-                  'SimilarityExtractor':{},
-                  'WordBoolExtractor':{}}
-
     # Tokenization & Cleaning
     if args.mode == 'train':
         if not os.path.exists(data_config['data_root']):
             os.makedirs(data_config['data_root'])
 
-        with open('data/raw/train.raw', 'r') as f:
+        with open('data/raw/atec_nlp_sim_train_full.csv', 'r') as f:
+            
             if args.tokenize:
+                print("Start cleaning and tokenization")
                 data_raw = f.readlines()
-                train_data_raw  = clean_data(data_raw, data_config, mode=args.mode)
+                data_raw  = clean_data(data_raw, data_config, mode=args.mode)
                 stop_words_file = "data/raw/simple_stop_words.txt"
-                train_char_tokenized = char_tokenizer.tokenize_all(train_data_raw, 'train.char', stop_words=None, mode=args.mode)
-                train_word_tokenized = word_tokenizer.tokenize_all(train_data_raw, 'train.word', stop_words=stop_words_file, mode=args.mode)
-                pickle.dump(train_data_raw, open('data/processed/train_raw.pkl', 'w'))
-                pickle.dump(train_char_tokenized, open('data/processed/train_char_tokenized.pkl', 'w'))
-                pickle.dump(train_word_tokenized, open('data/processed/train_word_tokenized.pkl', 'w'))
+                char_tokenized = char_tokenizer.tokenize_all(data_raw, 'train.char', stop_words=None, mode=args.mode)
+                word_tokenized = word_tokenizer.tokenize_all(data_raw, 'train.word', stop_words=stop_words_file, mode=args.mode)
+                pickle.dump(data_raw, open('data/processed/train_raw.pkl', 'w'))
+                pickle.dump(char_tokenized, open('data/processed/char_tokenized.pkl', 'w'))
+                pickle.dump(word_tokenized, open('data/processed/word_tokenized.pkl', 'w'))
             else:
-                train_data_raw = pickle.load(open('data/processed/train_raw.pkl', 'r'))
-                train_char_tokenized = pickle.load(open('data/processed/train_char_tokenized.pkl', 'r'))
-                train_word_tokenized = pickle.load(open('data/processed/train_word_tokenized.pkl', 'r'))
-
-        with open('data/raw/valid.raw', 'r') as f:
-            if args.tokenize:
-                data_raw = f.readlines()
-                valid_data_raw  = clean_data(data_raw, data_config, mode=args.mode)
-                valid_char_tokenized = char_tokenizer.tokenize_all(valid_data_raw, 'valid.char', stop_words=None, mode=args.mode)
-                valid_word_tokenized = word_tokenizer.tokenize_all(valid_data_raw, 'valid.word', stop_words=stop_words_file, mode=args.mode)
-                pickle.dump(valid_data_raw, open('data/processed/valid_raw.pkl', 'w'))
-                pickle.dump(valid_char_tokenized, open('data/processed/valid_char_tokenized.pkl', 'w'))
-                pickle.dump(valid_word_tokenized, open('data/processed/valid_word_tokenized.pkl', 'w'))
-            else:
-                valid_data_raw = pickle.load(open('data/processed/valid_raw.pkl', 'r'))
-                valid_char_tokenized = pickle.load(open('data/processed/valid_char_tokenized.pkl', 'r'))
-                valid_word_tokenized = pickle.load(open('data/processed/valid_word_tokenized.pkl', 'r'))
+                print("Load tokenized data")
+                data_raw = pickle.load(open('data/processed/train_raw.pkl', 'r'))
+                char_tokenized = pickle.load(open('data/processed/char_tokenized.pkl', 'r'))
+                word_tokenized = pickle.load(open('data/processed/word_tokenized.pkl', 'r'))
 
         # Pre-train embeddings
-        # Char embedding
         if args.embed:
-            sentences = [ins['s1'] for ins in train_char_tokenized+valid_char_tokenized] + [ins['s2'] for ins in train_char_tokenized+valid_char_tokenized]
+            # Char embedding
+            sentences = [ins['s1'] for ins in char_tokenized] + [ins['s2'] for ins in char_tokenized]
             print("Start char word2vec training")
             w2v_char = Word2Vec(sentences, size=data_config['embed_size'], min_count=data_config['min_freq'])
             w2v_char.save('data/processed/char_word2vec')
-            print("word2vec training finished")
 
-        # Word embedding
-            sentences = [ins['s1'] for ins in train_word_tokenized+valid_word_tokenized] + [ins['s2'] for ins in train_word_tokenized+valid_word_tokenized]
+            # Word embedding
+            sentences = [ins['s1'] for ins in word_tokenized] + [ins['s2'] for ins in word_tokenized]
             print("Start word word2vec training")
             w2v_word = Word2Vec(sentences, size=data_config['embed_size'], min_count=data_config['min_freq'])
-            w2v_char.save('data/processed/word_word2vec')
-            print("word2vec training finished")
+            w2v_word.save('data/processed/word_word2vec')
         
         # Extract features
         if args.extract:
+
+            base_exts = { 'WordEmbedExtractor': {},
+                          'WordBoolExtractor': {},
+                          'TFIDFExtractor':{}}
+
+            adv_exts = { 'SimilarityExtractor':{} }
+
             with codecs.open(os.path.join(data_config['data_root'], 'train.pkl'), 'w', encoding='utf-8') as fout:
                     char_vocab = Vocab(data_config=data_config, type='char', embedding=data_config['char_embedding'])
                     word_vocab = Vocab(data_config=data_config, type='word', embedding=data_config['word_embedding'])
-                    char_vocab.build(train_char_tokenized)
-                    word_vocab.build(train_word_tokenized)
+                    char_vocab.build(char_tokenized)
+                    word_vocab.build(word_tokenized)
                     if char_vocab.embedding is not None:
                         char_vocab.load_vectors(char_vocab.embedding)
                     if word_vocab.embedding is not None:
                         word_vocab.load_vectors(word_vocab.embedding)
 
-                    exts_train['WordEmbedExtractor']['char_vocab'] = char_vocab
-                    exts_train['WordEmbedExtractor']['word_vocab'] = word_vocab
+                    print("Start extracting basic features")
+                    # Extract basic features
+                    base_exts['WordEmbedExtractor']['char_vocab'] = char_vocab
+                    base_exts['WordEmbedExtractor']['word_vocab'] = word_vocab
+                    base_exts['TFIDFExtractor']['char_vocab'] = char_vocab
+                    base_exts['TFIDFExtractor']['word_vocab'] = word_vocab
+                    #base_exts['SentenceEmbedExtractor']['char_vocab'] = char_vocab
+                    #base_exts['SentenceEmbedExtractor']['word_vocab'] = word_vocab
+                    train = extract_features(data_raw, char_tokenized, word_tokenized, base_exts)
 
-                    train = extract_features(train_data_raw, train_char_tokenized, train_word_tokenized, exts_train)
-
+                    # Extract advanced features
+                    print("Start extracting advanced features")
+                    train.update(extract_features(data_raw, char_tokenized, word_tokenized, adv_exts))
                     pickle.dump(train, fout)
 
-            with codecs.open(os.path.join(data_config['data_root'], 'valid.pkl'), 'w', encoding='utf-8') as fout:
-
-                    exts_valid['WordEmbedExtractor']['char_vocab'] = char_vocab
-                    exts_valid['WordEmbedExtractor']['word_vocab'] = word_vocab
-
-                    valid = extract_features(valid_data_raw, valid_char_tokenized, valid_word_tokenized, exts_valid)
-                    pickle.dump(valid, fout)
 
     elif args.mode == 'test':
         with open(args.test_in, 'r') as fin:
@@ -216,16 +206,24 @@ def main(args):
             stop_words_file = "data/raw/simple_stop_words.txt"
             char_tokenized = char_tokenizer.tokenize_all(data_raw, 'test.char', stop_words=None, mode=args.mode)
             word_tokenized = word_tokenizer.tokenize_all(data_raw, 'test.word', stop_words=stop_words_file, mode=args.mode)
-            exts_test['WordEmbedExtractor']['char_vocab'] = char_vocab
-            exts_test['WordEmbedExtractor']['word_vocab'] = word_vocab
-            exts_test['WordEmbedExtractor']['mode'] = 'test'
-            valid = extract_features(data_raw, char_tokenized, word_tokenized, exts_test)
-            pickle.dump(valid, open('data/processed/test.pkl', 'w'))
+
+            base_exts = { 'WordEmbedExtractor': {},
+                          'WordBoolExtractor': {} }
+
+            adv_exts = { 'SimilarityExtractor':{} }
+
+            base_exts['WordEmbedExtractor']['char_vocab'] = char_vocab
+            base_exts['WordEmbedExtractor']['word_vocab'] = word_vocab
+            base_exts['WordEmbedExtractor']['mode'] = 'test'
+            #base_exts['SentenceEmbedExtractor']['char_vocab'] = char_vocab
+            #base_exts['SentenceEmbedExtractor']['word_vocab'] = word_vocab
+            test = extract_features(data_raw, char_tokenized, word_tokenized, base_exts)
+            test.update(extract_features(data_raw, char_tokenized, word_tokenized, adv_exts))
+            pickle.dump(test, open('data/processed/test.pkl', 'w'))
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    # parser.add_argument('--config', type=str, default=None)
     parser.add_argument('--mode', type=str, default='train')
     parser.add_argument('--test_in', type=str, default=None)
     parser.add_argument('--tokenize', dest='tokenize', action='store_true')

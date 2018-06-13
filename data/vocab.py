@@ -41,18 +41,18 @@ class Vocab:
         self.tokens = self.freqs = self.itos = self.stoi = self.vectors = None
         self.keys = ['tokens','freqs','itos','stoi','root','unk_token','sos_token','eos_token','vectors', 'embedding', 'data_config', 'type']
 
-    def build(self, tokenized=None, rebuild=True):
+    def build(self, data=None, rebuild=True):
         if not rebuild and os.path.exists(os.path.join(self.root, 'vocab_{0}.pkl'.format(self.type))):
             print("Loading {0} vocab".format(self.type))
             self._load()
-        elif tokenized is not None:
+        elif data is not None:
             self.data_config['max_vocab'] = self.data_config['max_char'] if self.type == 'char' else self.data_config['max_word']
 
             # Build vocab
             self.tokens = {"s1":[], "s2":[]}
-            for ins in tokenized:
-                self.tokens['s1'].append(ins['s1'])
-                self.tokens['s2'].append(ins['s2'])
+            for ins in data:
+                self.tokens['s1'].append(ins['s1_'+self.type])
+                self.tokens['s2'].append(ins['s2_'+self.type])
             allwords = list(itertools.chain.from_iterable(self.tokens['s1'] + self.tokens['s2']))
             self.freqs = Counter(allwords)
 
@@ -64,11 +64,11 @@ class Vocab:
             words_and_frequencies = list(self.freqs.items())
             words_and_frequencies.sort(key=lambda tup: tup[1], reverse=True) # sort by order
 
-            with open(os.path.join(self.root, 'freqs.txt'), 'w') as f:
+            with open(os.path.join(self.root, 'freqs_{0}.txt'.format(self.type)), 'w') as f:
                 for word, freq in words_and_frequencies:
                     if not (freq < min_freq or len(self.itos) == max_vocab):
                         self.itos.append(word)
-                    f.write("{0} {1}\n".format(word.encode('utf8'), freq))
+                    f.write("{0} {1}\n".format(word, freq))
             self.stoi = defaultdict(unk_idx)
             self.stoi.update({tok: i for i, tok in enumerate(self.itos)})
 

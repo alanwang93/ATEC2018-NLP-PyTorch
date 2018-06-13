@@ -33,4 +33,7 @@ class SKModel:
     def _load(self, cp_name):
         pass
 
+    def _save(self, cp_name):
+        pass
+
 
