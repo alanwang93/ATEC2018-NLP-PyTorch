@@ -5,7 +5,7 @@
 # Distributed under terms of the MIT license.
 
 import extractors
-import os
+import os, json
 import numpy as np
 import cPickle as pickle
 
@@ -67,20 +67,20 @@ class Features:
         print("Feature matrix size: {0}".format(self.feat_matrix.shape))
 
     def _save(self, mode):
-        
-        f = open('data/processed/{0}.feats'.format(mode), 'w')
+
+        f = open('data/processed/{0}_feats.json'.format(mode), 'w')
         d = {
             'feat_names': self.feat_names,
             'feat_levels': self.feat_levels,
             'feat_lens': self.feat_lens,
             'name2idx': self.name2idx
         }
-        pickle.dump(d, f)
+        json.dump(d, f)
        
     def _load(self, mode):
 
         f = open('data/processed/{0}.feats'.format(mode), 'r')
-        d = pickle.load(f)
+        d = json.load(f)
         self.feat_names = d['feat_names']
         self.feat_lens = d['feat_lens']
         self.feat_levels = d['feat_levels']

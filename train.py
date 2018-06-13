@@ -16,8 +16,9 @@ import numpy as np
 
 
 """
-
+Train a PyTorch Model
 """
+
 EVAL_STEPS = 1000 # evaluate on valid set
 LOG_STEPS = 200 # average train losses over LOG_STEPS steps
 UNK_IDX = 0
