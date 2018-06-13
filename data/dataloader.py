@@ -8,6 +8,7 @@ from torch.utils.data.sampler import SubsetRandomSampler
 import numpy as np
 import torch
 import cPickle as pickle
+from .features import Features
 
 
 UNK_IDX = 0
@@ -21,8 +22,10 @@ class Dataset(torch.utils.data.Dataset):
     Examples:
     """
     def __init__(self, data_path, mode='train'):
-        self.dict = pickle.load(open(data_path, 'r'))
-        self.keys = self.dict.keys()
+        self.feats = Features()
+        self.feats._load(mode)
+
+        self.feat_names = ['s']
         self.data = []
         for index in range(len(self.dict.values()[0][1])):
             d = {}
