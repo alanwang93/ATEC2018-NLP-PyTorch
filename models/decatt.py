@@ -66,7 +66,7 @@ class DecAttSiamese(nn.Module):
         self.relu = nn.ReLU()
         self.prelu = nn.PReLU()
         
-        self.loss = nn.CrossEntropyLoss(weight=None)#torch.tensor([1., config['pos_weight']]))
+        self.loss = nn.CrossEntropyLoss(weight=torch.tensor([1., config['pos_weight']]))
         self.optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, self.parameters()), lr=0.001)
 
         self._init_weights()
@@ -130,7 +130,7 @@ class DecAttSiamese(nn.Module):
         s1_vec = s1_vec.view(batch_size, seq_len, -1)
         s2_vec = s2_vec.view(batch_size, seq_len, -1)
 
-        E = torch.bmm(s1_vec, s2_vec.transpose(1,2)) # batch_size, seq_len(1), seq_len(2)
+        E = 1./ torch.bmm(s1_vec, s2_vec.transpose(1,2)) # batch_size, seq_len(1), seq_len(2)
         s2_weights = F.softmax(E, dim=2)
         s1_weights = F.softmax(E, dim=1)
         # not masked

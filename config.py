@@ -12,7 +12,7 @@ data_config = {
     'max_char': 1500,
     'max_word': 6000,
     'min_freq': 2,
-    'embed_size': 300 # custimized embedding size
+    'embed_size': 50 # custimized embedding size
 }
 
 
@@ -53,6 +53,7 @@ att_siamese = {
     'word_embedding': None,#'sgns.financial.char',#None,
 
     # Model
+    'mode': 'char',
     'embed_size': 200,
     'hidden_size': 200,
     'num_layers': 2,
@@ -158,7 +159,7 @@ siamese = {
     # Model
     'mode': 'char',
     'pos_weight': 3.,
-    'embed_size': 300,
+    'embed_size': 50,
     'hidden_size': 200,
     'num_layers': 2,
     'bidirectional':True,
