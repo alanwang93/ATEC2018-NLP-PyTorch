@@ -72,8 +72,6 @@ class Vocab:
             self.stoi = defaultdict(unk_idx)
             self.stoi.update({tok: i for i, tok in enumerate(self.itos)})
 
-            # TODO: extend vocab 1. words  2. characters
-
             self._dump()
 
     def __len__(self):
