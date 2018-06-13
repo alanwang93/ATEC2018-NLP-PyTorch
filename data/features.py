@@ -20,6 +20,7 @@ class Features:
     def __init__(self):
 
         self.feat_names = []
+        self.ext_names = []
         self.feat_levels = []
         self.feat_lens = []
         
@@ -40,6 +41,7 @@ class Features:
         """
         for e in extractor_list:
             feat_path = 'data/processed/{0}_{1}.npy'.format(mode, e['name'])
+            self.ext_names.append(e['name'])
             # self.kwargs.append(e['kwargs'])
             Extractor = getattr(extractors, e['name'])
             extractor = Extractor()
@@ -70,6 +72,7 @@ class Features:
 
         f = open('data/processed/{0}_feats.json'.format(mode), 'w')
         d = {
+            'ext_names': self.ext_names,
             'feat_names': self.feat_names,
             'feat_levels': self.feat_levels,
             'feat_lens': self.feat_lens,
@@ -79,14 +82,15 @@ class Features:
        
     def _load(self, mode):
 
-        f = open('data/processed/{0}.feats'.format(mode), 'r')
+        f = open('data/processed/{0}_feats.json'.format(mode), 'r')
         d = json.load(f)
+        self.ext_names = d['ext_names']
         self.feat_names = d['feat_names']
         self.feat_lens = d['feat_lens']
         self.feat_levels = d['feat_levels']
-        self.name2idx = d['name2dix']
+        self.name2idx = d['name2idx']
 
-        for name in self.feat_names:
+        for name in self.ext_names:
             feat_path = 'data/processed/{0}_{1}.npy'.format(mode, name)
             feats = np.load(feat_path)
             if self.feat_matrix is None:
@@ -121,7 +125,7 @@ class Features:
             for i, name in enumerate(name_list):
                 l.append(self.feat_matrix[:,self.name2idx[name][0]:self.name2idx[name][1]])
             l = np.concatenate(l, axis=1)
-            reutnr (l, name2idx)
+            return (l, name2idx)
 
 
         

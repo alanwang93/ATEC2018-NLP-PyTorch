@@ -6,7 +6,7 @@
 
 import torch
 from data.dataloader import get_dataloader
-import models
+import deep_models
 from data.vocab import Vocab
 from torch.utils import data
 import config
@@ -47,7 +47,7 @@ def main(args):
     data_config['char_size'] = char_size
     data_config['word_size'] = word_size
 
-    model = getattr(models, c['model'])(c, data_config)
+    model = getattr(deep_models, c['model'])(c, data_config)
 
     # Get data loader
     train, valid = get_dataloader(config=c, valid_ratio=data_config['valid_ratio'])

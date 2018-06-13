@@ -26,17 +26,17 @@ class Dataset(torch.utils.data.Dataset):
     def __init__(self, mode='train'):
         self.feats = Features()
         self.feats._load(mode)
-        if mode == 'train':
-            self.feat_names = ['label', 'sid', 's1_word', 's2_word', 's1_char', 's2_char', 's1_wlen', 's2_wlen', 's1_clen', 's2_clen']
-        else:
-            self.feat_names = ['sid', 's1_word', 's2_word', 's1_char', 's2_char', 's1_wlen', 's2_wlen', 's1_clen', 's2_clen']
+        self.feat_names = ['label', 'sid', 's1_word', 's2_word', 's1_word_rvs', 's2_word_rvs',\
+                's1_char', 's2_char', 's1_char_rvs', 's2_char_rvs', 's1_wlen', 's2_wlen', 's1_clen', 's2_clen']
         
-        self.dict = self.feats.get_feats_by_name(self.feat_names)
-        for index in range(len(self.dict.values()[0][1])):
+        self.dict, _ = self.feats.get_feats_by_name(self.feat_names, return_dict=True)
+        self.data = []
+        for index in range(self.dict.values()[0].shape[0]):
             d = {}
-            for k in self.keys:
-                d[k] = (self.dict[k][0], self.dict[k][1][index])
+            for k in self.feat_names:
+                d[k] = self.dict[k][index].astype(int)
             self.data.append(d)
+
 
     def __getitem__(self, index):
         return self.data[index]
@@ -44,15 +44,21 @@ class Dataset(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.data)
 
-def deep_collate_fn(batch):
+def simple_collate_fn(batch):
     batch_size = len(batch)
-    d = dict(zip(self.feat_names, [None]*len(self.feat_names)))
+    feat_names = ['label', 'sid', 's1_word', 's2_word', 's1_word_rvs', 's2_word_rvs',\
+                's1_char', 's2_char', 's1_char_rvs', 's2_char_rvs', 's1_wlen', 's2_wlen', 's1_clen', 's2_clen']
+    d = dict()
+    for k in feat_names:
+        d[k] = []
     for b in batch:
-        for k in self.feat_names:
-            if d[k] is None:
-                d[k] = b[k]
-            else:
-                d[k] = np.concatenate((d[k], b[k]), axis=1)
+        for k in feat_names:
+            d[k].append(b[k])
+
+    for k in feat_names:
+        d[k] = torch.tensor(np.vstack(d[k]))
+        if k in ['label', 'sid', 's1_wlen', 's2_wlen', 's1_clen', 's2_clen']:
+            d[k] = d[k].squeeze(1)
     return d
 
 
