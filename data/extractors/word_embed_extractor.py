@@ -9,15 +9,22 @@ from ..vocab import Vocab
 import jieba
 import re
 import numpy as np
+
 UNK_IDX = 0
+EOS_IDX = 2
 
 class WordEmbedExtractor(Extractor):
 
     def __init__(self):
         Extractor.__init__(self, name="WordEmbedExtractor")
+        self.max_clen = 300
+        self.max_wlen = 100
+        self.feat_names = ['s1_word', 's2_word', 's1_wlen', 's2_wlen', 's1_char', 's2_char', 's1_clen', 's2_clen']
+        self.feat_lens = [self.max_wlen, self.max_wlen, 1, 1, self.max_clen, self.max_clen, 1, 1]
+        self.feat_levels = ['w', 'w', 's', 's', 'c', 'c', 's', 's']
 
-    def extract(self, data_raw, chars, words, char_vocab, word_vocab, mode='train'):
-        d = dict()
+    def extract(self, data, char_vocab, word_vocab, mode='train'):
+
         s1_word = []
         s2_word = []
         s1_char = []
@@ -26,44 +33,22 @@ class WordEmbedExtractor(Extractor):
         s2_wlen = []
         s1_clen = []
         s2_clen = []
-        label = []
-        target = []
-        sid = []
 
+        for ins in data:
+            s1_wlen.append([len(ins['s1_word'])])
+            s2_wlen.append([len(ins['s2_word'])])
+            s1_word.append(np.pad(word_vocab.toi(ins['s1_word']), (0, self.max_wlen - len(ins['s1_word'])),\
+                    'constant', constant_values=(EOS_IDX, EOS_IDX)))
+            s2_word.append(np.pad(word_vocab.toi(ins['s2_word']), (0, self.max_wlen - len(ins['s2_word'])),\
+                    'constant', constant_values=(EOS_IDX, EOS_IDX)))
 
-        for ins in data_raw:
-            if mode == 'train':
-                label.append(ins['label'])
-                target.append(ins['target'])
-                if ins['target'] != 0. and ins['target'] != 1.:
-                    print(ins)
-            sid.append(ins['sid'])
+            s1_clen.append([len(ins['s1_char'])])
+            s2_clen.append([len(ins['s2_char'])])
+            s1_char.append(np.pad(char_vocab.toi(ins['s1_char']), (0, self.max_clen - len(ins['s1_char'])),\
+                    'constant', constant_values=(EOS_IDX, EOS_IDX)))
+            s2_char.append(np.pad(char_vocab.toi(ins['s2_char']), (0, self.max_clen - len(ins['s2_char'])),\
+                    'constant', constant_values=(EOS_IDX, EOS_IDX)))
 
+        feats = np.concatenate((s1_word, s2_word, s1_wlen, s2_wlen, s1_char, s2_char, s1_clen, s2_clen), axis=1)
 
-        for ins in words:
-            s1_wlen.append(len(ins['s1']))
-            s2_wlen.append(len(ins['s2']))
-            s1_word.append(word_vocab.toi(ins['s1']))
-            s2_word.append(word_vocab.toi(ins['s2']))
-
-        for ins in chars:
-            s1_clen.append(len(ins['s1']))
-            s2_clen.append(len(ins['s2']))
-            s1_char.append(char_vocab.toi(ins['s1']))
-            s2_char.append(char_vocab.toi(ins['s2']))
-
-
-        d['s1_word'] = ('w', np.asarray([np.array(s) for s in s1_word]), 0)
-        d['s2_word'] = ('w', np.asarray([np.array(s) for s in s2_word]), 0)
-        d['s1_wlen'] = ('s', np.asarray(s1_wlen), 1)
-        d['s2_wlen'] = ('s', np.asarray(s2_wlen), 1)
-
-        d['s1_char'] = ('c', np.asarray([np.array(s) for s in s1_char]), 0)
-        d['s2_char'] = ('c', np.asarray([np.array(s) for s in s2_char]), 0)
-        d['s1_clen'] = ('s', np.asarray(s1_clen), 1)
-        d['s2_clen'] = ('s', np.asarray(s2_clen), 1)
-        d['sid'] = ('o', np.asarray(sid))
-        if mode == 'train':
-            d['label'] = ('o', np.asarray(label), 0)
-            d['target'] = ('o', np.asarray(target), 0)
-        return d
+        return feats

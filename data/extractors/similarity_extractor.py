@@ -10,13 +10,26 @@ class SimilarityExtractor(Extractor):
     def __init__(self):
         Extractor.__init__(self, name="SimilarityExtractor")
 
+        self.feat_names = ['jaccard_char_unigram',
+                      'jaccard_char_bigram',
+                      'jaccard_char_trigram',
+                      'jaccard_word_unigram',
+                      'jaccard_word_bigram',
+                      'LevenshteinDistance_word']
+
+        self.feat_levels = ['p'] * 6
+        self.feat_lens = [1] * 6
+
+
     def extract(self, data_raw, chars, words):
         eps = 1e-8
-        d = dict()
+        feats= []
+
         jaccard_char_unigram = []
         jaccard_char_bigram = []
         jaccard_char_trigram = []
         jaccard_word_unigram = []
+        jaccard_word_bigram = []
 
         LevenshteinDistance_char = []
         LevenshteinDistance_word = []
@@ -25,57 +38,71 @@ class SimilarityExtractor(Extractor):
         for ins in chars:
             s1_gram = []
             s2_gram = []
-            s1_len = len(ins['s1'])
-            s2_len = len(ins['s2'])
+            s1_len = len(ins['s1_char'])
+            s2_len = len(ins['s2_char'])
             for i in range(s1_len):
-                s1_gram.append(ins['s1'][i])
+                s1_gram.append(ins['s1_char'][i])
             for i in range(s2_len):
-                s2_gram.append(ins['s2'][i])
+                s2_gram.append(ins['s2_char'][i])
             inter_len = len(list(set(s1_gram).intersection(s2_gram)))
             jaccard = float(inter_len) / (s1_len + s2_len - inter_len + eps)
             jaccard_char_unigram.append(jaccard)
 
         # jaccard for char bigram
-        for ins in chars:
+        for ins in data:
             s1_gram = []
             s2_gram = []
-            s1_len = len(ins['s1'])
-            s2_len = len(ins['s2'])
+            s1_len = len(ins['s1_char'])
+            s2_len = len(ins['s2_char'])
             for i in range(s1_len-1):
-                s1_gram.append(ins['s1'][i]+ins['s1'][i+1])
+                s1_gram.append(ins['s1_char'][i]+ins['s1_char'][i+1])
             for i in range(s2_len-1):
-                s2_gram.append(ins['s2'][i]+ins['s2'][i+1])
+                s2_gram.append(ins['s2_char'][i]+ins['s2_char'][i+1])
             inter_len = len(list(set(s1_gram).intersection(s2_gram)))
             jaccard = float(inter_len) / (s1_len + s2_len - inter_len + eps)
             jaccard_char_bigram.append(jaccard)
 
         # jaccard for char trigram
-        for ins in chars:
+        for ins in data:
             s1_gram = []
             s2_gram = []
-            s1_len = len(ins['s1'])
-            s2_len = len(ins['s2'])
+            s1_len = len(ins['s1_char'])
+            s2_len = len(ins['s2_char'])
             for i in range(s1_len-2):
-                s1_gram.append(ins['s1'][i]+ins['s1'][i+1]+ins['s1'][i+2])
+                s1_gram.append(ins['s1_char'][i]+ins['s1_char'][i+1]+ins['s1_char'][i+2])
             for i in range(s2_len-2):
-                s2_gram.append(ins['s2'][i]+ins['s2'][i+1]+ins['s2'][i+2])
+                s2_gram.append(ins['s2_char'][i]+ins['s2_char'][i+1]+ins['s2_char'][i+2])
             inter_len = len(list(set(s1_gram).intersection(s2_gram)))
             jaccard = float(inter_len) / (s1_len + s2_len - inter_len + eps)
             jaccard_char_trigram.append(jaccard)
 
         # jaccard for word unigram
-        for ins in words:
+        for ins in data:
             s1_gram = []
             s2_gram = []
-            s1_len = len(ins['s1'])
-            s2_len = len(ins['s2'])
+            s1_len = len(ins['s1_word'])
+            s2_len = len(ins['s2_word'])
             for i in range(s1_len):
-                s1_gram.append(ins['s1'][i])
+                s1_gram.append(ins['s1_word'][i])
             for i in range(s2_len):
-                s2_gram.append(ins['s2'][i])
+                s2_gram.append(ins['s2_word'][i])
             inter_len = len(list(set(s1_gram).intersection(s2_gram)))
             jaccard = float(inter_len) / (s1_len + s2_len - inter_len + eps)
             jaccard_word_unigram.append(jaccard)
+
+        # jaccard for word bigram
+        for ins in data:
+            s1_gram = []
+            s2_gram = []
+            s1_len = len(ins['s1_word'])
+            s2_len = len(ins['s2_word'])
+            for i in range(s1_len-1):
+                s1_gram.append(ins['s1_word'][i]+ins['s1_word'][i+1])
+            for i in range(s2_len-1):
+                s2_gram.append(ins['s2_word'][i]+ins['s2_word'][i+1])
+            inter_len = len(list(set(s1_gram).intersection(s2_gram)))
+            jaccard = float(inter_len) / (s1_len + s2_len - inter_len + eps)
+            jaccard_char_bigram.append(jaccard)
 
         # LevenshteinDistance for char
         # for ins in chars:
@@ -83,17 +110,20 @@ class SimilarityExtractor(Extractor):
             # LevenshteinDistance_char.append(dis)
 
         # LevenshteinDistance for word
-        for ins in words:
-            dis = self.LevenshteinDistance(ins['s1'], ins['s2'])
+        for ins in data:
+            dis = self.LevenshteinDistance(ins['s1_word'], ins['s2_word'])
             LevenshteinDistance_word.append(dis)
 
-        d['jaccard_char_unigram'] = ('p', np.asarray(jaccard_char_unigram), 1)
-        d['jaccard_char_bigram'] = ('p', np.asarray(jaccard_char_bigram), 1)
-        d['jaccard_char_trigram'] = ('p', np.asarray(jaccard_char_trigram), 1)
-        d['jaccard_word_unigram'] = ('p', np.asarray(jaccard_word_unigram), 1)
-        # d['LevenshteinDistance_char'] = ('p', np.asarray(LevenshteinDistance_char), 1)
-        d['LevenshteinDistance_word'] = ('p', np.asarray(LevenshteinDistance_word), 1)
-        return d
+        feats.append(jaccard_char_unigram)
+        feats.append(jaccard_char_bigram)
+        feats.append(jaccard_char_trigram)
+        feats.append(jaccard_word_unigram)
+        feats.append(jaccard_word_bigram)
+        feats.append(LevenshteinDistance_word)
+
+        feats = np.concatenate(feats, axis=1)
+
+        return feats
 
     def LevenshteinDistance(self, s1, s2):
             eps = 1e-6

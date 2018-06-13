@@ -12,10 +12,13 @@ import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 UNK_IDX = 0
 
-class TFIDFExtractor(Extractor):
+class TFIDFSimilarityExtractor(Extractor):
 
     def __init__(self):
-        Extractor.__init__(self, name="TFIDFExtractor")
+        Extractor.__init__(self, name="TFIDFSimilarityExtractor")
+        self.feat_names = ['lsa100']
+        self.feat_levels = ['p'] * 5
+        self.feat_lens = [1] * 5
 
     def extract(self, data_raw, chars, words, char_vocab, word_vocab, mode='train'):
         d = dict()

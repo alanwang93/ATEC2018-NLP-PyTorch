@@ -73,7 +73,7 @@ class Tokenizer:
         elif tokenizer == 'char+dict':
             pass
         if stop_words is not None:
-            stop_words_list =  [w.strip().decode('utf8') for w in open(stop_words, 'r').readlines()]
+            stop_words_list =  stop_words # [w.strip().decode('utf8') for w in open(stop_words, 'r').readlines()]
             new_list = []
             for w in word_list:
                 if w not in stop_words_list:
