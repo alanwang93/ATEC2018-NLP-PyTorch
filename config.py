@@ -163,7 +163,7 @@ siamese = {
     'hidden_size': 200,
     'num_layers': 2,
     'bidirectional':True,
-    'dropout': 0.4,
+    'dropout': 0.5,
     'dropout2': 0.0,
     'representation': 'max', # last, avg, max
     'sim_fun': 'dense+', # exp, cosine, cosine+, dense
@@ -172,7 +172,7 @@ siamese = {
     'l1_size': 100,
 
     # Training
-    'batch_size': 128,
+    'batch_size': 256,
     'max_iter': 500000,
     'patience': 5,    
     'max_grad_norm': 100.,
