@@ -49,7 +49,15 @@ else:
 
 deep_features = np.load('data/processed/features_siamese_default_best.npy')
 X = np.concatenate((X, deep_features), axis=1)
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=666)
+# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=666)
+
+train_idx = np.load('data/processed/train_idx.npy')
+valid_idx = np.load('data/processed/valid_idx.npy')
+
+X_train = X[train_idx]
+X_valid = X[valid_idx]
+y_train = y[train_idx]
+y_valid = y[valid_idx]
 
 print("Number of features", X_train.shape[1])
 

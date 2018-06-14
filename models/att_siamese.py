@@ -32,14 +32,14 @@ class AttSiameseRNN(nn.Module):
                 num_layers=self.num_layers, batch_first=True, dropout=0.)
 
         self.dropout = nn.Dropout(config['dropout'])
-        self.dropout2 = nn.Dropout(0.3)
+        self.dropout2 = nn.Dropout(config['dropout2'])
 
         self.linear_in_size = self.hidden_size
         self.lstm_size = self.hidden_size
         if self.bidirectional:
             self.lstm_size *= 2
             self.linear_in_size *= 2
-        self.linear_in_size = self.linear_in_size + 7 +124 #similarity:5; len:4->2; word_bool:124
+        self.linear_in_size = self.linear_in_size + 7 +124 + 200 #similarity:5; len:4->2; word_bool:124
         # Attention
         self.att = nn.Linear(self.lstm_size, self.lstm_size, bias=False)
 
@@ -51,6 +51,7 @@ class AttSiameseRNN(nn.Module):
         # self.linear3 = nn.Linear(self.linear3_in_size, 1)
 
         self.sigmoid = nn.Sigmoid()
+        self.softmax = nn.Softmax()
         self.tanh = nn.Tanh()
         self.relu = nn.ReLU()
         self.prelu = nn.PReLU()

@@ -64,15 +64,11 @@ class Vocab:
             words_and_frequencies = list(self.freqs.items())
             words_and_frequencies.sort(key=lambda tup: tup[1], reverse=True) # sort by order
 
-            with open(os.path.join(self.root, 'freqs_{0}.txt'.format(self.type)), 'w') as f:
-                for word, freq in words_and_frequencies:
-                    if not (freq < min_freq or len(self.itos) == max_vocab):
-                        self.itos.append(word)
-                    f.write("{0} {1}\n".format(word, freq))
+            for word, freq in words_and_frequencies:
+                if not (freq < min_freq or len(self.itos) == max_vocab):
+                    self.itos.append(word)
             self.stoi = defaultdict(unk_idx)
             self.stoi.update({tok: i for i, tok in enumerate(self.itos)})
-
-            # TODO: extend vocab 1. words  2. characters
 
             self._dump()
 

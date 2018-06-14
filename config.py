@@ -12,7 +12,7 @@ data_config = {
     'max_char': 1500,
     'max_word': 6000,
     'min_freq': 2,
-    'embed_size': 300 # custimized embedding size
+    'embed_size': 50 # custimized embedding size
 }
 
 
@@ -53,6 +53,7 @@ att_siamese = {
     'word_embedding': None,#'sgns.financial.char',#None,
 
     # Model
+    'mode': 'char',
     'embed_size': 200,
     'hidden_size': 200,
     'num_layers': 2,
@@ -158,23 +159,23 @@ siamese = {
     # Model
     'mode': 'char',
     'pos_weight': 3.,
-    'embed_size': 300,
+    'embed_size': 50,
     'hidden_size': 200,
     'num_layers': 2,
     'bidirectional':True,
-    'dropout': 0.5,
+    'dropout': 0.4,
     'dropout2': 0.0,
-    'representation': 'last', # last, avg, max
+    'representation': 'max', # last, avg, max
     'sim_fun': 'dense+', # exp, cosine, cosine+, dense
-    'plus_size': 400,
-    'l1_size': 200,
-    'l2_size': 100,
+    'sl1_size': 400,
+    'sl2_size': 200,
+    'l1_size': 100,
 
     # Training
     'batch_size': 128,
     'max_iter': 500000,
-    'patience': 10,    
-    'max_grad_norm': 10.,
+    'patience': 5,    
+    'max_grad_norm': 100.,
 }
 
 sigmoid_decatt = {
@@ -209,7 +210,7 @@ sigmoid_decatt = {
     'batch_size': 64,
     'max_iter': 500000,
     'patience': 5,
-    'max_grad_norm': 10.,
+    'max_grad_norm': 100.,
 }
 
 
@@ -219,17 +220,17 @@ decatt = {
     'model': 'DecAttSiamese',
 
     'char_embedding': None, #'sgns.financial.char',
-    'word_embedding': None, #'sgns.financial.char',#None,
+    'word_embedding': 'word_word2vec', #None, #'sgns.financial.char',#None,
 
     # Model
     'mode': 'word',
     'embed_size': 300,
     'hidden_size': 200,
-    'F1_out': 200,
+    'F1_out': 300,
     'F2_out': 200,
-    'G1_out': 200,
+    'G1_out': 300,
     'G2_out': 200,
-    'H1_out': 200,
+    'H1_out': 300,
     'num_layers': 2,
     'bidirectional':True,
     'dropout': 0.1,
@@ -242,7 +243,7 @@ decatt = {
     'batch_size': 64,
     'max_iter': 500000,
     'patience': 5,
-    'max_grad_norm': 10.,
+    'max_grad_norm': 1000.,
 }
 
 

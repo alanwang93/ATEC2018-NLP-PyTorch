@@ -26,17 +26,17 @@ class Dataset(torch.utils.data.Dataset):
     def __init__(self, mode='train'):
         self.feats = Features()
         self.feats._load(mode)
-        if mode == 'train':
-            self.feat_names = ['label', 'sid', 's1_word', 's2_word', 's1_char', 's2_char', 's1_wlen', 's2_wlen', 's1_clen', 's2_clen']
-        else:
-            self.feat_names = ['sid', 's1_word', 's2_word', 's1_char', 's2_char', 's1_wlen', 's2_wlen', 's1_clen', 's2_clen']
+        self.feat_names = ['label', 'sid', 's1_word', 's2_word', 's1_word_rvs', 's2_word_rvs',\
+                's1_char', 's2_char', 's1_char_rvs', 's2_char_rvs', 's1_wlen', 's2_wlen', 's1_clen', 's2_clen']
         
-        self.dict = self.feats.get_feats_by_name(self.feat_names)
-        for index in range(len(self.dict.values()[0][1])):
+        self.dict, _ = self.feats.get_feats_by_name(self.feat_names, return_dict=True)
+        self.data = []
+        for index in range(self.dict.values()[0].shape[0]):
             d = {}
-            for k in self.keys:
-                d[k] = (self.dict[k][0], self.dict[k][1][index])
+            for k in self.feat_names:
+                d[k] = self.dict[k][index].astype(int)
             self.data.append(d)
+
 
     def __getitem__(self, index):
         return self.data[index]
@@ -44,15 +44,35 @@ class Dataset(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.data)
 
-def deep_collate_fn(batch):
+def simple_collate_fn(batch):
     batch_size = len(batch)
-    d = dict(zip(self.feat_names, [None]*len(self.feat_names)))
-    for b in batch:
-        for k in self.feat_names:
-            if d[k] is None:
-                d[k] = b[k]
-            else:
-                d[k] = np.concatenate((d[k], b[k]), axis=1)
+    feat_names = ['label', 'sid', 's1_word', 's2_word', 's1_word_rvs', 's2_word_rvs',\
+                's1_char', 's2_char', 's1_char_rvs', 's2_char_rvs', 's1_wlen', 's2_wlen', 's1_clen', 's2_clen']
+    d = dict()
+    for k in feat_names:
+        d[k] = []
+    for k in feat_names:
+        for b in batch:
+            d[k].append(b[k])
+        d[k] = np.vstack(d[k])
+    s1_max_wlen = np.max(d['s1_wlen'])
+    s1_max_clen = np.max(d['s1_clen'])
+    s2_max_wlen = np.max(d['s2_wlen'])
+    s2_max_clen = np.max(d['s2_clen'])
+    d['s1_word'] = d['s1_word'][:,:s1_max_wlen]
+    d['s2_word'] = d['s2_word'][:,:s2_max_wlen]
+    d['s1_word_rvs'] = d['s1_word_rvs'][:,:s1_max_wlen]
+    d['s2_word_rvs'] = d['s2_word_rvs'][:,:s2_max_wlen]
+    d['s1_char'] = d['s1_char'][:,:s1_max_clen]
+    d['s2_char'] = d['s2_char'][:,:s2_max_clen]
+    d['s1_char_rvs'] = d['s1_char_rvs'][:,:s1_max_clen]
+    d['s2_char_rvs'] = d['s2_char_rvs'][:,:s2_max_clen]
+
+    for k in feat_names:
+        d[k] = torch.tensor(d[k])
+        if k in ['label', 'sid', 's1_wlen', 's2_wlen', 's1_clen', 's2_clen']:
+            d[k] = d[k].squeeze(1)
+
     return d
 
 
@@ -147,8 +167,8 @@ def get_dataloader(config, valid_ratio=0.1, shuffle=True):
         np.random.shuffle(indices)
     train_idx, valid_idx = indices[split:], indices[:split]
     # TODO: use KFold
-    np.save(open('data/processed/train_idx.npy'), train_idx)
-    np.save(open('data/processed/valid_idx.npy'), valid_idx)
+    np.save(open('data/processed/train_idx.npy', 'w'), train_idx)
+    np.save(open('data/processed/valid_idx.npy', 'w'), valid_idx)
     
     train_sampler = SubsetRandomSampler(train_idx)
     valid_sampler = SubsetRandomSampler(valid_idx)

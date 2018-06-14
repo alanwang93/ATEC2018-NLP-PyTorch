@@ -44,10 +44,10 @@ class SiameseRNN(nn.Module):
 
         self.linear1_in_size *= 2
         if config['sim_fun'] in ['dense', 'dense+']:
-            self.linear1_in_size = self.linear1_in_size + 5 + 124 + 2*(200 + 2)# similarity:5; len:4->2; word_bool:124; lsa: 400 => 200
+            self.linear1_in_size = self.linear1_in_size
             self.linear2_in_size = config['l1_size']
             self.linear1 = nn.Linear(self.linear1_in_size, self.linear2_in_size)
-            self.linear2 = nn.Linear(self.linear2_in_size, 2)
+            self .linear2 = nn.Linear(self.linear2_in_size, 2)
 
         if config['sim_fun'] == 'dense+':
             self.slinear1 = nn.Linear(self.lstm_size, config['sl1_size'])
@@ -109,6 +109,7 @@ class SiameseRNN(nn.Module):
         if self.config['representation'] == 'last': # last hidden state
             s1_out = torch.squeeze(s1_out[row_idx, data['s1_'+self.l]-1, :], 1)
             s2_out = torch.squeeze(s2_out[row_idx, data['s2_'+self.l]-1, :], 1)
+
         elif self.config['representation'] == 'avg': # average of all hidden states
             s1_outs = []
             s2_outs = []
@@ -133,6 +134,7 @@ class SiameseRNN(nn.Module):
                 s2_out_rvs = torch.squeeze(s2_out_rvs[row_idx, data['s2_'+self.l]-1, :], 1)
                 s1_outs = torch.cat((s1_out, s1_out_rvs), dim=1)
                 s2_outs = torch.cat((s2_out, s2_out_rvs), dim=1)
+
             elif self.config['representation'] == 'avg': # average of all hidden states
                 s1_outs_rvs = []
                 s2_outs_rvs = []
@@ -169,10 +171,7 @@ class SiameseRNN(nn.Module):
                 s1_outs = self.relu(s1_outs)
                 s2_outs = self.relu(s2_outs)
 
-            sfeats = self.sfeats(data)
-            pfeats = self.pair_feats(data)
-
-            feats = torch.cat((torch.abs(s1_outs-s2_outs), s1_outs * s2_outs, sfeats, pfeats), dim=1)
+            feats = torch.cat((torch.abs(s1_outs-s2_outs), s1_outs * s2_outs), dim=1)
             feats = self.bn_feats(feats)
             feats = self.relu(feats)
             feats = self.linear1(feats)
@@ -184,22 +183,22 @@ class SiameseRNN(nn.Module):
         out = torch.squeeze(self.linear2(out), 1)
         return out
 
-         
-    def sfeats(self, data):
-        """ Sentence level features """
-        s1_feats = data['s1_feats'].type(torch.FloatTensor)
-        s2_feats = data['s2_feats'].type(torch.FloatTensor)
-        feats = torch.abs(s1_feats-s2_feats).float()
-        feats = torch.cat((feats, s1_feats*s2_feats), dim=1)
-        if self.config['use_cuda']:
-            feats = feats.cuda(self.config['cuda_num'])
-        return feats
+    def dice_loss(self, pred, target):
+        p = pred[:,1]
+        t = target.float()
+        smooth = 1.
+        prod = p * t
+        inter = torch.sum(prod)
+        coef = ( 2. * inter + smooth) / (torch.sum(p) + torch.sum(t) + smooth)
+        loss = 1. - coef
+        return loss
 
-    def pair_feats(self, data):
-        feats = data['pair_feats']
-        if self.config['use_cuda']:
-            feats = feats.cuda(self.config['cuda_num'])
-        return feats
+    def focal_loss(self, pred, target, gamma=2.):
+        eps = 1e-6
+        p = pred[:,1]
+        t = target.float()
+        loss = - self.pos_weight* torch.pow((1-p), gamma)*torch.log(p+eps)*t  - torch.pow(p, gamma) * torch.log(1-p+eps) * (1-t)
+        return loss.mean()
 
 
     def load_vectors(self, char=None, word=None):
@@ -213,7 +212,7 @@ class SiameseRNN(nn.Module):
         out = self.forward(data)
         out = self.score_layer(out)
         proba = self.softmax(out) # (N,C)
-        loss = self.loss(proba, data['label'])
+        loss = self.focal_loss(proba, data['label'])
         self.optimizer.zero_grad()
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.parameters(), self.config['max_grad_norm'])
@@ -224,7 +223,7 @@ class SiameseRNN(nn.Module):
         out = self.forward(data)
         out = self.score_layer(out)
         proba = self.softmax(out)
-        loss = self.loss(proba, data['label'])
+        loss = self.focal_loss(proba, data['label'])
         v, pred = torch.max(proba, dim=1)
         return pred.tolist(),  data['label'].tolist(), loss.item()
 

@@ -51,7 +51,7 @@ class TextProcessor:
         replace_words = open('data/raw/synonym_word.txt').readlines()
         replace_chars = open('data/raw/synonym_char.txt').readlines()
         self.replace_words_list = [(l[0], l[1:]) for l in [l.strip().decode('utf8').split(' ') for l in replace_words]]
-        self.replace_words_list.append((u'蚂蚁', u''))
+        self.replace_words_list.append((u'铓傝殎', u''))
         self.replace_chars_list = [(l[0], l[1:]) for l in [l.strip().decode('utf8').split(' ') for l in replace_chars]]
         self.stop_words_list =  [w.strip().decode('utf8') for w in open("data/raw/simple_stop_words.txt", 'r').readlines()]
     
@@ -99,6 +99,9 @@ class TextProcessor:
                 ins['sid'] = int(splits[0])
                 if mode == 'train':
                     ins['label'] = int(splits[3])
+                else:
+                    ins['label'] = -1
+
                 s1 = self.word_tokenizer.tokenize(splits[1], tokenizer='word+dict', stop_words=None)
                 s2 = self.word_tokenizer.tokenize(splits[2], tokenizer='word+dict', stop_words=None)
                 s1 = self.replace_chars(s1)
