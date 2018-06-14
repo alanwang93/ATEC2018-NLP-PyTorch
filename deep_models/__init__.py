@@ -6,7 +6,7 @@
 
 #from .sigmoid_siamese import SigmoidSiameseRNN
 from .siamese import SiameseRNN
-#from .match_pyramid import MatchPyramid
+from .match_pyramid import MatchPyramid
 #from .ainn import AINN
 #from .att_siamese import AttSiameseRNN
 #from .sigmoid_decatt import SigmoidDecAttSiamese
