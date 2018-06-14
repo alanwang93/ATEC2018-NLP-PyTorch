@@ -47,7 +47,7 @@ class SiameseRNN(nn.Module):
             self.linear1_in_size = self.linear1_in_size
             self.linear2_in_size = config['l1_size']
             self.linear1 = nn.Linear(self.linear1_in_size, self.linear2_in_size)
-            self.linear2 = nn.Linear(self.linear2_in_size, 2)
+            self .linear2 = nn.Linear(self.linear2_in_size, 2)
 
         if config['sim_fun'] == 'dense+':
             self.slinear1 = nn.Linear(self.lstm_size, config['sl1_size'])
@@ -183,6 +183,23 @@ class SiameseRNN(nn.Module):
         out = torch.squeeze(self.linear2(out), 1)
         return out
 
+    def dice_loss(self, pred, target):
+        p = pred[:,1]
+        t = target.float()
+        smooth = 1.
+        prod = p * t
+        inter = torch.sum(prod)
+        coef = ( 2. * inter + smooth) / (torch.sum(p) + torch.sum(t) + smooth)
+        loss = 1. - coef
+        return loss
+
+    def focal_loss(self, pred, target, gamma=2.):
+        eps = 1e-6
+        p = pred[:,1]
+        t = target.float()
+        loss = - self.pos_weight* torch.pow((1-p), gamma)*torch.log(p+eps)*t  - torch.pow(p, gamma) * torch.log(1-p+eps) * (1-t)
+        return loss.mean()
+
 
     def load_vectors(self, char=None, word=None):
         print("Use pretrained embedding")
@@ -195,7 +212,7 @@ class SiameseRNN(nn.Module):
         out = self.forward(data)
         out = self.score_layer(out)
         proba = self.softmax(out) # (N,C)
-        loss = self.loss(proba, data['label'])
+        loss = self.focal_loss(proba, data['label'])
         self.optimizer.zero_grad()
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.parameters(), self.config['max_grad_norm'])
@@ -206,7 +223,7 @@ class SiameseRNN(nn.Module):
         out = self.forward(data)
         out = self.score_layer(out)
         proba = self.softmax(out)
-        loss = self.loss(proba, data['label'])
+        loss = self.focal_loss(proba, data['label'])
         v, pred = torch.max(proba, dim=1)
         return pred.tolist(),  data['label'].tolist(), loss.item()
 

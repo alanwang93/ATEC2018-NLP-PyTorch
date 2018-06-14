@@ -51,14 +51,28 @@ def simple_collate_fn(batch):
     d = dict()
     for k in feat_names:
         d[k] = []
-    for b in batch:
-        for k in feat_names:
+    for k in feat_names:
+        for b in batch:
             d[k].append(b[k])
+        d[k] = np.vstack(d[k])
+    s1_max_wlen = np.max(d['s1_wlen'])
+    s1_max_clen = np.max(d['s1_clen'])
+    s2_max_wlen = np.max(d['s2_wlen'])
+    s2_max_clen = np.max(d['s2_clen'])
+    d['s1_word'] = d['s1_word'][:,:s1_max_wlen]
+    d['s2_word'] = d['s2_word'][:,:s2_max_wlen]
+    d['s1_word_rvs'] = d['s1_word_rvs'][:,:s1_max_wlen]
+    d['s2_word_rvs'] = d['s2_word_rvs'][:,:s2_max_wlen]
+    d['s1_char'] = d['s1_char'][:,:s1_max_clen]
+    d['s2_char'] = d['s2_char'][:,:s2_max_clen]
+    d['s1_char_rvs'] = d['s1_char_rvs'][:,:s1_max_clen]
+    d['s2_char_rvs'] = d['s2_char_rvs'][:,:s2_max_clen]
 
     for k in feat_names:
-        d[k] = torch.tensor(np.vstack(d[k]))
+        d[k] = torch.tensor(d[k])
         if k in ['label', 'sid', 's1_wlen', 's2_wlen', 's1_clen', 's2_clen']:
             d[k] = d[k].squeeze(1)
+
     return d
 
 
