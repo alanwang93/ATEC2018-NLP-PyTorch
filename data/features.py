@@ -119,7 +119,7 @@ class Features:
             d = dict()
             for i, name in enumerate(name_list):
                 d[name] = self.feat_matrix[:,self.name2idx[name][0]:self.name2idx[name][1]]
-            return d, None
+            return (d, None)
         else:
             l = []
             for i, name in enumerate(name_list):
