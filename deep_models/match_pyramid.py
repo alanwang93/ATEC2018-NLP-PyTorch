@@ -10,23 +10,26 @@ EOS_IDX = 2
 class MatchPyramid(nn.Module):
     def __init__(self, config, data_config):
         super(MatchPyramid, self).__init__()
-        self.mode = 'word'
+        self.mode = config['mode']
         self.vocab_size = data_config[self.mode + '_size']
         self.embed_size = config['embed_size']
         self.config = config
+        self.pos_weight = config['pos_weight']
         self.data_config = data_config
 
         self.embed = nn.Embedding(self.vocab_size, self.embed_size, padding_idx=EOS_IDX)
-        self.conv1 = nn.Conv2d(1, self.config['conv1_channel'], kernel_size=3, padding=2)
-        self.conv2 = nn.Conv2d(self.config['conv1_channel'], self.config['conv2_channel'], kernel_size=3, padding=2)
-        self.maxpool1 = nn.MaxPool2d(2)
-        self.admaxpool2 = nn.AdaptiveMaxPool2d(output_size=self.config['dp_out'])
-        self.fc1 = nn.Linear(self.config['dp_out']*self.config['dp_out']*self.config['conv2_channel'], 100)
-        self.fc2 = nn.Linear(100, 2)
+        self.conv1 = nn.Conv2d(1, self.config['conv1_channel'], kernel_size=5)
+        self.conv2 = nn.Conv2d(self.config['conv1_channel'], self.config['conv2_channel'], kernel_size=3)
+        self.admaxpool1 = nn.AdaptiveMaxPool2d(output_size=self.config['dp_out'])
+        self.maxpool2 = nn.MaxPool2d(2,stride=1)
+        size = 17
+        self.fc1 = nn.Linear(size*size, 300)
+        self.fc2 = nn.Linear(300, 2)
         
 
         self.sigmoid = nn.Sigmoid()
         self.relu = nn.ReLU()
+        self.prelu = nn.Tanh()
         self.tanh = nn.Tanh()
         self.softmax = nn.Softmax(dim=1)
         self.dropout = nn.Dropout(config['dropout'])
@@ -45,23 +48,21 @@ class MatchPyramid(nn.Module):
         batch_size = data['s1_'+self.mode].size()[0]
         embed_1 = self.embed(data['s1_'+self.mode])
         embed_2 = self.embed(data['s2_'+self.mode])
-        embed_1 = self.dropout(embed_1)
-        embed_2 = self.dropout(embed_2)
+        #embed_1 = self.dropout(embed_1)
+        #embed_2 = self.dropout(embed_2)
         # dot matching
-        embed_2 = torch.transpose(embed_2, 1, 2)
-        matching = torch.bmm(embed_1, embed_2).unsqueeze(1)
-        print("embded size", matching.size())
+        matching = torch.bmm(embed_1, embed_2.transpose(1,2)).unsqueeze(1)
         output = self.conv1(matching)
-        output = self.tanh(output)
-        output = self.maxpool1(output)
-        output = self.tanh(self.conv2(output))
-        output = self.admaxpool2(output)
+        output = self.prelu(output)
+        output = self.admaxpool1(output)
+        output = self.prelu(self.conv2(output))
+        output = self.maxpool2(output)
+        output = torch.mean(output, 1)
         output = output.view((batch_size, -1))
         output = self.fc1(output)
-        output = self.tanh(output)
+        output = self.prelu(output)
         # output = self.dropout(output)
         output = self.fc2(output)
-        output = self.relu(output)
         return output
 
 
@@ -92,8 +93,9 @@ class MatchPyramid(nn.Module):
 
     def train_step(self, data):
         out = self.forward(data)
+        #print(out[0])
         proba = self.softmax(out) # (N,C)
-        loss = self.focal_loss(proba, data['label'])
+        loss = self.loss(proba, data['label'])
         self.optimizer.zero_grad()
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.parameters(), self.config['max_grad_norm'])
@@ -103,6 +105,7 @@ class MatchPyramid(nn.Module):
     def evaluate(self, data):
         out = self.forward(data)
         proba = self.softmax(out)
-        loss = self.focal_loss(proba, data['label'])
+        loss = self.loss(proba, data['label'])
+        #print(self.fc2.weight)
         v, pred = torch.max(proba, dim=1)
-        return proba.tolist(),  data['label'].tolist(), loss.item()
+        return pred.tolist(),  data['label'].tolist(), loss.item()

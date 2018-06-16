@@ -26,9 +26,9 @@ class SiameseRNN(nn.Module):
         self.embed = nn.Embedding(self.vocab_size, self.embed_size, padding_idx=EOS_IDX)
 
         self.rnn = nn.LSTM(input_size=self.embed_size, hidden_size=self.hidden_size, \
-                num_layers=self.num_layers, batch_first=True, dropout=0.1)
+                num_layers=self.num_layers, batch_first=True, dropout=0.0)
         self.rnn_rvs = nn.LSTM(input_size=self.embed_size, hidden_size=self.hidden_size, \
-                num_layers=self.num_layers, batch_first=True, dropout=0.1)
+                num_layers=self.num_layers, batch_first=True, dropout=0.0)
 
         self.dropout = nn.Dropout(config['dropout'])
         self.dropout2 = nn.Dropout(config['dropout2'])
@@ -40,7 +40,7 @@ class SiameseRNN(nn.Module):
             self.linear1_in_size *= 2
 
         if config['sim_fun'] == 'dense+':
-            self.linear1_in_size = config['sl2_size']
+            self.linear1_in_size = config['sl1_size']
 
         self.linear1_in_size *= 2
         if config['sim_fun'] in ['dense', 'dense+']:
@@ -51,7 +51,9 @@ class SiameseRNN(nn.Module):
 
         if config['sim_fun'] == 'dense+':
             self.slinear1 = nn.Linear(self.lstm_size, config['sl1_size'])
-            self.slinear2 = nn.Linear(config['sl1_size'], config['sl2_size'])
+            #self.slinear2 = nn.Linear(config['sl1_size'], config['sl2_size'])
+            self.sbn1 = nn.BatchNorm1d(self.config['sl1_size'])
+            #self.sbn2 = nn.BatchNorm1d(self.config['sl2_size'])
 
 
         self.bn_feats = nn.BatchNorm1d(self.linear1_in_size)
@@ -93,7 +95,7 @@ class SiameseRNN(nn.Module):
         
         if self.config['sim_fun'] == 'dense+':
             nn.init.kaiming_uniform_(self.slinear1.weight)
-            nn.init.kaiming_uniform_(self.slinear2.weight)
+            #nn.init.kaiming_uniform_(self.slinear2.weight)
 
 
     def forward(self, data):
@@ -160,16 +162,21 @@ class SiameseRNN(nn.Module):
             out = out * (1./ (1.+torch.exp(-1*(torch.bmm(s1_outs.unsqueeze(1), s2_outs.unsqueeze(2)).squeeze()+1.))))
         elif self.config['sim_fun'] in ['dense', 'dense+']:
             if self.config['sim_fun'] == 'dense+':
-                #s1_outs = self.dropout2(s1_outs)
-                #s2_outs = self.dropout2(s2_outs)
+                s1_outs = self.dropout2(s1_outs)
+                s2_outs = self.dropout2(s2_outs)
                 s1_outs = self.slinear1(s1_outs)
                 s2_outs = self.slinear1(s2_outs)
+                #s1_outs = self.sbn1(s1_outs)
+                #s2_outs = self.sbn1(s2_outs)
+                
                 s1_outs = self.relu(s1_outs)
                 s2_outs = self.relu(s2_outs)
-                s1_outs = self.slinear2(s1_outs)
-                s2_outs = self.slinear2(s2_outs)
-                s1_outs = self.relu(s1_outs)
-                s2_outs = self.relu(s2_outs)
+                #s1_outs = self.slinear2(s1_outs)
+                #s2_outs = self.slinear2(s2_outs)
+                #s1_outs = self.sbn2(s1_outs)
+                #s2_outs = self.sbn2(s2_outs)
+                #s1_outs = self.relu(s1_outs)
+                #s2_outs = self.relu(s2_outs)
 
             feats = torch.cat((torch.abs(s1_outs-s2_outs), s1_outs * s2_outs), dim=1)
             feats = self.bn_feats(feats)
@@ -177,6 +184,8 @@ class SiameseRNN(nn.Module):
             feats = self.linear1(feats)
             feats = self.bn1(feats)
             out = self.relu(feats)
+            out = torch.squeeze(self.linear2(out), 1)
+
         return out
     
     def score_layer(self, out):
@@ -210,7 +219,6 @@ class SiameseRNN(nn.Module):
 
     def train_step(self, data):
         out = self.forward(data)
-        out = self.score_layer(out)
         proba = self.softmax(out) # (N,C)
         loss = self.focal_loss(proba, data['label'])
         self.optimizer.zero_grad()
@@ -221,7 +229,6 @@ class SiameseRNN(nn.Module):
 
     def evaluate(self, data):
         out = self.forward(data)
-        out = self.score_layer(out)
         proba = self.softmax(out)
         loss = self.focal_loss(proba, data['label'])
         v, pred = torch.max(proba, dim=1)

@@ -79,21 +79,24 @@ match_pyramid = {
     'name': 'match_pyramid',
     'model': 'MatchPyramid',
 
-    'char_embedding': None,#'sgns.financial.char',
-    'word_embedding': None,#'sgns.financial.char',#None,
+    'char_embedding': 'char_word2vec',
+    'word_embedding': None,#'word_word2vec',#'sgns.financial.char',#None,
 
     # model
+    'mode': 'char',
     'embed_size': 300,
     'dropout': 0.5,
-    'conv1_channel': 20,
-    'conv2_channel': 200,
-    'dp_out': 1,
-    'dropout': 0.2,
-    'max_grad_norm': 10.,
+    'conv1_channel': 4,
+    'conv2_channel': 8,
+    'dp_out': 20,
+    'pos_weight':3.,
+
 
     # training
-    'batch_size': 32,
+    'batch_size': 128,
     'max_iter': 50000,
+    'patience': 5,
+    'max_grad_norm': 10.,
 }
 
 
@@ -154,25 +157,26 @@ siamese = {
     'model': 'SiameseRNN',
 
     'char_embedding': 'char_word2vec',
-    'word_embedding': None,#'word_word2vec',
+    'word_embedding': None, #'word_word2vec',
 
     # Model
     'mode': 'char',
     'pos_weight': 3.,
-    'embed_size': 50,
+    'embed_size': 300,
     'hidden_size': 200,
     'num_layers': 2,
     'bidirectional':True,
     'dropout': 0.5,
-    'dropout2': 0.0,
+    'dropout2': 0.1,
     'representation': 'max', # last, avg, max
     'sim_fun': 'dense+', # exp, cosine, cosine+, dense
-    'sl1_size': 400,
-    'sl2_size': 200,
-    'l1_size': 100,
+    'sl1_size': 200,
+    #'sl2_size': 200,
+
+    'l1_size': 200,
 
     # Training
-    'batch_size': 256,
+    'batch_size': 64,
     'max_iter': 500000,
     'patience': 5,    
     'max_grad_norm': 100.,

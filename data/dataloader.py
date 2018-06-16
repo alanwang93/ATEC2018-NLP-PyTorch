@@ -163,7 +163,7 @@ def get_dataloader(config, valid_ratio=0.1, shuffle=True):
     indices = list(range(num_train))
     split = int(np.floor(valid_ratio * num_train))
     if shuffle:
-        np.random.seed(233)
+        np.random.seed(0)
         np.random.shuffle(indices)
     train_idx, valid_idx = indices[split:], indices[:split]
     # TODO: use KFold

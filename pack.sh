@@ -10,7 +10,7 @@ mkdir submissions/$1/checkpoints
 cp checkpoints/$1.pkl submissions/$1/checkpoints/$1.pkl
 cp checkpoints/$1.txt submissions/$1/checkpoints/$1.txt
 mkdir submissions/$1/models
-cp models/*.py submissions/$1/models/
+cp deep_models/*.py submissions/$1/models/
 mkdir submissions/$1/data
 mkdir submissions/$1/data/raw
 cp data/raw/*.txt submissions/$1/data/raw/
