@@ -80,21 +80,21 @@ class TFIDFExtractor(Extractor):
             f = pickle.load(open('data/params/tfidf_params.pkl', 'r'))
             word_vectorizer = TfidfVectorizer(analyzer='word', lowercase=False, sublinear_tf=True)
             char_vectorizer = TfidfVectorizer(analyzer='char', lowercase=False, sublinear_tf=True, ngram_range=(1, 4))   
-            word_vectorizer.set_params(f['word_params'])
-            char_vectorizer.set_params(f['char_params'])
+            word_vectorizer.set_params(**f['word_params'])
+            char_vectorizer.set_params(**f['char_params'])
             # TF-IDF are sparse matrice
             corpus = s1 + s2
             char_tfidf = char_vectorizer.transform(corpus)
             word_tfidf = word_vectorizer.transform(corpus)
 
             char_svd = TruncatedSVD(100)
-            char_svd.set_params(f['char_svd'])
+            char_svd.set_params(**f['char_svd'])
             normalizer = Normalizer(copy=False)
             lsa_char = make_pipeline(char_svd, normalizer)
             char_lsa = lsa_char.transform(char_tfidf)
 
             word_svd = TruncatedSVD(100)
-            word_svd.set_params(f['word_svd'])
+            word_svd.set_params(**f['word_svd'])
             normalizer = Normalizer(copy=False)
             lsa_word = make_pipeline(word_svd, normalizer)
             word_lsa = lsa_word.transform(word_tfidf)
