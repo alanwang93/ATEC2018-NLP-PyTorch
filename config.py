@@ -12,7 +12,7 @@ data_config = {
     'max_char': 1500,
     'max_word': 6000,
     'min_freq': 2,
-    'embed_size': 50 # custimized embedding size
+    'embed_size': 300 # custimized embedding size
 }
 
 

@@ -53,7 +53,7 @@ def main(inpath, outpath):
     data_config['word_size'] = word_size
 
     # Build data
-    test_data = Dataset(test_path)
+    test_data = Dataset(mode='test')
     test_size = len(test_data)
     test = data.DataLoader(test_data, batch_size=32, collate_fn=simple_collate_fn)
 

@@ -155,24 +155,23 @@ def main(args):
 
             # adv_exts = { 'SimilarityExtractor':{} }
 
-            with codecs.open(os.path.join(data_config['data_root'], 'train.pkl'), 'w', encoding='utf-8') as fout:
-                    char_vocab = Vocab(data_config=data_config, type='char', embedding=data_config['char_embedding'])
-                    word_vocab = Vocab(data_config=data_config, type='word', embedding=data_config['word_embedding'])
-                    char_vocab.build(data)
-                    word_vocab.build(data)
-                    if char_vocab.embedding is not None:
-                        char_vocab.load_vectors(char_vocab.embedding)
-                    if word_vocab.embedding is not None:
-                        word_vocab.load_vectors(word_vocab.embedding)
-
-                    print("Start extracting basic features")
-                    # Extract basic features
-                    base_exts[0]['kwargs']['char_vocab'] = char_vocab
-                    base_exts[0]['kwargs']['word_vocab'] = word_vocab
-                    base_exts[2]['kwargs']['char_vocab'] = char_vocab
-                    base_exts[2]['kwargs']['word_vocab'] = word_vocab
-                    feats.extract(base_exts, data, mode='train')
-                    feats._save(mode='train')
+            # with codecs.open(os.path.join(data_config['data_root'], 'train.pkl'), 'w', encoding='utf-8') as fout:
+            char_vocab = Vocab(data_config=data_config, type='char', embedding=data_config['char_embedding'])
+            word_vocab = Vocab(data_config=data_config, type='word', embedding=data_config['word_embedding'])
+            char_vocab.build(data)
+            word_vocab.build(data)
+            if char_vocab.embedding is not None:
+                char_vocab.load_vectors(char_vocab.embedding)
+            if word_vocab.embedding is not None:
+                word_vocab.load_vectors(word_vocab.embedding)
+            print("Start extracting basic features")
+            # Extract basic features
+            base_exts[0]['kwargs']['char_vocab'] = char_vocab
+            base_exts[0]['kwargs']['word_vocab'] = word_vocab
+            base_exts[2]['kwargs']['char_vocab'] = char_vocab
+            base_exts[2]['kwargs']['word_vocab'] = word_vocab
+            feats.extract(base_exts, data, mode='train')
+            feats._save(mode='train')
 
 
     elif args.mode == 'test':
@@ -181,26 +180,38 @@ def main(args):
             word_vocab = Vocab(data_config=data_config, type='word')
             char_vocab.build(rebuild=False)
             word_vocab.build(rebuild=False)
-
             data_raw = fin.readlines()
-            data_raw  = clean_data(data_raw, data_config, mode='test')
+            data = processor.process(data_raw, mode='test', rebuild=True)
+
             stop_words_file = "data/raw/simple_stop_words.txt"
-            char_tokenized = char_tokenizer.tokenize_all(data_raw, 'test.char', stop_words=None, mode=args.mode)
-            word_tokenized = word_tokenizer.tokenize_all(data_raw, 'test.word', stop_words=stop_words_file, mode=args.mode)
 
-            base_exts = { 'WordEmbedExtractor': {},
-                          'WordBoolExtractor': {} }
 
-            adv_exts = { 'SimilarityExtractor':{} }
+            base_exts = [ {'name': 'WordEmbedExtractor', 'kwargs': {}},
+                          {'name': 'WordBoolExtractor', 'kwargs': {}},
+                          {'name': 'TFIDFExtractor', 'kwargs':{}} ]
 
-            base_exts['WordEmbedExtractor']['char_vocab'] = char_vocab
-            base_exts['WordEmbedExtractor']['word_vocab'] = word_vocab
-            base_exts['WordEmbedExtractor']['mode'] = 'test'
-            #base_exts['SentenceEmbedExtractor']['char_vocab'] = char_vocab
-            #base_exts['SentenceEmbedExtractor']['word_vocab'] = word_vocab
-            test = extract_features(data_raw, char_tokenized, word_tokenized, base_exts)
-            test.update(extract_features(data_raw, char_tokenized, word_tokenized, adv_exts))
-            pickle.dump(test, open('data/processed/test.pkl', 'w'))
+            char_vocab = Vocab(data_config=data_config, type='char', embedding=data_config['char_embedding'])
+            word_vocab = Vocab(data_config=data_config, type='word', embedding=data_config['word_embedding'])
+            char_vocab.build(data)
+            word_vocab.build(data)
+
+            if char_vocab.embedding is not None:
+                char_vocab.load_vectors(char_vocab.embedding)
+            if word_vocab.embedding is not None:
+                word_vocab.load_vectors(word_vocab.embedding)
+
+            print("Start extracting basic features")
+            # Extract basic features
+            base_exts[0]['kwargs']['char_vocab'] = char_vocab
+            base_exts[0]['kwargs']['word_vocab'] = word_vocab
+            base_exts[0]['kwargs']['mode'] = 'test'
+            base_exts[2]['kwargs']['char_vocab'] = char_vocab
+            base_exts[2]['kwargs']['word_vocab'] = word_vocab
+            base_exts[2]['kwargs']['mode'] = 'test'
+            feats = Features()
+            feats.extract(base_exts, data, mode='test')
+            feats._save(mode='test')
+            # adv_exts = { 'SimilarityExtractor':{} }
 
 
 if __name__ == '__main__':
