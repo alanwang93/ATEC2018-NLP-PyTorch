@@ -8,11 +8,10 @@ import numpy as np
 from utils import score
 
 class SKModel:
-    def __init__(self, config, data_config=None):
-        self.config = config
+    def __init__(self, clf, data_config=None):
+
         self.data_config = data_config
-        m = getattr(sklearn, config['module'])
-        self.clf = getattr(m, config['clf'])(**config['kwargs'])
+        self.clf = clf
 
     def fit(self, X, y):
         self.clf.fit(X, y)

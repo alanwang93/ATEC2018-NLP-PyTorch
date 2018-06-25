@@ -107,6 +107,7 @@ class Features:
     def get_feats_by_name(self, name_list, return_dict=False):
 
         feat_lens = [0]
+        print(self.feat_names)
         len_dict = dict(zip(self.feat_names, self.feat_lens))
         for name in name_list:
             feat_lens.append(len_dict[name])
