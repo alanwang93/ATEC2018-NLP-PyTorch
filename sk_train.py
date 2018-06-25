@@ -15,42 +15,6 @@ feat_names = ['word_bool']
 X, d = feats.get_feats_by_name(feat_names, return_dict=False)
 print(d)
 
-# Pair level or sentence level features
-# features = ['s1_wlen', 's1_clen', 'jaccard_char_unigram', 'jaccard_char_bigram',\
-#  			'jaccard_char_trigram', 'jaccard_word_unigram',# 'LevenshteinDistance_char',\
-#  			'LevenshteinDistance_word', 'word_bool', 's1_word_lsa']
-# features = ['s1_word_lsa']
-
-logger.info("Loading training data")
-# if rebuild or not os.path.exists(sk_train_path):
-#     data = pickle.load(open(train_data_path, 'r'))
-#     logger.info("Processing training data")
-#     X_features = []
-#     for feat in features:
-#         #if 'lsa' in feat:
-#         #    X_features.append(data[feat][1])
-#         if data[feat][0] == 's':
-#             X_features.append(np.power(data[feat][1] - data[feat.replace('1', '2')][1], 2).reshape(-1, data[feat][2]))
-#         elif data[feat][0] == 'p':
-#             if feat == 'word_bool':
-#                 X_features.append(np.squeeze(data[feat][1]))
-#             elif len(data[feat][1].shape) == 1:
-#                 X_features.append(data[feat][1].reshape(-1,1))
-#             else:
-#                 X_features.append(np.squeeze(data[feat][1]))
-
-#     for f in X_features:
-#         print(f.shape)
-#     X = np.concatenate(X_features, axis=1)
-#     y = data['label'][1]
-#     del data
-#     pickle.dump({"X":X, "y":y}, open(sk_train_path, 'w'))
-# else:
-#     data = pickle.load(open(sk_train_path, 'r'))
-#     X = data['X']
-#     y = data['y']
-#     del data
-
 # deep_features = np.load('data/processed/features_siamese_default_best.npy')
 # X = np.concatenate((X, deep_features), axis=1)
 # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=666)
