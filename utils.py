@@ -122,7 +122,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--raw', type=str, default='data/raw/atec_nlp_sim_train_full.csv')
     parser.add_argument('--out_dir', type=str, default='data/raw/')
-    parser.add_argument('--train_ratio', type=float, default=0.95)
+    parser.add_argument('--train_ratio', type=float, default=0.8)
     parser.add_argument('--split', dest='split', action='store_true')
     parser.add_argument('--shuffle', dest='shuffle', action='store_true')
     parser.add_argument('--oversample', dest='oversample', action='store_true')

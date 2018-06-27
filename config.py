@@ -269,8 +269,7 @@ decatt = {
     'bidirectional':True,
     'dropout': 0.1,
     #'dropout2': 0.4,
-    'pos_weight': 1.,
-    'representation': 'last', # last, avg, max
+    'pos_weight': 3.,
     'l1_size': 200,
 
     # Training
