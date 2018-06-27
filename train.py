@@ -10,6 +10,7 @@ import deep_models
 from data.vocab import Vocab
 from torch.utils import data
 import config
+from data.kfold import KFold
 import itertools, argparse, os, json
 from utils import init_log, score, to_cuda
 import numpy as np
@@ -25,6 +26,7 @@ EVAL_STEPS = 1000 # evaluate on valid set
 LOG_STEPS = 200 # average train losses over LOG_STEPS steps
 UNK_IDX = 0
 EOS_IDX = 2
+N_SAMPLE = 102477
 
 def main(args):
     assert args.config is not None
@@ -50,7 +52,9 @@ def main(args):
     model = getattr(deep_models, c['model'])(c, data_config)
 
     # Get data loader
-    train, valid = get_dataloader(config=c, valid_ratio=data_config['valid_ratio'])
+    kfold = KFold(N=N_SAMPLE, k=10, seed=996)
+    train_idx, valid_idx = kfold.get(0)
+    train, valid = get_dataloader(config=c, train_idx=train_idx, valid_idx=valid_idx)
 
     logger.info(json.dumps(data_config, indent=2))
     logger.info(json.dumps(c, indent=2))

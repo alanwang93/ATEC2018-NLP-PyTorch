@@ -154,21 +154,21 @@ def simple_collate_fn(batch):
 #     return d
 
 
-def get_dataloader(config, valid_ratio=0.1, shuffle=True):
+def get_dataloader(data, config, train_idx, valid_idx):
     """
     Only used during training
     """
     data = Dataset(mode='train')
-    num_train = len(data)
-    indices = list(range(num_train))
-    split = int(np.floor(valid_ratio * num_train))
-    if shuffle:
-        np.random.seed(0)
-        np.random.shuffle(indices)
-    train_idx, valid_idx = indices[split:], indices[:split]
+    # num_train = len(data)
+    # indices = list(range(num_train))
+    # split = int(np.floor(valid_ratio * num_train))
+    # if shuffle:
+        # np.random.seed(0)
+        # np.random.shuffle(indices)
+    # train_idx, valid_idx = indices[split:], indices[:split]
     # TODO: use KFold
-    np.save(open('data/processed/train_idx.npy', 'w'), train_idx)
-    np.save(open('data/processed/valid_idx.npy', 'w'), valid_idx)
+    # np.save(open('data/processed/train_idx.npy', 'w'), train_idx)
+    # np.save(open('data/processed/valid_idx.npy', 'w'), valid_idx)
     
     train_sampler = SubsetRandomSampler(train_idx)
     valid_sampler = SubsetRandomSampler(valid_idx)
