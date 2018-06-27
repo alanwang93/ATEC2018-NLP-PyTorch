@@ -150,8 +150,8 @@ def main(args):
         if args.extract:
 
             base_exts = [ {'name': 'WordEmbedExtractor', 'kwargs': {}},
-                          {'name': 'WordBoolExtractor', 'kwargs': {}},
-                          {'name': 'TFIDFExtractor', 'kwargs':{}} ]
+                          {'name': 'WordBoolExtractor', 'kwargs': {}}]
+                        #   {'name': 'TFIDFExtractor', 'kwargs':{}} ]
 
             # adv_exts = { 'SimilarityExtractor':{} }
 
@@ -168,8 +168,8 @@ def main(args):
             # Extract basic features
             base_exts[0]['kwargs']['char_vocab'] = char_vocab
             base_exts[0]['kwargs']['word_vocab'] = word_vocab
-            base_exts[2]['kwargs']['char_vocab'] = char_vocab
-            base_exts[2]['kwargs']['word_vocab'] = word_vocab
+            # base_exts[2]['kwargs']['char_vocab'] = char_vocab
+            # base_exts[2]['kwargs']['word_vocab'] = word_vocab
             feats.extract(base_exts, data, mode='train')
             feats._save(mode='train')
 
@@ -187,27 +187,27 @@ def main(args):
 
 
             base_exts = [ {'name': 'WordEmbedExtractor', 'kwargs': {}},
-                          {'name': 'WordBoolExtractor', 'kwargs': {}},
-                          {'name': 'TFIDFExtractor', 'kwargs':{}} ]
+                          {'name': 'WordBoolExtractor', 'kwargs': {}}]
+                        #   {'name': 'TFIDFExtractor', 'kwargs':{}} ]
 
             char_vocab = Vocab(data_config=data_config, type='char', embedding=data_config['char_embedding'])
             word_vocab = Vocab(data_config=data_config, type='word', embedding=data_config['word_embedding'])
             char_vocab.build(data)
             word_vocab.build(data)
 
-            if char_vocab.embedding is not None:
-                char_vocab.load_vectors(char_vocab.embedding)
-            if word_vocab.embedding is not None:
-                word_vocab.load_vectors(word_vocab.embedding)
+            # if char_vocab.embedding is not None:
+            #     char_vocab.load_vectors(char_vocab.embedding)
+            # if word_vocab.embedding is not None:
+            #     word_vocab.load_vectors(word_vocab.embedding)
 
             print("Start extracting basic features")
             # Extract basic features
             base_exts[0]['kwargs']['char_vocab'] = char_vocab
             base_exts[0]['kwargs']['word_vocab'] = word_vocab
             base_exts[0]['kwargs']['mode'] = 'test'
-            base_exts[2]['kwargs']['char_vocab'] = char_vocab
-            base_exts[2]['kwargs']['word_vocab'] = word_vocab
-            base_exts[2]['kwargs']['mode'] = 'test'
+            # base_exts[2]['kwargs']['char_vocab'] = char_vocab
+            # base_exts[2]['kwargs']['word_vocab'] = word_vocab
+            # base_exts[2]['kwargs']['mode'] = 'test'
             feats = Features()
             feats.extract(base_exts, data, mode='test')
             feats._save(mode='test')

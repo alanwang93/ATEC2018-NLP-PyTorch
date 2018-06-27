@@ -237,7 +237,6 @@ class SiameseRNN(nn.Module):
 
     def test(self, data):
         out = self.forward(data)
-        out = self.score_layer(out)
         proba = self.softmax(out)
         v, pred = torch.max(proba, dim=1)
-        return pred.tolist(), data['sid'].item()
+        return pred.tolist(), data['sid'].tolist()
