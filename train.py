@@ -5,7 +5,7 @@
 # Distributed under terms of the MIT license.
 
 import torch
-from data.dataloader import get_dataloader
+from data.dataloader import get_dataloader, Dataset
 import deep_models
 from data.vocab import Vocab
 from torch.utils import data
@@ -51,10 +51,12 @@ def main(args):
 
     model = getattr(deep_models, c['model'])(c, data_config)
 
+    train_data = Dataset(mode='train')
+
     # Get data loader
     kfold = KFold(N=N_SAMPLE, k=10, seed=996)
     train_idx, valid_idx = kfold.get(0)
-    train, valid = get_dataloader(config=c, train_idx=train_idx, valid_idx=valid_idx)
+    train, valid = get_dataloader(train_data, config=c, train_idx=train_idx, valid_idx=valid_idx)
 
     logger.info(json.dumps(data_config, indent=2))
     logger.info(json.dumps(c, indent=2))
