@@ -166,7 +166,7 @@ def main(args):
                         'config': json.dumps(c), 'best_f1': best_f1, 'best_epoch': best_epoch,
                         'best_threshold': best_threshold}, indent=2))
                 logger.info("Early stop at epoch {0}, best threshold {1}, best F1:{2:.3f}".format(best_epoch, best_threshold, best_f1))
-                return
+                continue
 
 
 

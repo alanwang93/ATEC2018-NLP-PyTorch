@@ -25,7 +25,7 @@ siamese = {
 
     # Model
     'mode': 'char',
-    'pos_weight': 2.8,
+    'pos_weight': 3.5,
     'embed_size': 300,
     'hidden_size': 200,
     'num_layers': 2,
@@ -34,16 +34,16 @@ siamese = {
     'dropout2': 0.1,
     'representation': 'max', # last, avg, max
     'sim_fun': 'dense+', # exp, cosine, cosine+, dense
-    'sl1_size': 200,
+    'sl1_size': 300,
     #'sl2_size': 200,
 
     'l1_size': 200,
 
     # Training
-    'batch_size': 64,
+    'batch_size': 128,
     'max_iter': 500000,
     'patience': 5,    
-    'max_grad_norm': 100.,
+    'max_grad_norm': 5.,
 }
 
 
