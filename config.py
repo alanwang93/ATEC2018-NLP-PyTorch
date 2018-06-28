@@ -12,7 +12,7 @@ data_config = {
     'max_char': 1500,
     'max_word': 6000,
     'min_freq': 2,
-    'embed_size': 300 # custimized embedding size
+    'embed_size': 50 # custimized embedding size
 }
 
 
@@ -191,8 +191,8 @@ siamese = {
 
     # Model
     'mode': 'char',
-    'pos_weight': 3.,
-    'embed_size': 300,
+    'pos_weight': 2.5,
+    'embed_size': 50,
     'hidden_size': 200,
     'num_layers': 2,
     'bidirectional':True,
@@ -200,7 +200,7 @@ siamese = {
     'dropout2': 0.1,
     'representation': 'max', # last, avg, max
     'sim_fun': 'dense+', # exp, cosine, cosine+, dense
-    'sl1_size': 200,
+    'sl1_size': 400,
     #'sl2_size': 200,
 
     'l1_size': 200,
