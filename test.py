@@ -19,10 +19,10 @@ import numpy as np
 Test on a single deep model
 """
 
-# l = open('model_name', 'r').readline().strip()
-l = 'siamese_default_best'
-model_path = 'checkpoints/{0}.pkl'.format(l)
-# test_path = 'data/processed/test.pkl'
+
+cp_name = 'siamese_default_best'
+model_path = 'checkpoints/{0}.pkl'.format(cp_name)
+
 UNK_IDX = 0
 EOS_IDX = 2
 

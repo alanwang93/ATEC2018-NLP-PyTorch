@@ -15,6 +15,69 @@ data_config = {
     'embed_size': 300 # custimized embedding size
 }
 
+siamese = {
+    # Basic
+    'name': 'siamese',
+    'model': 'SiameseRNN',
+
+    'char_embedding': 'char_word2vec',
+    'word_embedding': None, #'word_word2vec',
+
+    # Model
+    'mode': 'char',
+    'pos_weight': 2.8,
+    'embed_size': 300,
+    'hidden_size': 200,
+    'num_layers': 2,
+    'bidirectional':True,
+    'dropout': 0.5,
+    'dropout2': 0.1,
+    'representation': 'max', # last, avg, max
+    'sim_fun': 'dense+', # exp, cosine, cosine+, dense
+    'sl1_size': 200,
+    #'sl2_size': 200,
+
+    'l1_size': 200,
+
+    # Training
+    'batch_size': 64,
+    'max_iter': 500000,
+    'patience': 5,    
+    'max_grad_norm': 100.,
+}
+
+
+weighted_siamese = {
+    # Basic
+    'name': 'wighted_siamese',
+    'model': 'WeightedSiameseRNN',
+
+    'char_embedding': 'char_word2vec',
+    'word_embedding': None, #'word_word2vec',
+
+    # Model
+    'mode': 'char',
+    'pos_weight': 3.,
+    'embed_size': 300,
+    'hidden_size': 200,
+    'num_layers': 2,
+    'bidirectional':True,
+    'dropout': 0.5,
+    'dropout2': 0.1,
+    'representation': 'max', # last, avg, max
+    'sim_fun': 'dense+', # exp, cosine, cosine+, dense
+    'sl1_size': 200,
+    #'sl2_size': 200,
+
+    'l1_size': 200,
+
+    # Training
+    'batch_size': 64,
+    'max_iter': 500000,
+    'patience': 5,    
+    'max_grad_norm': 100.,
+}
+
 
 sigmoid_siamese = {
     # Basic
@@ -149,67 +212,6 @@ sigmoid_siamese_plus = {
     'batch_size': 128,
     'max_iter': 500000,
     'patience': 5,
-}
-
-weighted_siamese = {
-    # Basic
-    'name': 'wighted_siamese',
-    'model': 'WeightedSiameseRNN',
-
-    'char_embedding': 'char_word2vec',
-    'word_embedding': None, #'word_word2vec',
-
-    # Model
-    'mode': 'char',
-    'pos_weight': 3.,
-    'embed_size': 300,
-    'hidden_size': 200,
-    'num_layers': 2,
-    'bidirectional':True,
-    'dropout': 0.5,
-    'dropout2': 0.1,
-    'representation': 'max', # last, avg, max
-    'sim_fun': 'dense+', # exp, cosine, cosine+, dense
-    'sl1_size': 200,
-    #'sl2_size': 200,
-
-    'l1_size': 200,
-
-    # Training
-    'batch_size': 64,
-    'max_iter': 500000,
-    'patience': 5,    
-    'max_grad_norm': 100.,
-}
-siamese = {
-    # Basic
-    'name': 'siamese',
-    'model': 'SiameseRNN',
-
-    'char_embedding': 'char_word2vec',
-    'word_embedding': None, #'word_word2vec',
-
-    # Model
-    'mode': 'char',
-    'pos_weight': 3.,
-    'embed_size': 300,
-    'hidden_size': 200,
-    'num_layers': 2,
-    'bidirectional':True,
-    'dropout': 0.5,
-    'dropout2': 0.1,
-    'representation': 'max', # last, avg, max
-    'sim_fun': 'dense+', # exp, cosine, cosine+, dense
-    'sl1_size': 200,
-    #'sl2_size': 200,
-
-    'l1_size': 200,
-
-    # Training
-    'batch_size': 64,
-    'max_iter': 500000,
-    'patience': 5,    
-    'max_grad_norm': 100.,
 }
 
 sigmoid_decatt = {
