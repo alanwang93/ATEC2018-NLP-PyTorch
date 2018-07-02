@@ -20,13 +20,13 @@ siamese = {
     'name': 'siamese',
     'model': 'SiameseRNN',
 
-    'char_embedding': 'char_word2vec',
+    'char_embedding': None, #'char_word2vec',
     'word_embedding': None, #'word_word2vec',
 
     # Model
     'mode': 'char',
-    'pos_weight': 3.5,
-    'embed_size': 300,
+    'pos_weight': 3.,
+    'embed_size': 100,
     'hidden_size': 200,
     'num_layers': 2,
     'bidirectional':True,

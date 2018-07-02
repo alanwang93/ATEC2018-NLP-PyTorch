@@ -49,10 +49,9 @@ def main(args):
     data_config['char_size'] = char_size
     data_config['word_size'] = word_size
 
-    model = getattr(deep_models, c['model'])(c, data_config)
 
     train_data = Dataset(mode='train')
-    K = 5
+    K = 10
     kfold = KFold(N=N_SAMPLE, k=K, seed=0)
 
     for i in range(K):
@@ -62,6 +61,7 @@ def main(args):
         logger.info(json.dumps(data_config, indent=2))
         logger.info(json.dumps(c, indent=2))
 
+        model = getattr(deep_models, c['model'])(c, data_config)
 
         if c['char_embedding'] is not None:
             model.load_vectors(char_vocab.vectors)
@@ -166,7 +166,7 @@ def main(args):
                         'config': json.dumps(c), 'best_f1': best_f1, 'best_epoch': best_epoch,
                         'best_threshold': best_threshold}, indent=2))
                 logger.info("Early stop at epoch {0}, best threshold {1}, best F1:{2:.3f}".format(best_epoch, best_threshold, best_f1))
-                continue
+                break
 
 
 
