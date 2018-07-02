@@ -82,6 +82,7 @@ def main(inpath, outpath):
                     pred = pred[0]
                 preds.append(pred)
             sids.append(sid[0])
+        print('sids', sids)
         all_preds.append(preds)
     print(all_preds)
     probas = np.mean(all_preds, axis=0)

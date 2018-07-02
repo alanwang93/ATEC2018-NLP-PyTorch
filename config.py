@@ -32,7 +32,7 @@ siamese = {
     'bidirectional':True,
     'dropout': 0.5,
     'dropout2': 0.1,
-    'representation': 'max', # last, avg, max
+    'representation': 'last', # last, avg, max
     'sim_fun': 'dense+', # exp, cosine, cosine+, dense
     'sl1_size': 300,
     #'sl2_size': 200,
