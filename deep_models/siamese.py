@@ -52,19 +52,19 @@ class SiameseRNN(nn.Module):
         if config['sim_fun'] == 'dense+':
             self.slinear1 = nn.Linear(self.lstm_size, config['sl1_size'])
             #self.slinear2 = nn.Linear(config['sl1_size'], config['sl2_size'])
-            self.sbn1 = nn.BatchNorm1d(self.config['sl1_size'])
+            #self.sbn1 = nn.BatchNorm1d(self.config['sl1_size'])
             #self.sbn2 = nn.BatchNorm1d(self.config['sl2_size'])
 
 
-        self.bn_feats = nn.BatchNorm1d(self.linear1_in_size)
-        self.bn1 = nn.BatchNorm1d(self.linear2_in_size)
+        #self.bn_feats = nn.BatchNorm1d(self.linear1_in_size)
+        #self.bn1 = nn.BatchNorm1d(self.linear2_in_size)
 
         self.softmax = nn.Softmax(dim=1)
         self.sigmoid = nn.Sigmoid()
         self.tanh = nn.Tanh()
         self.relu = nn.ReLU()
         self.selu = nn.SELU()
-        self.prelu = nn.PReLU()
+        #self.prelu = nn.PReLU()
         self.loss = nn.CrossEntropyLoss(weight=torch.tensor([1., config['pos_weight']]))
 
         self.optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, self.parameters()), lr=0.001)
@@ -179,10 +179,10 @@ class SiameseRNN(nn.Module):
                 #s2_outs = self.relu(s2_outs)
 
             feats = torch.cat((torch.abs(s1_outs-s2_outs), s1_outs * s2_outs), dim=1)
-            feats = self.bn_feats(feats)
+            #feats = self.bn_feats(feats)
             feats = self.relu(feats)
             feats = self.linear1(feats)
-            feats = self.bn1(feats)
+            #feats = self.bn1(feats)
             out = self.relu(feats)
             out = torch.squeeze(self.linear2(out), 1)
 
@@ -220,7 +220,8 @@ class SiameseRNN(nn.Module):
     def train_step(self, data):
         out = self.forward(data)
         proba = self.softmax(out) # (N,C)
-        loss = self.focal_loss(proba, data['label'])
+        #loss = self.focal_loss(proba, data['label'])
+        loss = self.loss(proba, data['label'])
         self.optimizer.zero_grad()
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.parameters(), self.config['max_grad_norm'])
@@ -230,7 +231,8 @@ class SiameseRNN(nn.Module):
     def evaluate(self, data):
         out = self.forward(data)
         proba = self.softmax(out)
-        loss = self.focal_loss(proba, data['label'])
+        loss = self.loss(proba, data['label'])
+        #loss = self.focal_loss(proba, data['label'])
         v, pred = torch.max(proba, dim=1)
         return pred.tolist(),  data['label'].tolist(), loss.item()
 

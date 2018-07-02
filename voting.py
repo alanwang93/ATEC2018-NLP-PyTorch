@@ -79,11 +79,8 @@ def main(inpath, outpath):
 
             else:
                 pred, sid = model.eval().predict_proba(to_cuda(test_batch, c))
-
             preds.extend(pred)
             sids.extend(sid)
-
-        # print(preds)
         all_preds.append(preds)
     for p in all_preds:
         print(p)

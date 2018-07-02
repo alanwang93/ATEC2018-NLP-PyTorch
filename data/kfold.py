@@ -31,8 +31,8 @@ class KFold:
             a = np.random.permutation(self.N)
             if with_test:
                 self.test = a[-int(self.N*self.test_ratio)]
-            self.kfolds = np.array_split(a, k[:-int(self.N*self.test_ratio)])
-            pickle.dump({'kfolds': self.kfolds, 'test':test}, open(datapath, 'w'))
+            self.kfolds = np.array_split(a[:-int(self.N*self.test_ratio)], k)
+            pickle.dump({'kfolds': self.kfolds, 'test':self.test}, open(datapath, 'w'))
 
     def train_test_split(self, train_ratio=0.9):
         pass
