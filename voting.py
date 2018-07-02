@@ -19,7 +19,12 @@ import numpy as np
 Test on a single deep model
 """
 
-cp_names = []
+cp_names = ['siamese_CE3.0_0_5_best.pkl',
+'siamese_CE3.0_1_5_best.pkl',
+'siamese_CE3.0_2_5_best.pkl',
+'siamese_CE3.0_3_5_best.pkl',
+'siamese_CE3.0_4_5_best.pkl',
+]
 soft = False
 
 
@@ -68,22 +73,20 @@ def main(inpath, outpath):
         sids = []
         print("Start prediction")
         for i, test_batch in enumerate(test):
+            print(i)
             if not soft:
                 pred, sid = model.eval().test(to_cuda(test_batch, c))
-                if hasattr(pred, '__len__'):
-                    pred = pred[0]
-                if pred > threshold:
-                    preds.append(1)
-                else:
-                    preds.append(0)
+
             else:
                 pred, sid = model.eval().predict_proba(to_cuda(test_batch, c))
-                if hasattr(pred, '__len__'):
-                    pred = pred[0]
-                preds.append(pred)
-            sids.append(sid[0])
+
+            preds.extend(pred)
+            sids.extend(sid)
+
+        # print(preds)
         all_preds.append(preds)
-    print(all_preds)
+    for p in all_preds:
+        print(p)
     probas = np.mean(all_preds, axis=0)
     print(probas)
     preds = [1 if p > threshold else 0 for p in probas]
