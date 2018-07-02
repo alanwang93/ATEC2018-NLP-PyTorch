@@ -220,7 +220,8 @@ class SiameseRNN(nn.Module):
     def train_step(self, data):
         out = self.forward(data)
         proba = self.softmax(out) # (N,C)
-        loss = self.focal_loss(proba, data['label'])
+        #loss = self.focal_loss(proba, data['label'])
+        loss = self.loss(proba, data['label'])
         self.optimizer.zero_grad()
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.parameters(), self.config['max_grad_norm'])
@@ -230,7 +231,8 @@ class SiameseRNN(nn.Module):
     def evaluate(self, data):
         out = self.forward(data)
         proba = self.softmax(out)
-        loss = self.focal_loss(proba, data['label'])
+        loss = self.loss(proba, data['label'])
+        #loss = self.focal_loss(proba, data['label'])
         v, pred = torch.max(proba, dim=1)
         return pred.tolist(),  data['label'].tolist(), loss.item()
 
