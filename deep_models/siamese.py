@@ -242,3 +242,9 @@ class SiameseRNN(nn.Module):
         proba = self.softmax(out)
         v, pred = torch.max(proba, dim=1)
         return pred.tolist(), data['sid'].tolist()
+
+    def predict_proba(self, data):
+        out = self.forward(data)
+        proba = self.softmax(out)
+        pred = proba[:,1]
+        return pred.tolist(), data['sid'].tolist()      

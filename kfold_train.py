@@ -55,7 +55,7 @@ def main(args):
     kfold = KFold(N=N_SAMPLE, k=K, seed=0)
 
     for i in range(K):
-        train_idx, valid_idx = kfold.get(i)
+        train_idx, valid_idx, _ = kfold.get(i)
         train, valid = get_dataloader(train_data, config=c, train_idx=train_idx, valid_idx=valid_idx)
 
         logger.info(json.dumps(data_config, indent=2))
