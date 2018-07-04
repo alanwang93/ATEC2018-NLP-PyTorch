@@ -56,6 +56,8 @@ class Features:
                 # extract
                 feats = extractor.extract(data, **e['kwargs'])
                 np.save(open(feat_path, 'w'), feats)
+            if self.feat_matrix is not None:
+                print(self.feat_matrix.shape, feats.shape)
             if self.feat_matrix is None:
                 self.feat_matrix = feats
             else:

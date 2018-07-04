@@ -27,7 +27,9 @@ class Dataset(torch.utils.data.Dataset):
         self.feats = Features()
         self.feats._load(mode)
         self.feat_names = ['label', 'sid', 's1_word', 's2_word', 's1_word_rvs', 's2_word_rvs',\
-                's1_char', 's2_char', 's1_char_rvs', 's2_char_rvs', 's1_wlen', 's2_wlen', 's1_clen', 's2_clen']
+                's1_char', 's2_char', 's1_char_rvs', 's2_char_rvs', 's1_wlen', 's2_wlen', 's1_clen', 's2_clen',
+                'power_words', 'jaccard_char_unigram', 'jaccard_char_bigram', 'jaccard_char_trigram', 
+                'jaccard_word_unigram', 'jaccard_word_bigram', 'LevenshteinDistance_word']
         
         self.dict, _ = self.feats.get_feats_by_name(self.feat_names, return_dict=True)
         self.data = []
@@ -47,7 +49,9 @@ class Dataset(torch.utils.data.Dataset):
 def simple_collate_fn(batch):
     batch_size = len(batch)
     feat_names = ['label', 'sid', 's1_word', 's2_word', 's1_word_rvs', 's2_word_rvs',\
-                's1_char', 's2_char', 's1_char_rvs', 's2_char_rvs', 's1_wlen', 's2_wlen', 's1_clen', 's2_clen']
+                's1_char', 's2_char', 's1_char_rvs', 's2_char_rvs', 's1_wlen', 's2_wlen', 's1_clen', 's2_clen', 
+                'power_words', 'jaccard_char_unigram', 'jaccard_char_bigram', 'jaccard_char_trigram', 
+                'jaccard_word_unigram', 'jaccard_word_bigram', 'LevenshteinDistance_word']
     d = dict()
     for k in feat_names:
         d[k] = []
@@ -69,9 +73,13 @@ def simple_collate_fn(batch):
     d['s2_char_rvs'] = d['s2_char_rvs'][:,:s2_max_clen]
 
     for k in feat_names:
-        d[k] = torch.tensor(d[k])
-        if k in ['label', 'sid', 's1_wlen', 's2_wlen', 's1_clen', 's2_clen']:
-            d[k] = d[k].squeeze(1)
+        if k in ['s1_word', 's1_word_rvs', 's2_word', 's2_word_rvs', 
+                's1_char', 's1_char_rvs', 's2_char', 's2_char_rvs']:
+            d[k] = torch.tensor(d[k])
+        elif k in ['label', 'sid', 's1_wlen', 's2_wlen', 's1_clen', 's2_clen']:
+            d[k] = torch.tensor(d[k]).squeeze(1)
+        else:
+            d[k] = torch.FloatTensor(d[k])
 
     return d
 
