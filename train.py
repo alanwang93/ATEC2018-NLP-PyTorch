@@ -54,8 +54,8 @@ def main(args):
     train_data = Dataset(mode='train')
 
     # Get data loader
-    kfold = KFold(N=N_SAMPLE, k=10, seed=996)
-    train_idx, valid_idx = kfold.get(0)
+    kfold = KFold(N=N_SAMPLE, k=10, seed=0)
+    train_idx, valid_idx, test_idx = kfold.get(0)
     train, valid = get_dataloader(train_data, config=c, train_idx=train_idx, valid_idx=valid_idx)
 
     logger.info(json.dumps(data_config, indent=2))

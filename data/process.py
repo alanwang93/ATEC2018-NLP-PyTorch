@@ -153,7 +153,7 @@ def main(args):
                           {'name': 'WordBoolExtractor', 'kwargs': {}}]
                         #   {'name': 'TFIDFExtractor', 'kwargs':{}} ]
 
-            # adv_exts = { 'SimilarityExtractor':{} }
+            adv_exts = [ {'name': 'SimilarityExtractor', 'kwargs': {}} ]
 
             # with codecs.open(os.path.join(data_config['data_root'], 'train.pkl'), 'w', encoding='utf-8') as fout:
             char_vocab = Vocab(data_config=data_config, type='char', embedding=data_config['char_embedding'])
@@ -171,6 +171,7 @@ def main(args):
             # base_exts[2]['kwargs']['char_vocab'] = char_vocab
             # base_exts[2]['kwargs']['word_vocab'] = word_vocab
             feats.extract(base_exts, data, mode='train')
+            feats.extract(adv_exts, data, mode='train')
             feats._save(mode='train')
 
 
@@ -187,8 +188,9 @@ def main(args):
 
 
             base_exts = [ {'name': 'WordEmbedExtractor', 'kwargs': {}},
-                          {'name': 'WordBoolExtractor', 'kwargs': {}}]
-                        #   {'name': 'TFIDFExtractor', 'kwargs':{}} ]
+                          {'name': 'WordBoolExtractor', 'kwargs': {}} ]
+
+            adv_exts = [ {'name': 'SimilarityExtractor', 'kwargs': {}} ]
 
             char_vocab = Vocab(data_config=data_config, type='char', embedding=data_config['char_embedding'])
             word_vocab = Vocab(data_config=data_config, type='word', embedding=data_config['word_embedding'])
@@ -210,8 +212,8 @@ def main(args):
             # base_exts[2]['kwargs']['mode'] = 'test'
             feats = Features()
             feats.extract(base_exts, data, mode='test')
+            feats.extract(adv_exts, data, mode='test')
             feats._save(mode='test')
-            # adv_exts = { 'SimilarityExtractor':{} }
 
 
 if __name__ == '__main__':

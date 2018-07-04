@@ -6,6 +6,7 @@
 
 #from .sigmoid_siamese import SigmoidSiameseRNN
 from .siamese import SiameseRNN
+from .sf_siamese import SFSiameseRNN
 from .weighted_siamese import WeightedSiameseRNN
 from .match_pyramid import MatchPyramid
 from .esim import ESIM

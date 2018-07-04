@@ -21,7 +21,7 @@ class SimilarityExtractor(Extractor):
         self.feat_lens = [1] * 6
 
 
-    def extract(self, data_raw, chars, words):
+    def extract(self, data):
         eps = 1e-8
         feats= []
 
@@ -35,7 +35,7 @@ class SimilarityExtractor(Extractor):
         LevenshteinDistance_word = []
 
         # jaccard for char unigram
-        for ins in chars:
+        for ins in data:
             s1_gram = []
             s2_gram = []
             s1_len = len(ins['s1_char'])
@@ -46,7 +46,7 @@ class SimilarityExtractor(Extractor):
                 s2_gram.append(ins['s2_char'][i])
             inter_len = len(list(set(s1_gram).intersection(s2_gram)))
             jaccard = float(inter_len) / (s1_len + s2_len - inter_len + eps)
-            jaccard_char_unigram.append(jaccard)
+            jaccard_char_unigram.append([jaccard])
 
         # jaccard for char bigram
         for ins in data:
@@ -60,7 +60,7 @@ class SimilarityExtractor(Extractor):
                 s2_gram.append(ins['s2_char'][i]+ins['s2_char'][i+1])
             inter_len = len(list(set(s1_gram).intersection(s2_gram)))
             jaccard = float(inter_len) / (s1_len + s2_len - inter_len + eps)
-            jaccard_char_bigram.append(jaccard)
+            jaccard_char_bigram.append([jaccard])
 
         # jaccard for char trigram
         for ins in data:
@@ -74,7 +74,7 @@ class SimilarityExtractor(Extractor):
                 s2_gram.append(ins['s2_char'][i]+ins['s2_char'][i+1]+ins['s2_char'][i+2])
             inter_len = len(list(set(s1_gram).intersection(s2_gram)))
             jaccard = float(inter_len) / (s1_len + s2_len - inter_len + eps)
-            jaccard_char_trigram.append(jaccard)
+            jaccard_char_trigram.append([jaccard])
 
         # jaccard for word unigram
         for ins in data:
@@ -88,7 +88,7 @@ class SimilarityExtractor(Extractor):
                 s2_gram.append(ins['s2_word'][i])
             inter_len = len(list(set(s1_gram).intersection(s2_gram)))
             jaccard = float(inter_len) / (s1_len + s2_len - inter_len + eps)
-            jaccard_word_unigram.append(jaccard)
+            jaccard_word_unigram.append([jaccard])
 
         # jaccard for word bigram
         for ins in data:
@@ -102,7 +102,7 @@ class SimilarityExtractor(Extractor):
                 s2_gram.append(ins['s2_word'][i]+ins['s2_word'][i+1])
             inter_len = len(list(set(s1_gram).intersection(s2_gram)))
             jaccard = float(inter_len) / (s1_len + s2_len - inter_len + eps)
-            jaccard_char_bigram.append(jaccard)
+            jaccard_word_bigram.append([jaccard])
 
         # LevenshteinDistance for char
         # for ins in chars:
@@ -112,7 +112,7 @@ class SimilarityExtractor(Extractor):
         # LevenshteinDistance for word
         for ins in data:
             dis = self.LevenshteinDistance(ins['s1_word'], ins['s2_word'])
-            LevenshteinDistance_word.append(dis)
+            LevenshteinDistance_word.append([dis])
 
         feats.append(jaccard_char_unigram)
         feats.append(jaccard_char_bigram)
@@ -120,9 +120,8 @@ class SimilarityExtractor(Extractor):
         feats.append(jaccard_word_unigram)
         feats.append(jaccard_word_bigram)
         feats.append(LevenshteinDistance_word)
-
-        feats = np.concatenate(feats, axis=1)
-
+        
+        feats = np.concatenate(feats, 1)
         return feats
 
     def LevenshteinDistance(self, s1, s2):
