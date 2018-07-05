@@ -194,8 +194,8 @@ def main(args):
 
             char_vocab = Vocab(data_config=data_config, type='char', embedding=data_config['char_embedding'])
             word_vocab = Vocab(data_config=data_config, type='word', embedding=data_config['word_embedding'])
-            char_vocab.build(data)
-            word_vocab.build(data)
+            char_vocab.build(rebuild=False)
+            word_vocab.build(rebuild=False)
 
             # if char_vocab.embedding is not None:
             #     char_vocab.load_vectors(char_vocab.embedding)
