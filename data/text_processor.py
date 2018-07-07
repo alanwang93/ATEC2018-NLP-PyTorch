@@ -73,7 +73,7 @@ class TextProcessor:
                 lines = f.readlines()
                 for line in lines:
                     ins = {}
-                    splits = line.strip('\n').split('\t')
+                    splits = line.decode('utf8').strip('\n').split('\t')
                     for i, k in enumerate(self.keys):
                         if mode == 'test' and i == 0:
                             continue
@@ -107,14 +107,16 @@ class TextProcessor:
                 s1 = self.replace_chars(s1)
                 s2 = self.replace_chars(s2)
 
+
                 # Tokenization
+                # here data are in utf8
                 ins['s1_word'] = self.word_tokenizer.tokenize("".join(s1), tokenizer='word+dict', stop_words=self.stop_words_list)
                 ins['s2_word'] = self.word_tokenizer.tokenize("".join(s2), tokenizer='word+dict', stop_words=self.stop_words_list)
                 ins['s1'] = "".join(ins['s1_word'])
                 ins['s2'] = "".join(ins['s2_word'])
                 ins['s1_char'] = self.char_tokenizer.tokenize(ins['s1'], tokenizer='char')
                 ins['s2_char'] = self.char_tokenizer.tokenize(ins['s2'], tokenizer='char')
-                ins['s1_unique'], ins['s2_unique'] = self.remove_duplicates(ins['s1_word'], ins['s2_word'])
+                # ins['s1_unique'], ins['s2_unique'] = self.remove_duplicates(ins['s1_word'], ins['s2_word'])
                 
                 data.append(ins)
             # Save
@@ -130,7 +132,7 @@ class TextProcessor:
                             s += ' '.join(ins[k]) + '\t'
                         else:
                             s += ' '.join(ins[k]) + '\n'
-                    f.write(s.encode('utf8'))
+                    f.write(s.encode('utf8')) # file are written in utf8
             print("Save to {0}".format(filepath))
 
         return data
