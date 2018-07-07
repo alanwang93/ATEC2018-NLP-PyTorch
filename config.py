@@ -6,13 +6,13 @@
 
 data_config = {
     'data_root': 'data/processed/',
-    'valid_ratio': 0.1,
+    'valid_ratio': 0.0,
     'char_embedding': 'char_word2vec',
     'word_embedding': 'word_word2vec',
     'max_char': 1500,
     'max_word': 6000,
     'min_freq': 2,
-    'embed_size': 50 # custimized embedding size
+    'embed_size': 300 # custimized embedding size
 }
 
 siamese = {
@@ -58,13 +58,13 @@ sf_siamese = {
     # Model
     'mode': 'char',
     'pos_weight': 3.,
-    'embed_size': 300,
-    'hidden_size': 200,
+    'embed_size': 50,
+    'hidden_size': 150,
     'num_layers': 2,
     'bidirectional':True,
     'dropout': 0.5,
-    'dropout2': 0.1,
-    'representation': 'max', # last, avg, max
+    'dropout2': 0.0,
+    'representation': 'last', # last, avg, max
     'sim_fun': 'dense+', # exp, cosine, cosine+, dense
     'sl1_size': 300,
     #'sl2_size': 200,
@@ -72,10 +72,10 @@ sf_siamese = {
     'l1_size': 200,
 
     # Training
-    'batch_size': 128,
+    'batch_size': 64,
     'max_iter': 500000,
     'patience': 5,    
-    'max_grad_norm': 5.,
+    'max_grad_norm': 10.,
 }
 
 

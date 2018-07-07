@@ -13,7 +13,7 @@ class SFSiameseRNN(nn.Module):
     def __init__(self,  config, data_config):
         super(SFSiameseRNN, self).__init__()
         self.mode = config['mode']
-        self.sf_dim = 134
+        self.sf_dim = 134 - 2
         self.l = self.mode[0] + 'len'
         self.vocab_size = data_config[self.mode+'_size']
         self.embed_size = config['embed_size']
@@ -43,7 +43,7 @@ class SFSiameseRNN(nn.Module):
         if config['sim_fun'] == 'dense+':
             self.linear1_in_size = config['sl1_size']
 
-        self.linear1_in_size *= 2
+        self.linear1_in_size *= 4
         if config['sim_fun'] in ['dense', 'dense+']:
             self.linear1_in_size = self.linear1_in_size
             self.linear2_in_size = config['l1_size']
@@ -53,12 +53,12 @@ class SFSiameseRNN(nn.Module):
         if config['sim_fun'] == 'dense+':
             self.slinear1 = nn.Linear(self.lstm_size, config['sl1_size'])
             #self.slinear2 = nn.Linear(config['sl1_size'], config['sl2_size'])
-            #self.sbn1 = nn.BatchNorm1d(self.config['sl1_size'])
+            self.sbn1 = nn.BatchNorm1d(self.config['sl1_size'])
             #self.sbn2 = nn.BatchNorm1d(self.config['sl2_size'])
 
 
         #self.bn_feats = nn.BatchNorm1d(self.linear1_in_size)
-        #self.bn1 = nn.BatchNorm1d(self.linear2_in_size)
+        self.bn1 = nn.BatchNorm1d(self.linear2_in_size)
 
         self.softmax = nn.Softmax(dim=1)
         self.sigmoid = nn.Sigmoid()
@@ -96,7 +96,7 @@ class SFSiameseRNN(nn.Module):
         
         if self.config['sim_fun'] == 'dense+':
             nn.init.kaiming_uniform_(self.slinear1.weight)
-            #nn.init.kaiming_uniform_(self.slinear2.weight)
+            # nn.init.kaiming_uniform_(self.slinear2.weight)
 
 
     def forward(self, data):
@@ -107,34 +107,38 @@ class SFSiameseRNN(nn.Module):
         s1_embed = self.dropout(s1_embed)
         s2_embed = self.dropout(s2_embed)
 
-        s1_out, s1_hidden = self.rnn(s1_embed)
-        s2_out, s2_hidden = self.rnn(s2_embed)
+        s1_out1, s1_hidden = self.rnn(s1_embed)
+        s2_out1, s2_hidden = self.rnn(s2_embed)
+
         if self.config['representation'] == 'last': # last hidden state
-            s1_out = torch.squeeze(s1_out[row_idx, data['s1_'+self.l]-1, :], 1)
-            s2_out = torch.squeeze(s2_out[row_idx, data['s2_'+self.l]-1, :], 1)
+            s1_out = torch.squeeze(s1_out1[row_idx, data['s1_'+self.l]-1, :], 1)
+            s2_out = torch.squeeze(s2_out1[row_idx, data['s2_'+self.l]-1, :], 1)
 
         elif self.config['representation'] == 'avg': # average of all hidden states
             s1_outs = []
             s2_outs = []
             for i in range(batch_size):
-                s1_outs.append(torch.mean(s1_out[i][:data['s1_'+self.l][i]], dim=0))
-                s2_outs.append(torch.mean(s2_out[i][:data['s2_'+self.l][i]], dim=0))
+                s1_outs.append(torch.mean(s1_out1[i][:data['s1_'+self.l][i]], dim=0))
+                s2_outs.append(torch.mean(s2_out1[i][:data['s2_'+self.l][i]], dim=0))
             s1_outs = torch.stack(s1_outs)
             s2_outs = torch.stack(s2_outs)
         elif self.config['representation'] == 'max':
-            s1_out, _ = torch.max(s1_out, 1)
-            s2_out, _ = torch.max(s2_out, 1)
+            s1_out, _ = torch.max(s1_out1, 1)
+            s2_out, _ = torch.max(s2_out1, 1)
+            s1_out += torch.squeeze(s1_out1[row_idx, data['s1_'+self.l]-1, :], 1)
+            s2_out += torch.squeeze(s2_out1[row_idx, data['s2_'+self.l]-1, :], 1)
+
 
         if self.bidirectional:
             s1_embed_rvs = self.embed(data['s1_'+self.mode+'_rvs'])
             s2_embed_rvs = self.embed(data['s2_'+self.mode+'_rvs'])
             s1_embed_rvs = self.dropout(s1_embed_rvs)
             s2_embed_rvs = self.dropout(s2_embed_rvs)
-            s1_out_rvs, _ = self.rnn_rvs(s1_embed_rvs)
-            s2_out_rvs, _ = self.rnn_rvs(s2_embed_rvs)
+            s1_out_rvs1, _ = self.rnn_rvs(s1_embed_rvs)
+            s2_out_rvs1, _ = self.rnn_rvs(s2_embed_rvs)
             if self.config['representation'] == 'last': # last hidden state
-                s1_out_rvs = torch.squeeze(s1_out_rvs[row_idx, data['s1_'+self.l]-1, :], 1)
-                s2_out_rvs = torch.squeeze(s2_out_rvs[row_idx, data['s2_'+self.l]-1, :], 1)
+                s1_out_rvs = torch.squeeze(s1_out_rvs1[row_idx, data['s1_'+self.l]-1, :], 1)
+                s2_out_rvs = torch.squeeze(s2_out_rvs1[row_idx, data['s2_'+self.l]-1, :], 1)
                 s1_outs = torch.cat((s1_out, s1_out_rvs), dim=1)
                 s2_outs = torch.cat((s2_out, s2_out_rvs), dim=1)
 
@@ -142,15 +146,19 @@ class SFSiameseRNN(nn.Module):
                 s1_outs_rvs = []
                 s2_outs_rvs = []
                 for i in range(batch_size):
-                    s1_outs_rvs.append(torch.mean(s1_out_rvs[i][:data['s1_'+self.l][i]], dim=0))
-                    s2_outs_rvs.append(torch.mean(s2_out_rvs[i][:data['s2_'+self.l][i]], dim=0))
+                    s1_outs_rvs.append(torch.mean(s1_out_rvs1[i][:data['s1_'+self.l][i]], dim=0))
+                    s2_outs_rvs.append(torch.mean(s2_out_rvs1[i][:data['s2_'+self.l][i]], dim=0))
                 s1_outs = torch.cat((torch.stack(s1_outs_rvs), s1_outs), dim=1)
                 s2_outs = torch.cat((torch.stack(s2_outs_rvs), s2_outs), dim=1)
             elif self.config['representation'] == 'max':
-                s1_out_rvs, _ = torch.max(s1_out_rvs, 1)
-                s2_out_rvs, _ = torch.max(s2_out_rvs, 1)
+                s1_out_rvs, _ = torch.max(s1_out_rvs1, 1)
+                s2_out_rvs, _ = torch.max(s2_out_rvs1, 1)
+
+                s1_out_rvs += torch.squeeze(s1_out_rvs1[row_idx, data['s1_'+self.l]-1, :], 1)
+                s2_out_rvs += torch.squeeze(s2_out_rvs1[row_idx, data['s2_'+self.l]-1, :], 1)
                 s1_outs = torch.cat((s1_out, s1_out_rvs), dim=1)
                 s2_outs = torch.cat((s2_out, s2_out_rvs), dim=1)
+
 
         if self.config['sim_fun'] == 'cosine':
             out = nn.functional.cosine_similarity(s1_outs, s2_outs)
@@ -163,35 +171,36 @@ class SFSiameseRNN(nn.Module):
             out = out * (1./ (1.+torch.exp(-1*(torch.bmm(s1_outs.unsqueeze(1), s2_outs.unsqueeze(2)).squeeze()+1.))))
         elif self.config['sim_fun'] in ['dense', 'dense+']:
             if self.config['sim_fun'] == 'dense+':
-                s1_outs = self.dropout2(s1_outs)
-                s2_outs = self.dropout2(s2_outs)
+                #s1_outs = self.dropout2(s1_outs)
+                #s2_outs = self.dropout2(s2_outs)
                 s1_outs = self.slinear1(s1_outs)
                 s2_outs = self.slinear1(s2_outs)
-                #s1_outs = self.sbn1(s1_outs)
-                #s2_outs = self.sbn1(s2_outs)
+
+                s1_outs = self.sbn1(s1_outs)
+                s2_outs = self.sbn1(s2_outs)
                 
-                s1_outs = self.relu(s1_outs)
-                s2_outs = self.relu(s2_outs)
+                s1_outs = self.tanh(s1_outs)
+                s2_outs = self.tanh(s2_outs)
                 #s1_outs = self.slinear2(s1_outs)
                 #s2_outs = self.slinear2(s2_outs)
                 #s1_outs = self.sbn2(s1_outs)
                 #s2_outs = self.sbn2(s2_outs)
                 #s1_outs = self.relu(s1_outs)
                 #s2_outs = self.relu(s2_outs)
+
             sf = self.sf(data)
-            feats = torch.cat((torch.abs(s1_outs-s2_outs), s1_outs * s2_outs, sf), dim=1)
-            #feats = self.bn_feats(feats)
-            feats = self.relu(feats)
+            feats = torch.cat((s1_outs, s2_outs, torch.abs(s1_outs-s2_outs), s1_outs * s2_outs, sf), dim=1)
+            # feats = self.bn_feats(feats)
             feats = self.linear1(feats)
-            #feats = self.bn1(feats)
-            out = self.relu(feats)
+            feats = self.bn1(feats)
+            out = self.tanh(feats)
             out = torch.squeeze(self.linear2(out), 1)
 
         return out
 
     def sf(self, data):
-        sf = torch.cat((data['s1_wlen'].unsqueeze(1).float(), data['s2_wlen'].unsqueeze(1).float(),
-            data['s1_clen'].unsqueeze(1).float(), data['s2_clen'].unsqueeze(1).float(), data['power_words'], 
+        sf = torch.cat((torch.abs(data['s1_wlen'].unsqueeze(1).float()-data['s2_wlen'].unsqueeze(1).float()),
+            torch.abs(data['s1_clen'].unsqueeze(1).float()- data['s2_clen'].unsqueeze(1).float()), data['power_words'], 
             data['jaccard_char_unigram'], data['jaccard_char_bigram'], data['jaccard_char_trigram'], 
             data['jaccard_word_unigram'], data['jaccard_word_bigram'],
             data['LevenshteinDistance_word']), dim=1)

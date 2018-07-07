@@ -54,7 +54,6 @@ class WordBoolExtractor(Extractor):
         d = len(self.words1)
         feat = np.zeros((d))
         for i, w in enumerate(self.words1):
-            w = w.encode('utf8')
             if (w in s1 and w not in s2) or (w in s2 and w not in s1):
                 feat[i] = 1.
         return feat
@@ -65,7 +64,6 @@ class WordBoolExtractor(Extractor):
         d = len(self.words2)
         feat = np.zeros((d))
         for i, w in enumerate(self.words2):
-            w = w.encode('utf8')
             if w in s1 and w in s2:
                 feat[i] = 1.
         return feat
